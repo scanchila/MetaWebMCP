@@ -1,6 +1,6 @@
 # Test report
 
-Verification was performed on **2026-09-02T21:12Z** (**2026-09-03 04:12, Asia/Ho_Chi_Minh**).
+Verification was performed on **2026-09-02T21:37Z** (**2026-09-03 04:37, Asia/Ho_Chi_Minh**).
 
 ## Environment
 
@@ -9,6 +9,7 @@ Verification was performed on **2026-09-02T21:12Z** (**2026-09-03 04:12, Asia/Ho
 - npm 11.5.1
 - Python 3.14.2
 - Playwright for Python 1.62.0
+- Playwright MCP 1.63.0-alpha-2026-08-31
 - Google Chrome 147.0.7727.116
 
 ## Automated results
@@ -16,12 +17,12 @@ Verification was performed on **2026-09-02T21:12Z** (**2026-09-03 04:12, Asia/Ho
 `npm test` runs static analysis, Node tests, and the Chromium journey.
 
 - Static repository checks: **52 repository files passed**.
-- Node unit and integration tests: **20 passed, 0 failed**.
+- Node unit and integration tests: **23 passed, 0 failed**.
 - Cloudflare Worker dry-run bundle: **passed** with Browser Run, Durable Object, Rate Limit, and Static Assets bindings.
 - Recursive Chromium end-to-end test: **passed** with no console or page errors.
 - Generated runtime evaluations: **4 passed, 0 failed, 0 skipped**.
 
-The Node suite covers HTML and accessibility-snapshot analysis, schema and tool-name generation, ZIP generation, runnable owner bundles, unsafe bundle rejection, SSRF and origin validation, Streamable HTTP and long-lived SSE MCP clients, serialized MCP operations, strict Playwright tool contracts, server-side workspace isolation, and page-owned MCP session reuse and closure.
+The Node suite covers HTML and accessibility-snapshot analysis, required form fields across deep trees, repeated item-action grouping, bounded input-to-reference mappings, current and legacy Playwright reference schemas, ZIP generation, runnable owner bundles, unsafe bundle rejection, SSRF and origin validation, Streamable HTTP and long-lived SSE MCP clients, serialized MCP operations, server-side workspace isolation, and page-owned MCP session reuse and closure.
 
 The browser journey verifies the following sequence:
 
@@ -40,6 +41,18 @@ Evidence from the final run is retained in:
 - `test-artifacts/e2e-result.json`
 - `test-artifacts/metawebmcp-e2e.png`
 - `test-artifacts/relay-sessions-webmcp.zip`
+
+## Public-site Browser MCP validation
+
+The Node deployment was connected to the current official Playwright MCP server and exercised through MetaWebMCP's generated semantic tools:
+
+| Public target | Generated tool | Observed result |
+|---|---|---|
+| Wikipedia | `search(search_wikipedia, selection)` | Submitted `WebMCP` in English and returned a result snapshot containing the query. |
+| SauceDemo | `login(username, password)` | Used the site's documented test account and reached the Products view. |
+| Books to Scrape | `add_to_basket(item)` | Exposed all 20 visible book titles as one bounded enum, selected “A Light in the Attic,” and returned the changed basket state. |
+
+Each run used the analyze → create → activate → execute → reset sequence. The MCP server received only its advertised tool schema, and MetaWebMCP adapted the `target` reference field used by the current server while retaining the `ref` field used by the Cloudflare MCP package.
 
 ## Commands
 

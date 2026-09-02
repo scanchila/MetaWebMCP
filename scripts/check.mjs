@@ -16,7 +16,7 @@ const required = [
 async function walk(directory) {
   const result = [];
   for (const name of await readdir(directory)) {
-    if (['.git', '.wrangler', 'node_modules'].includes(name)) continue;
+    if (['.git', '.playwright-mcp', '.wrangler', 'node_modules'].includes(name)) continue;
     const full = path.join(directory, name);
     const info = await stat(full);
     if (info.isDirectory()) result.push(...await walk(full));
