@@ -1,6 +1,6 @@
 # Test report
 
-Verification was performed on **2026-09-02T22:07Z** (**2026-09-03 05:07, Asia/Ho_Chi_Minh**).
+Verification was performed on **2026-09-02T22:21Z** (**2026-09-03 05:21, Asia/Ho_Chi_Minh**).
 
 ## Environment
 
@@ -11,6 +11,7 @@ Verification was performed on **2026-09-02T22:07Z** (**2026-09-03 05:07, Asia/Ho
 - Playwright for Python 1.62.0
 - Playwright MCP 1.63.0-alpha-2026-08-31
 - Google Chrome 147.0.7727.116
+- Lighthouse 13.4.1
 
 ## Automated results
 
@@ -21,6 +22,7 @@ Verification was performed on **2026-09-02T22:07Z** (**2026-09-03 05:07, Asia/Ho
 - Cloudflare Worker dry-run bundle: **passed** with Browser Run, Durable Object, Rate Limit, and Static Assets bindings.
 - Recursive Chromium end-to-end test: **passed** with no console or page errors.
 - Generated runtime evaluations: **4 passed, 0 failed, 0 skipped**.
+- Lighthouse: **100 accessibility, 100 best practices**, with no failing audits.
 
 The Node suite covers HTML and accessibility-snapshot analysis, required form fields across deep trees, repeated item-action grouping, bounded input-to-reference mappings, current and legacy Playwright reference schemas, ZIP generation, runnable owner bundles, unsafe bundle rejection, SSRF and origin validation, Streamable HTTP and long-lived SSE MCP clients, serialized MCP operations, server-side workspace isolation, and page-owned MCP session reuse and closure.
 
