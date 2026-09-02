@@ -286,12 +286,14 @@ def main() -> int:
                     "clear_itinerary",
                 ], capability_names
                 assert all(item["evidence"] for item in analysis["capabilities"])
+                assert page.locator("#capability-section").evaluate("element => element.open") is True
                 result["checks"].append("live target analysis and four evidence-backed candidates")
 
                 progress("invoking meta_create_webmcp")
                 created = page.evaluate("async () => window.__callNative('meta_create_webmcp', {})")
                 assert created["toolCount"] == 4
                 assert all(tool["inputSchema"]["type"] == "object" for tool in created["tools"])
+                assert page.locator("#capability-section").evaluate("element => element.open") is False
                 result["checks"].append("ToolSpec creation")
 
                 progress("invoking meta_activate_webmcp")
@@ -305,6 +307,15 @@ def main() -> int:
                     "clear_itinerary",
                     "find_sessions",
                     "inspect_itinerary",
+                ]
+                visible_registry_names = page.locator("#tool-list .tool-card").evaluate_all(
+                    "cards => cards.map(card => card.dataset.toolName)"
+                )
+                assert visible_registry_names[:4] == [
+                    "find_sessions",
+                    "add_session_to_itinerary",
+                    "inspect_itinerary",
+                    "clear_itinerary",
                 ]
                 result["checks"].append("recursive dynamic registration from seven to eleven tools")
 
@@ -665,6 +676,31 @@ def main() -> int:
                 screenshot_path = ARTIFACTS / "metawebmcp-e2e.png"
                 page.screenshot(path=str(screenshot_path), full_page=True)
                 result["screenshot"] = str(screenshot_path.relative_to(ROOT))
+                layouts = []
+                for width in [1440, 1221, 1220, 1024, 901, 900, 768, 390]:
+                    page.set_viewport_size({"width": width, "height": 844})
+                    page.wait_for_timeout(25)
+                    layout = page.evaluate(
+                        """() => ({
+                          viewport: window.innerWidth,
+                          documentWidth: document.documentElement.scrollWidth,
+                          targetWidth: document.querySelector('.target-column').getBoundingClientRect().width,
+                          buildWidth: document.querySelector('.build-column').getBoundingClientRect().width,
+                          toolsWidth: document.querySelector('.tools-column').getBoundingClientRect().width,
+                        })"""
+                    )
+                    assert layout["documentWidth"] <= layout["viewport"], layout
+                    assert all(
+                        layout[key] <= layout["viewport"]
+                        for key in ["targetWidth", "buildWidth", "toolsWidth"]
+                    ), layout
+                    layouts.append(layout)
+                page.locator("#trace").evaluate("element => { element.scrollTop = element.scrollHeight; }")
+                mobile_screenshot_path = ARTIFACTS / "metawebmcp-mobile.png"
+                page.screenshot(path=str(mobile_screenshot_path), full_page=True)
+                result["responsiveScreenshot"] = str(mobile_screenshot_path.relative_to(ROOT))
+                result["responsiveLayouts"] = layouts
+                result["checks"].append("workspace has no horizontal overflow from 390px through 1440px")
                 result["exportArchive"] = str(archive_path.relative_to(ROOT))
                 result["nativeToolCount"] = page.evaluate("async () => (await document.modelContext.getTools()).length")
                 result["evaluation"] = evaluation

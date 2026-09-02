@@ -1,6 +1,6 @@
 # Test report
 
-Verification was performed on **2026-09-02T21:48Z** (**2026-09-03 04:48, Asia/Ho_Chi_Minh**).
+Verification was performed on **2026-09-02T22:07Z** (**2026-09-03 05:07, Asia/Ho_Chi_Minh**).
 
 ## Environment
 
@@ -16,7 +16,7 @@ Verification was performed on **2026-09-02T21:48Z** (**2026-09-03 04:48, Asia/Ho
 
 `npm test` runs static analysis, Node tests, and the Chromium journey.
 
-- Static repository checks: **52 repository files passed**.
+- Static repository checks: **54 repository files passed**.
 - Node unit and integration tests: **23 passed, 0 failed**.
 - Cloudflare Worker dry-run bundle: **passed** with Browser Run, Durable Object, Rate Limit, and Static Assets bindings.
 - Recursive Chromium end-to-end test: **passed** with no console or page errors.
@@ -36,11 +36,13 @@ The browser journey verifies the following sequence:
 8. `meta_export_webmcp` returns a valid repository ZIP with direct `document.modelContext.registerTool(...)` source.
 9. The extracted exported site registers its own four tools and executes them against its bundled target UI.
 10. A browser-derived export registers on a separate owned-page fixture, searches and changes the requested item without MetaWebMCP or a browser bridge, then fails closed when that item disappears.
+11. The completed workspace reflows from 1440 px down to 390 px without horizontal overflow across the brief, conversation, and live registry.
 
 Evidence from the final run is retained in:
 
 - `test-artifacts/e2e-result.json`
 - `test-artifacts/metawebmcp-e2e.png`
+- `test-artifacts/metawebmcp-mobile.png`
 - `test-artifacts/relay-sessions-webmcp.zip`
 
 ## Public-site Browser MCP validation
