@@ -118,4 +118,4 @@ Run the generated WebMCP evaluation suite and export a repository named relay-se
 2. Confirm the seven `meta_*` tools appear.
 3. Run the prompt sequence above.
 4. The controlled demo requires no credentials or external service.
-5. The optional “Use any site” path requires the separately configured Browser MCP sidecar and is not needed to verify the central recursive claim.
+5. The live “Any public site” path uses the deployment's isolated Browser MCP runtime; the controlled demo remains a deterministic fallback.

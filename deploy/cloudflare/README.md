@@ -42,4 +42,4 @@ After deployment:
 curl https://metawebmcp.neuryta.com/health
 ```
 
-Then open the site, choose **Use any site**, and analyze a public HTTP or HTTPS target. A healthy deployment reports the browser runtime as connected and preserves the same session through generated-tool execution and reset.
+Then open the site, choose **Any public site**, and analyze a public HTTP or HTTPS target. A healthy deployment reports the browser runtime as connected and preserves the same session through generated-tool execution and reset.

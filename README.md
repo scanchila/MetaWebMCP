@@ -72,7 +72,7 @@ After step 3, the top-level page contains eleven tools: seven meta-tools and fou
 
 ## Modes
 
-### Own the site
+### Owned page
 
 Choose one of three inputs:
 
@@ -102,7 +102,7 @@ A generated pack includes:
 
 The generated module contains direct `document.modelContext.registerTool(...)` calls. For the controlled demo and pasted HTML, `index.html` includes the target UI with that module installed, so the exported repository can be run and tested immediately. DOM adapters remain an installation bridge; in an owned repository, replace clicks and selectors with existing client functions, stores, API clients, and permission checks.
 
-### Use any site
+### Any public site
 
 MetaWebMCP can connect to a standard Streamable HTTP browser MCP endpoint. The generated WebMCP tools stay semantic; low-level `browser_snapshot`, `browser_type`, `browser_click`, and related calls remain hidden behind the adapter.
 
