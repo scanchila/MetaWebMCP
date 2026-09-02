@@ -190,9 +190,14 @@ function renderTargetStage() {
     elements.stageLabel.textContent = 'Uninstrumented target';
     elements.stageState.textContent = state.activated ? `${state.contracts.length} tools via parent` : 'No WebMCP';
   } else if (isBrowser) {
+    const latestSnapshot = typeof state.latestTargetState === 'string' ? state.latestTargetState : '';
     elements.stageLabel.textContent = 'Isolated Browser MCP session';
-    elements.stageState.textContent = state.activated ? `${state.contracts.length} virtual tools` : 'External target unchanged';
-    elements.snapshotPreview.textContent = state.analysis?.snapshot || 'Analyze a target to populate the accessibility snapshot.';
+    elements.stageState.textContent = latestSnapshot
+      ? 'Latest tool result'
+      : state.activated ? `${state.contracts.length} virtual tools` : 'External target unchanged';
+    elements.snapshotPreview.textContent = latestSnapshot
+      || state.analysis?.snapshot
+      || 'Analyze a target to populate the accessibility snapshot.';
   } else {
     elements.stageLabel.textContent = 'Native integration analysis';
     elements.stageState.textContent = state.contracts.length ? `${state.contracts.length} contracts` : 'Export target';
@@ -209,6 +214,7 @@ function clearBuildState({ keepTrace = true } = {}) {
   state.evals = [];
   state.export = null;
   state.selectedToolName = null;
+  state.latestTargetState = null;
   if (!keepTrace) state.trace = [];
   elements.capabilitySection.classList.add('hidden');
   elements.capabilitySection.open = false;
