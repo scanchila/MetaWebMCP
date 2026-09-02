@@ -1,6 +1,6 @@
 # Test report
 
-Verification was performed on **2026-09-02T22:21Z** (**2026-09-03 05:21, Asia/Ho_Chi_Minh**).
+Verification was performed on **2026-09-02T22:28Z** (**2026-09-03 05:28, Asia/Ho_Chi_Minh**).
 
 ## Environment
 
@@ -17,12 +17,12 @@ Verification was performed on **2026-09-02T22:21Z** (**2026-09-03 05:21, Asia/Ho
 
 `npm test` runs static analysis, Node tests, and the Chromium journey.
 
-- Static repository checks: **54 repository files passed**.
+- Static repository checks: **56 repository files passed**.
 - Node unit and integration tests: **23 passed, 0 failed**.
 - Cloudflare Worker dry-run bundle: **passed** with Browser Run, Durable Object, Rate Limit, and Static Assets bindings.
 - Recursive Chromium end-to-end test: **passed** with no console or page errors.
 - Generated runtime evaluations: **4 passed, 0 failed, 0 skipped**.
-- Lighthouse: **100 accessibility, 100 best practices**, with no failing audits.
+- Lighthouse: **99 performance, 100 accessibility, 100 best practices, 100 SEO, and 100 agentic browsing**. The four non-performance categories had no failing audits; the local performance score reflected development-server delivery rather than the production edge cache.
 
 The Node suite covers HTML and accessibility-snapshot analysis, required form fields across deep trees, repeated item-action grouping, bounded input-to-reference mappings, current and legacy Playwright reference schemas, ZIP generation, runnable owner bundles, unsafe bundle rejection, SSRF and origin validation, Streamable HTTP and long-lived SSE MCP clients, serialized MCP operations, server-side workspace isolation, and page-owned MCP session reuse and closure.
 
