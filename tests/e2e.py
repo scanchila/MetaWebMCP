@@ -674,7 +674,8 @@ def main() -> int:
                 assert page.locator("#generated-tool-count").inner_text() == "4"
 
                 screenshot_path = ARTIFACTS / "metawebmcp-e2e.png"
-                page.screenshot(path=str(screenshot_path), full_page=True)
+                page.wait_for_timeout(750)
+                page.screenshot(path=str(screenshot_path), full_page=True, animations="disabled")
                 result["screenshot"] = str(screenshot_path.relative_to(ROOT))
                 layouts = []
                 for width in [1440, 1221, 1220, 1024, 901, 900, 768, 390]:
@@ -697,7 +698,8 @@ def main() -> int:
                     layouts.append(layout)
                 page.locator("#trace").evaluate("element => { element.scrollTop = element.scrollHeight; }")
                 mobile_screenshot_path = ARTIFACTS / "metawebmcp-mobile.png"
-                page.screenshot(path=str(mobile_screenshot_path), full_page=True)
+                page.wait_for_timeout(100)
+                page.screenshot(path=str(mobile_screenshot_path), full_page=True, animations="disabled")
                 result["responsiveScreenshot"] = str(mobile_screenshot_path.relative_to(ROOT))
                 result["responsiveLayouts"] = layouts
                 result["checks"].append("workspace has no horizontal overflow from 390px through 1440px")

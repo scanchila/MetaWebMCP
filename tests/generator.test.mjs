@@ -38,6 +38,7 @@ test('generated project directly registers WebMCP tools and includes review arti
   assert.match(project.files['src/webmcp.generated.js'], /name: spec\.name/);
   assert.match(project.files['README.md'], /top-level page/);
   assert.match(project.files['integration-report.html'], /Generated WebMCP integration/);
+  assert.match(project.files['integration-report.html'], /<link rel="icon" href="data:,">/);
   assert.match(project.files['AGENTS.md'], /Replace DOM clicks with stable application functions/);
   assert.match(project.files['tests/manual-evals.md'], /Expected selection: `find_sessions`/);
   assert.doesNotThrow(() => JSON.parse(project.files['src/tool-spec.json']));
@@ -63,6 +64,7 @@ test('owner bundle produces a runnable target preview with generated registratio
   });
   assert.match(project.files['index.html'], /src\/webmcp\.generated\.js/);
   assert.match(project.files['index.html'], /<form id="search">/);
+  assert.match(project.files['index.html'], /<link rel="icon" href="data:,">/);
   assert.equal(project.files['target.js'], 'window.targetReady = true;');
   assert.match(project.files['README.md'], /executable preview/);
   assert.equal(project.files['metawebmcp-report.json'].includes('"runnablePreview": true'), true);
