@@ -4,4 +4,5 @@ node_modules/
 coverage/
 *.log
 playwright-output/
+.wrangler/
 test-artifacts/*.tmp

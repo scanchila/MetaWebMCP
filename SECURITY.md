@@ -38,7 +38,7 @@ These controls reduce, but do not mathematically eliminate, DNS-rebinding and ne
 
 Playwright MCP is not a security boundary. Its own origin controls do not cover every redirect case. Use an isolated runtime with restricted egress, no cloud metadata access, no host filesystem mounts, and no persistent authenticated browser profile.
 
-A public same-origin MCP route is a powerful resource even when the product UI exposes only semantic generated tools. Apply origin checks, rate limits, browser quotas, and abuse monitoring at the deployment edge.
+A public same-origin MCP route is a powerful resource even when the product UI exposes only semantic generated tools. The Cloudflare deployment rejects cross-origin browser transport requests, limits them to 60 requests per source IP per minute, uses the account's browser quotas, and closes browser contexts on reset or page teardown. Production operators should also monitor abuse and account-level consumption.
 
 ### Generated tool execution
 
