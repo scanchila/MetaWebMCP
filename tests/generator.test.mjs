@@ -50,6 +50,17 @@ test('generated ZIP has a valid archive signature and deterministic file count',
   assert.equal(archive.buffer.readUInt32LE(0), 0x04034b50);
   assert.equal(archive.fileCount, 11);
   assert.ok(archive.buffer.length > 2000);
+
+  let centralOffset = archive.buffer.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]));
+  assert.notEqual(centralOffset, -1);
+  for (let entry = 0; entry < archive.fileCount; entry += 1) {
+    assert.equal(archive.buffer.readUInt32LE(centralOffset), 0x02014b50);
+    assert.equal(archive.buffer.readUInt32LE(centralOffset + 38) >>> 16, 0o100644);
+    centralOffset += 46
+      + archive.buffer.readUInt16LE(centralOffset + 28)
+      + archive.buffer.readUInt16LE(centralOffset + 30)
+      + archive.buffer.readUInt16LE(centralOffset + 32);
+  }
 });
 
 test('owner bundle produces a runnable target preview with generated registration installed', () => {
