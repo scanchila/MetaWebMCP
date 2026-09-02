@@ -1,0 +1,21 @@
+# MetaWebMCP
+
+> MetaWebMCP is a WebMCP application that observes website interfaces, creates narrow semantic tools, activates them for the current session, verifies them against visible state, and exports the same contracts as native integration code.
+
+The live workspace exposes seven permanent `meta_*` WebMCP tools. A completed build adds reviewed, domain-specific tools to the same top-level registry without adding WebMCP to the target page. The controlled Relay Sessions demo is deterministic; Any public site mode uses an isolated Browser MCP runtime.
+
+## Primary links
+
+- [Live workspace](https://metawebmcp.neuryta.com/)
+- [Source and setup](https://github.com/scanchila/MetaWebMCP)
+- [Architecture](https://github.com/scanchila/MetaWebMCP/blob/main/ARCHITECTURE.md)
+- [Security model](https://github.com/scanchila/MetaWebMCP/blob/main/SECURITY.md)
+- [Validation report](https://github.com/scanchila/MetaWebMCP/blob/main/TEST_REPORT.md)
+
+## Core workflow
+
+1. Observe a controlled, owned, or public target.
+2. Review evidence-backed capability candidates.
+3. Shape and activate semantic WebMCP tools.
+4. Execute and verify the generated surface.
+5. Export a standalone native repository.
