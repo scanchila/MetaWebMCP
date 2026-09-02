@@ -1,0 +1,19 @@
+{
+  "name": "metawebmcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A WebMCP page that creates, activates, tests, and exports other WebMCP integrations.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "NODE_ENV=development node --watch server.mjs",
+    "check": "node scripts/check.mjs",
+    "test:unit": "node --test tests/*.test.mjs",
+    "test:e2e": "python3 tests/e2e.py",
+    "test": "npm run check && npm run test:unit && npm run test:e2e"
+  },
+  "license": "MIT"
+}

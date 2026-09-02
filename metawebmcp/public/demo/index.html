@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Relay Sessions — legacy planner</title>
+  <link rel="stylesheet" href="/demo/demo.css">
+</head>
+<body>
+  <header class="demo-header">
+    <div><span class="demo-mark">R</span><strong>Relay Sessions</strong></div>
+    <span class="legacy-badge">Legacy UI · no WebMCP</span>
+  </header>
+
+  <main class="demo-layout">
+    <section class="catalog" aria-labelledby="catalog-title">
+      <p class="kicker">Agent infrastructure forum · Saigon</p>
+      <h1 id="catalog-title">Build a useful day, not a crowded one.</h1>
+      <p class="intro">Search a compact program on reliability, evaluation, secure execution, and agent memory.</p>
+
+      <form id="session-search-form" aria-label="Search sessions">
+        <label for="query">Topic or speaker</label>
+        <div class="search-row">
+          <input id="query" name="query" type="search" placeholder="Try “reliability”">
+          <select id="level" name="level" aria-label="Level">
+            <option value="all">All levels</option>
+            <option value="practical">Practical</option>
+            <option value="advanced">Advanced</option>
+          </select>
+          <select id="day" name="day" aria-label="Day">
+            <option value="all">Both days</option>
+            <option value="day-1">Day 1</option>
+            <option value="day-2">Day 2</option>
+          </select>
+          <button id="search-submit" type="submit">Search sessions</button>
+        </div>
+      </form>
+
+      <div class="results-bar"><span id="result-count">6 sessions</span><span>Choose deliberately</span></div>
+      <div id="session-results" class="session-grid" aria-live="polite"></div>
+    </section>
+
+    <aside id="itinerary-panel" class="itinerary" data-readable="itinerary" aria-labelledby="itinerary-title">
+      <div class="itinerary-heading">
+        <div><p class="kicker">Working set</p><h2 id="itinerary-title">Your itinerary</h2></div>
+        <button id="clear-itinerary" data-action="clear-itinerary" type="button">Clear</button>
+      </div>
+      <div id="itinerary-list" class="itinerary-list"><p class="empty">No sessions selected.</p></div>
+      <div id="itinerary-status" role="status" aria-live="polite">0 sessions · 0 conflicts</div>
+    </aside>
+  </main>
+
+  <script type="module" src="/demo/demo.js"></script>
+</body>
+</html>

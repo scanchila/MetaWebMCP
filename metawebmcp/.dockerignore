@@ -1,0 +1,9 @@
+.git
+.github
+.env
+node_modules
+coverage
+test-artifacts
+*.log
+__pycache__
+*.pyc

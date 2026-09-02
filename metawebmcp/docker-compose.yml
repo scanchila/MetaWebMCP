@@ -1,0 +1,30 @@
+services:
+  metawebmcp:
+    build: .
+    ports:
+      - "8787:8787"
+    environment:
+      PORT: 8787
+      HOST: 0.0.0.0
+      BROWSER_MCP_URL: http://playwright-mcp:8931/mcp
+    depends_on:
+      - playwright-mcp
+
+  playwright-mcp:
+    image: mcr.microsoft.com/playwright/mcp:latest
+    init: true
+    entrypoint: ["node", "/app/cli.js"]
+    command:
+      - --headless
+      - --browser
+      - chromium
+      - --no-sandbox
+      - --isolated
+      - --image-responses
+      - omit
+      - --port
+      - "8931"
+      - --host
+      - 0.0.0.0
+      - --allowed-hosts
+      - playwright-mcp,localhost,127.0.0.1

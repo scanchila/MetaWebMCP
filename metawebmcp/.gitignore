@@ -1,0 +1,7 @@
+.env
+.DS_Store
+node_modules/
+coverage/
+*.log
+playwright-output/
+test-artifacts/*.tmp

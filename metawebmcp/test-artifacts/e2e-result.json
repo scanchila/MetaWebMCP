@@ -1,0 +1,274 @@
+{
+  "baseUrl": "http://127.0.0.1:49435",
+  "checks": [
+    "server health endpoint",
+    "seven native meta-tools; target has no WebMCP registry",
+    "live target analysis and four evidence-backed candidates",
+    "ToolSpec creation",
+    "recursive dynamic registration from seven to eleven tools",
+    "generated tools execute against real target state",
+    "four deterministic runtime evaluations",
+    "downloadable runnable repository, expected files, and generated JavaScript syntax",
+    "exported repository registers and executes its four native WebMCP tools"
+  ],
+  "screenshot": "test-artifacts/metawebmcp-e2e.png",
+  "exportArchive": "test-artifacts/relay-sessions-webmcp.zip",
+  "nativeToolCount": 11,
+  "evaluation": {
+    "ok": true,
+    "scope": "Deterministic registration, schema, execution, and visible-state checks. Agent intent-selection prompts are included in the exported manual eval plan.",
+    "results": [
+      {
+        "tool": "find_sessions",
+        "status": "passed",
+        "durationMs": 95,
+        "checks": [
+          {
+            "name": "registered in generated tool registry",
+            "passed": true
+          },
+          {
+            "name": "execution returned ok",
+            "passed": true
+          },
+          {
+            "name": "matching sessions are visible",
+            "passed": true
+          }
+        ],
+        "result": {
+          "ok": true,
+          "tool": "find_sessions",
+          "risk": "read",
+          "state": {
+            "filters": {
+              "query": "agent",
+              "level": "all",
+              "day": "all"
+            },
+            "visibleSessions": [
+              {
+                "id": "reliability-beyond-happy-path",
+                "title": "Reliability beyond the happy path",
+                "day": "Day 1",
+                "time": "09:00",
+                "level": "practical"
+              },
+              {
+                "id": "agent-evals-that-catch-regressions",
+                "title": "Agent evals that catch regressions",
+                "day": "Day 1",
+                "time": "10:00",
+                "level": "advanced"
+              },
+              {
+                "id": "knowledge-graphs-agent-memory",
+                "title": "Knowledge graphs as working agent memory",
+                "day": "Day 2",
+                "time": "09:30",
+                "level": "practical"
+              }
+            ],
+            "itinerary": [],
+            "conflictCount": 0
+          }
+        }
+      },
+      {
+        "tool": "add_session_to_itinerary",
+        "status": "passed",
+        "durationMs": 74,
+        "checks": [
+          {
+            "name": "registered in generated tool registry",
+            "passed": true
+          },
+          {
+            "name": "execution returned ok",
+            "passed": true
+          },
+          {
+            "name": "requested session is in itinerary",
+            "passed": true
+          }
+        ],
+        "result": {
+          "ok": true,
+          "tool": "add_session_to_itinerary",
+          "risk": "write",
+          "state": {
+            "filters": {
+              "query": "agent",
+              "level": "all",
+              "day": "all"
+            },
+            "visibleSessions": [
+              {
+                "id": "reliability-beyond-happy-path",
+                "title": "Reliability beyond the happy path",
+                "day": "Day 1",
+                "time": "09:00",
+                "level": "practical"
+              },
+              {
+                "id": "agent-evals-that-catch-regressions",
+                "title": "Agent evals that catch regressions",
+                "day": "Day 1",
+                "time": "10:00",
+                "level": "advanced"
+              },
+              {
+                "id": "knowledge-graphs-agent-memory",
+                "title": "Knowledge graphs as working agent memory",
+                "day": "Day 2",
+                "time": "09:30",
+                "level": "practical"
+              }
+            ],
+            "itinerary": [
+              {
+                "id": "agent-evals-that-catch-regressions",
+                "title": "Agent evals that catch regressions",
+                "speaker": "Noah Chen",
+                "day": "day-1",
+                "dayLabel": "Day 1",
+                "time": "10:00",
+                "end": "10:45",
+                "level": "advanced",
+                "summary": "Journey-level evaluation tied to real implementations rather than synthetic unit prompts."
+              }
+            ],
+            "conflictCount": 0
+          },
+          "actedOn": "agent-evals-that-catch-regressions"
+        }
+      },
+      {
+        "tool": "inspect_itinerary",
+        "status": "passed",
+        "durationMs": 2,
+        "checks": [
+          {
+            "name": "registered in generated tool registry",
+            "passed": true
+          },
+          {
+            "name": "execution returned ok",
+            "passed": true
+          },
+          {
+            "name": "read result contains itinerary state",
+            "passed": true
+          }
+        ],
+        "result": {
+          "ok": true,
+          "tool": "inspect_itinerary",
+          "risk": "read",
+          "state": {
+            "filters": {
+              "query": "agent",
+              "level": "all",
+              "day": "all"
+            },
+            "visibleSessions": [
+              {
+                "id": "reliability-beyond-happy-path",
+                "title": "Reliability beyond the happy path",
+                "day": "Day 1",
+                "time": "09:00",
+                "level": "practical"
+              },
+              {
+                "id": "agent-evals-that-catch-regressions",
+                "title": "Agent evals that catch regressions",
+                "day": "Day 1",
+                "time": "10:00",
+                "level": "advanced"
+              },
+              {
+                "id": "knowledge-graphs-agent-memory",
+                "title": "Knowledge graphs as working agent memory",
+                "day": "Day 2",
+                "time": "09:30",
+                "level": "practical"
+              }
+            ],
+            "itinerary": [
+              {
+                "id": "agent-evals-that-catch-regressions",
+                "title": "Agent evals that catch regressions",
+                "speaker": "Noah Chen",
+                "day": "day-1",
+                "dayLabel": "Day 1",
+                "time": "10:00",
+                "end": "10:45",
+                "level": "advanced",
+                "summary": "Journey-level evaluation tied to real implementations rather than synthetic unit prompts."
+              }
+            ],
+            "conflictCount": 0
+          },
+          "visibleState": "WORKING SET Your itinerary Clear Remove Agent evals that catch regressions Day 1 \u00b7 10:00\u201310:45 1 SESSION \u00b7 0 CONFLICTS"
+        }
+      },
+      {
+        "tool": "clear_itinerary",
+        "status": "passed",
+        "durationMs": 75,
+        "checks": [
+          {
+            "name": "registered in generated tool registry",
+            "passed": true
+          },
+          {
+            "name": "execution returned ok",
+            "passed": true
+          },
+          {
+            "name": "itinerary is empty",
+            "passed": true
+          }
+        ],
+        "result": {
+          "ok": true,
+          "tool": "clear_itinerary",
+          "risk": "write",
+          "state": {
+            "filters": {
+              "query": "agent",
+              "level": "all",
+              "day": "all"
+            },
+            "visibleSessions": [
+              {
+                "id": "reliability-beyond-happy-path",
+                "title": "Reliability beyond the happy path",
+                "day": "Day 1",
+                "time": "09:00",
+                "level": "practical"
+              },
+              {
+                "id": "agent-evals-that-catch-regressions",
+                "title": "Agent evals that catch regressions",
+                "day": "Day 1",
+                "time": "10:00",
+                "level": "advanced"
+              },
+              {
+                "id": "knowledge-graphs-agent-memory",
+                "title": "Knowledge graphs as working agent memory",
+                "day": "Day 2",
+                "time": "09:30",
+                "level": "practical"
+              }
+            ],
+            "itinerary": [],
+            "conflictCount": 0
+          }
+        }
+      }
+    ]
+  },
+  "consoleErrors": []
+}

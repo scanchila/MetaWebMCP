@@ -1,0 +1,466 @@
+const MAX_CAPABILITIES = 12;
+
+const ENTITY_MAP = new Map([
+  ['&amp;', '&'],
+  ['&lt;', '<'],
+  ['&gt;', '>'],
+  ['&quot;', '"'],
+  ['&#39;', "'"],
+  ['&nbsp;', ' '],
+]);
+
+export function decodeEntities(value = '') {
+  return String(value)
+    .replace(/&(amp|lt|gt|quot|#39|nbsp);/gi, (match) => ENTITY_MAP.get(match.toLowerCase()) ?? match)
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)));
+}
+
+export function stripTags(value = '') {
+  return decodeEntities(
+    String(value)
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' '),
+  )
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function parseAttributes(source = '') {
+  const attributes = {};
+  const pattern = /([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
+  let match;
+  while ((match = pattern.exec(source))) {
+    const key = match[1].toLowerCase();
+    if (key.startsWith('<') || key === '/') continue;
+    attributes[key] = decodeEntities(match[2] ?? match[3] ?? match[4] ?? '');
+  }
+  return attributes;
+}
+
+export function slugifyToolName(value, fallback = 'use_site_action') {
+  const normalized = String(value || fallback)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/['’]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .replace(/_+/g, '_');
+  const startsWithLetter = /^[a-z]/.test(normalized) ? normalized : `tool_${normalized}`;
+  return (startsWithLetter || fallback).slice(0, 64);
+}
+
+function singularize(value) {
+  if (value.endsWith('ies')) return `${value.slice(0, -3)}y`;
+  if (value.endsWith('ses')) return value.slice(0, -2);
+  if (value.endsWith('s') && !value.endsWith('ss')) return value.slice(0, -1);
+  return value;
+}
+
+function uniqueName(base, used) {
+  let candidate = slugifyToolName(base);
+  let index = 2;
+  while (used.has(candidate)) candidate = `${slugifyToolName(base).slice(0, 60)}_${index++}`;
+  used.add(candidate);
+  return candidate;
+}
+
+function cssEscapeAttribute(value) {
+  return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function selectorFor(attrs, tag, index) {
+  if (attrs.id) return `#${attrs.id.replace(/([^a-zA-Z0-9_-])/g, '\\$1')}`;
+  if (attrs['data-action']) return `[data-action="${cssEscapeAttribute(attrs['data-action'])}"]`;
+  if (attrs.name) return `${tag}[name="${cssEscapeAttribute(attrs.name)}"]`;
+  if (attrs['aria-label']) return `${tag}[aria-label="${cssEscapeAttribute(attrs['aria-label'])}"]`;
+  return `${tag}:nth-of-type(${index + 1})`;
+}
+
+function labelMapFromHtml(html) {
+  const labels = new Map();
+  const pattern = /<label\b([^>]*)>([\s\S]*?)<\/label>/gi;
+  let match;
+  while ((match = pattern.exec(html))) {
+    const attrs = parseAttributes(match[1]);
+    if (attrs.for) labels.set(attrs.for, stripTags(match[2]));
+  }
+  return labels;
+}
+
+function schemaForControl(tag, attrs, inner, labels, index) {
+  const type = (attrs.type || (tag === 'textarea' ? 'textarea' : tag === 'select' ? 'select' : 'text')).toLowerCase();
+  if (['hidden', 'submit', 'button', 'image', 'reset', 'file'].includes(type)) return null;
+  if (attrs.disabled !== undefined) return null;
+
+  const rawName = attrs.name || attrs.id || attrs['aria-label'] || attrs.placeholder || `field_${index + 1}`;
+  const name = slugifyToolName(rawName, `field_${index + 1}`);
+  const label = labels.get(attrs.id) || attrs['aria-label'] || attrs.placeholder || rawName.replace(/[_-]+/g, ' ');
+  const property = { description: `Value for ${label}.` };
+
+  if (type === 'number' || type === 'range') {
+    property.type = 'number';
+    if (attrs.min !== undefined && attrs.min !== '') property.minimum = Number(attrs.min);
+    if (attrs.max !== undefined && attrs.max !== '') property.maximum = Number(attrs.max);
+  } else if (type === 'checkbox') {
+    property.type = 'boolean';
+  } else {
+    property.type = 'string';
+    if (type === 'date') property.format = 'date';
+    if (type === 'email') property.format = 'email';
+    if (tag === 'select') {
+      const values = [...inner.matchAll(/<option\b([^>]*)>([\s\S]*?)<\/option>/gi)]
+        .map((option) => parseAttributes(option[1]).value || stripTags(option[2]))
+        .filter(Boolean)
+        .slice(0, 30);
+      if (values.length) property.enum = values;
+    }
+  }
+
+  return {
+    name,
+    sourceName: attrs.name || attrs.id || name,
+    label,
+    selector: selectorFor(attrs, tag, index),
+    required: attrs.required !== undefined,
+    controlType: tag === 'select' ? 'select' : type,
+    property,
+  };
+}
+
+function extractFormControls(body) {
+  const labels = labelMapFromHtml(body);
+  const controls = [];
+  let index = 0;
+
+  // Inputs are void elements. Parsing them separately prevents the first input
+  // from consuming the rest of a form while looking for an optional closing tag.
+  for (const match of body.matchAll(/<input\b([^>]*)>/gi)) {
+    const control = schemaForControl('input', parseAttributes(match[1]), '', labels, index++);
+    if (control && !controls.some((existing) => existing.name === control.name)) controls.push(control);
+  }
+
+  for (const match of body.matchAll(/<(textarea|select)\b([^>]*)>([\s\S]*?)<\/\1>/gi)) {
+    const control = schemaForControl(match[1].toLowerCase(), parseAttributes(match[2]), match[3] || '', labels, index++);
+    if (control && !controls.some((existing) => existing.name === control.name)) controls.push(control);
+  }
+
+  return controls;
+}
+
+function textFromButtonHtml(body) {
+  const button = body.match(/<button\b[^>]*>([\s\S]*?)<\/button>/i);
+  if (button) return stripTags(button[1]);
+  const submit = body.match(/<input\b[^>]*type\s*=\s*["']?submit["']?[^>]*>/i);
+  return submit ? parseAttributes(submit[0]).value || 'Submit' : '';
+}
+
+function inferRisk(label, method = '') {
+  const readPattern = /\b(search|find|filter|show|view|preview|inspect|lookup|check|calculate|compare|list|get)\b/i;
+  if (readPattern.test(label) || String(method).toLowerCase() === 'get') return 'read';
+  const consequential = /\b(pay|purchase|buy|delete|remove account|send|publish|book|reserve|confirm order|transfer)\b/i;
+  return consequential.test(label) ? 'consequential' : 'write';
+}
+
+function sampleForProperty(property) {
+  if (property.enum?.length) return property.enum[0];
+  if (property.type === 'boolean') return true;
+  if (property.type === 'number') return property.minimum ?? 1;
+  if (property.format === 'date') return '2026-09-03';
+  if (property.format === 'email') return 'agent@example.com';
+  return 'example';
+}
+
+function sampleArgsFromSchema(schema) {
+  return Object.fromEntries(Object.entries(schema.properties || {}).map(([name, property]) => [name, sampleForProperty(property)]));
+}
+
+function formCapability({ attrs, body, index, usedNames }) {
+  const controls = extractFormControls(body);
+  if (!controls.length) return null;
+  const submitLabel = textFromButtonHtml(body);
+  const title = attrs['aria-label'] || submitLabel || attrs.name || attrs.id || `Submit form ${index + 1}`;
+  const baseName = slugifyToolName(title);
+  const name = uniqueName(baseName.startsWith('search_') || baseName.startsWith('find_') ? baseName : baseName, usedNames);
+  const risk = inferRisk(title, attrs.method);
+  const properties = Object.fromEntries(controls.map((control) => [control.name, control.property]));
+  const required = controls.filter((control) => control.required).map((control) => control.name);
+  const formSelector = selectorFor(attrs, 'form', index);
+  const submitAttrs = body.match(/<button\b([^>]*)>([\s\S]*?)<\/button>/i);
+  const submitSelector = submitAttrs
+    ? selectorFor(parseAttributes(submitAttrs[1]), 'button', 0)
+    : `${formSelector} [type="submit"]`;
+  const inputSchema = {
+    type: 'object',
+    properties,
+    additionalProperties: false,
+    ...(required.length ? { required } : {}),
+  };
+
+  return {
+    id: `form_${index + 1}_${name}`,
+    kind: 'form',
+    name,
+    title,
+    description: `${risk === 'read' ? 'Use' : 'Submit'} the “${title}” workflow on the current page. ${risk === 'read' ? 'Returns the resulting visible state.' : 'This changes page state.'}`,
+    risk,
+    inputSchema,
+    sampleArgs: sampleArgsFromSchema(inputSchema),
+    evidence: [
+      { type: 'form', selector: formSelector, label: title },
+      ...controls.map((control) => ({ type: 'field', selector: `${formSelector} ${control.selector}`, label: control.label })),
+    ],
+    executor: {
+      type: 'dom-form',
+      formSelector,
+      fields: controls.map(({ name: fieldName, selector, controlType }) => ({ name: fieldName, selector, controlType })),
+      submitSelector,
+      resultSelector: '[aria-live], [role="status"], main',
+    },
+  };
+}
+
+function buttonCapabilities(html, formRanges, usedNames) {
+  const groups = new Map();
+  const pattern = /<button\b([^>]*)>([\s\S]*?)<\/button>/gi;
+  let match;
+  let index = 0;
+  while ((match = pattern.exec(html))) {
+    const insideForm = formRanges.some(([start, end]) => match.index >= start && match.index <= end);
+    if (insideForm) continue;
+    const attrs = parseAttributes(match[1]);
+    const label = attrs['aria-label'] || stripTags(match[2]);
+    if (!label || attrs.disabled !== undefined) continue;
+    const groupKey = attrs['data-action'] || label.toLowerCase();
+    const item = {
+      attrs,
+      label,
+      selector: selectorFor(attrs, 'button', index++),
+      itemId: attrs['data-entity-id'] || attrs['data-id'] || attrs.value || null,
+    };
+    if (!groups.has(groupKey)) groups.set(groupKey, []);
+    groups.get(groupKey).push(item);
+  }
+
+  const capabilities = [];
+  for (const items of groups.values()) {
+    const first = items[0];
+    const risk = inferRisk(first.label);
+    let base = slugifyToolName(first.label);
+    const properties = {};
+    const required = [];
+    let executor;
+
+    if (items.length > 1 && items.some((item) => item.itemId)) {
+      const entity = first.attrs['data-entity'] || first.attrs['data-action']?.split('-')[0] || 'item';
+      if (!base.includes(singularize(entity))) base = `${base}_${singularize(slugifyToolName(entity))}`;
+      const ids = items.map((item) => item.itemId).filter(Boolean);
+      properties.item_id = {
+        type: 'string',
+        description: `Identifier of the ${entity} to act on.`,
+        ...(ids.length <= 30 ? { enum: ids } : {}),
+      };
+      required.push('item_id');
+      executor = {
+        type: 'dom-action-group',
+        selector: first.attrs['data-action']
+          ? `[data-action="${cssEscapeAttribute(first.attrs['data-action'])}"]`
+          : first.selector,
+        itemAttribute: first.attrs['data-entity-id'] !== undefined ? 'data-entity-id' : first.attrs['data-id'] !== undefined ? 'data-id' : 'value',
+        statusSelector: '[aria-live], [role="status"]',
+      };
+    } else {
+      executor = { type: 'dom-button', selector: first.selector, statusSelector: '[aria-live], [role="status"]' };
+    }
+
+    const name = uniqueName(base, usedNames);
+    const inputSchema = {
+      type: 'object',
+      properties,
+      additionalProperties: false,
+      ...(required.length ? { required } : {}),
+    };
+    capabilities.push({
+      id: `button_${capabilities.length + 1}_${name}`,
+      kind: 'action',
+      name,
+      title: first.label,
+      description: `${first.label} on the current page.${risk === 'read' ? ' Returns the resulting visible state.' : ' This changes page state.'}`,
+      risk,
+      inputSchema,
+      sampleArgs: sampleArgsFromSchema(inputSchema),
+      evidence: items.slice(0, 5).map((item) => ({ type: 'button', selector: item.selector, label: item.label, itemId: item.itemId })),
+      executor,
+    });
+    if (capabilities.length >= MAX_CAPABILITIES) break;
+  }
+  return capabilities;
+}
+
+function titleFromHtml(html, url) {
+  const title = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+  if (title) return stripTags(title[1]);
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return 'Untitled site';
+  }
+}
+
+export function analyzeHtml({ html, url = '', goal = '' }) {
+  if (typeof html !== 'string' || !html.trim()) throw new Error('HTML input is empty.');
+  // Script and template source frequently contains HTML-looking strings. They
+  // are implementation text, not live controls, so exclude them from the scan.
+  const scannedHtml = html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<template\b[^>]*>[\s\S]*?<\/template>/gi, ' ')
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ');
+  const usedNames = new Set();
+  const capabilities = [];
+  const formRanges = [];
+  const formPattern = /<form\b([^>]*)>([\s\S]*?)<\/form>/gi;
+  let formMatch;
+  let formIndex = 0;
+  while ((formMatch = formPattern.exec(scannedHtml))) {
+    formRanges.push([formMatch.index, formPattern.lastIndex]);
+    const capability = formCapability({
+      attrs: parseAttributes(formMatch[1]),
+      body: formMatch[2],
+      index: formIndex++,
+      usedNames,
+    });
+    if (capability) capabilities.push(capability);
+    if (capabilities.length >= MAX_CAPABILITIES) break;
+  }
+  if (capabilities.length < MAX_CAPABILITIES) {
+    capabilities.push(...buttonCapabilities(scannedHtml, formRanges, usedNames).slice(0, MAX_CAPABILITIES - capabilities.length));
+  }
+
+  const linkCount = (scannedHtml.match(/<a\b/gi) || []).length;
+  const buttonCount = (scannedHtml.match(/<button\b/gi) || []).length;
+  const inputCount = (scannedHtml.match(/<(input|select|textarea)\b/gi) || []).length;
+
+  return {
+    source: { kind: 'html', url, title: titleFromHtml(html, url) },
+    goal,
+    summary: {
+      forms: formRanges.length,
+      buttons: buttonCount,
+      inputs: inputCount,
+      links: linkCount,
+      candidates: capabilities.length,
+    },
+    capabilities,
+    warnings: capabilities.length
+      ? []
+      : ['No stable form or button workflows were found in the server-rendered HTML. Use Browser MCP mode for client-rendered sites.'],
+  };
+}
+
+function extractSnapshotControls(snapshot) {
+  const controls = [];
+  const lines = String(snapshot).split(/\r?\n/);
+  const rolePattern = /^\s*-\s+(button|textbox|searchbox|combobox|checkbox|radio|link|spinbutton|slider)\s+(?:"([^"]*)")?[^\n]*?\[ref=([^\]]+)\]/i;
+  lines.forEach((line, index) => {
+    const match = line.match(rolePattern);
+    if (!match) return;
+    controls.push({ role: match[1].toLowerCase(), name: match[2] || match[1], ref: match[3], line: index, raw: line.trim() });
+  });
+  return { controls, lines };
+}
+
+function inputPropertyFromRole(control) {
+  if (control.role === 'checkbox' || control.role === 'radio') return { type: 'boolean', description: `Whether to select ${control.name}.` };
+  if (control.role === 'spinbutton' || control.role === 'slider') return { type: 'number', description: `Value for ${control.name}.` };
+  return { type: 'string', description: `Value for ${control.name}.` };
+}
+
+export function analyzeAccessibilitySnapshot({ snapshot, url = '', goal = '' }) {
+  const { controls } = extractSnapshotControls(snapshot);
+  const usedNames = new Set();
+  const capabilities = [];
+  const consumed = new Set();
+  const inputRoles = new Set(['textbox', 'searchbox', 'combobox', 'spinbutton', 'slider']);
+  const formButtonPattern = /\b(search|find|filter|apply|submit|go|continue|check|compare)\b/i;
+
+  for (const button of controls.filter((control) => control.role === 'button' && formButtonPattern.test(control.name))) {
+    const inputs = controls.filter(
+      (control) => inputRoles.has(control.role) && control.line < button.line && button.line - control.line <= 14 && !consumed.has(control.ref),
+    );
+    if (!inputs.length) continue;
+    inputs.forEach((input) => consumed.add(input.ref));
+    consumed.add(button.ref);
+    const name = uniqueName(button.name, usedNames);
+    const properties = {};
+    const fields = [];
+    for (const input of inputs) {
+      const fieldName = slugifyToolName(input.name, `field_${fields.length + 1}`);
+      properties[fieldName] = inputPropertyFromRole(input);
+      fields.push({ name: fieldName, role: input.role, target: input.ref, label: input.name });
+    }
+    const inputSchema = { type: 'object', properties, additionalProperties: false };
+    const steps = fields.map((field) =>
+      field.role === 'combobox'
+        ? { tool: 'browser_select_option', arguments: { element: field.label, target: field.target, values: [`{{${field.name}}}`] } }
+        : { tool: 'browser_type', arguments: { element: field.label, target: field.target, text: `{{${field.name}}}` } },
+    );
+    steps.push(
+      { tool: 'browser_click', arguments: { element: button.name, target: button.ref } },
+      { tool: 'browser_snapshot', arguments: { depth: 7 } },
+    );
+    capabilities.push({
+      id: `mcp_form_${capabilities.length + 1}_${name}`,
+      kind: 'form',
+      name,
+      title: button.name,
+      description: `Use the “${button.name}” workflow through the connected browser MCP session and return the resulting page snapshot.`,
+      risk: inferRisk(button.name),
+      inputSchema,
+      sampleArgs: sampleArgsFromSchema(inputSchema),
+      evidence: [...fields.map((field) => ({ type: field.role, ref: field.target, label: field.label })), { type: 'button', ref: button.ref, label: button.name }],
+      executor: { type: 'mcp-recipe', steps },
+    });
+    if (capabilities.length >= MAX_CAPABILITIES) break;
+  }
+
+  for (const button of controls.filter((control) => control.role === 'button' && !consumed.has(control.ref))) {
+    if (capabilities.length >= MAX_CAPABILITIES) break;
+    const name = uniqueName(button.name, usedNames);
+    const risk = inferRisk(button.name);
+    capabilities.push({
+      id: `mcp_button_${capabilities.length + 1}_${name}`,
+      kind: 'action',
+      name,
+      title: button.name,
+      description: `Activate “${button.name}” through the connected browser MCP session and return the resulting page snapshot.${risk === 'read' ? '' : ' This may change page state.'}`,
+      risk,
+      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      sampleArgs: {},
+      evidence: [{ type: 'button', ref: button.ref, label: button.name }],
+      executor: {
+        type: 'mcp-recipe',
+        steps: [
+          { tool: 'browser_click', arguments: { element: button.name, target: button.ref } },
+          { tool: 'browser_snapshot', arguments: { depth: 7 } },
+        ],
+      },
+    });
+  }
+
+  return {
+    source: { kind: 'browser_mcp', url, title: (() => { try { return new URL(url).hostname; } catch { return 'Browser target'; } })() },
+    goal,
+    summary: {
+      controls: controls.length,
+      buttons: controls.filter((control) => control.role === 'button').length,
+      inputs: controls.filter((control) => inputRoles.has(control.role)).length,
+      candidates: capabilities.length,
+    },
+    capabilities,
+    snapshot: String(snapshot).slice(0, 40_000),
+    warnings: capabilities.length ? [] : ['The browser snapshot did not contain recognizable interactive controls.'],
+  };
+}
