@@ -1,9 +1,9 @@
 {
-  "baseUrl": "http://127.0.0.1:37625",
+  "baseUrl": "http://127.0.0.1:57063",
   "checks": [
     "server health endpoint",
     "seven native meta-tools; target has no WebMCP registry",
-    "live target analysis and four evidence-backed candidates",
+    "live target analysis, synchronized agent brief, and four evidence-backed candidates",
     "ToolSpec creation",
     "recursive dynamic registration from seven to eleven tools",
     "generated tools execute against real target state",
@@ -82,7 +82,7 @@
       {
         "tool": "find_sessions",
         "status": "passed",
-        "durationMs": 93,
+        "durationMs": 95,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -138,7 +138,7 @@
       {
         "tool": "add_session_to_itinerary",
         "status": "passed",
-        "durationMs": 73,
+        "durationMs": 74,
         "checks": [
           {
             "name": "registered in generated tool registry",
