@@ -21,7 +21,7 @@ The checked-in configuration publishes `metawebmcp.neuryta.com`. Change `routes`
 
 ## Runtime layout
 
-- Cloudflare Static Assets serves `public/`.
+- Cloudflare Static Assets serves `public/` through the Worker so document security headers apply on every route.
 - The Worker handles `/health`, analysis, export, and expiring ZIP downloads.
 - `PlaywrightMCP` is a Durable Object backed by the Browser Run binding.
 - The page uses the package's SSE endpoint so one control connection remains open for the life of the browser session.
