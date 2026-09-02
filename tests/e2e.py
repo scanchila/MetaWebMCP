@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """Full recursive browser test for MetaWebMCP.
 
-The container's system Chromium is enterprise-managed with URLBlocklist=["*"].
-The test therefore renders the application in about:blank, injects the real
+The test renders a network-independent page harness, injects the production
 browser modules, and bridges same-origin API calls to the real Node server via
-Playwright's exposed-function mechanism. This still executes the production UI,
+Playwright's exposed-function mechanism. This executes the production UI,
 registry, target application, analyzer, generator, and export endpoints in a
-real Chromium JavaScript/DOM environment without bypassing browser policy.
+real Chromium JavaScript/DOM environment.
 """
 
 from __future__ import annotations
@@ -124,6 +123,25 @@ def progress(message: str) -> None:
     print(f"[e2e] {message}", flush=True)
 
 
+def chromium_executable(playwright: Any) -> str:
+    configured = os.environ.get("CHROMIUM_PATH")
+    candidates = [
+        Path(configured) if configured else None,
+        Path(playwright.chromium.executable_path),
+        Path("/usr/bin/chromium"),
+        Path("/usr/bin/chromium-browser"),
+        Path("/usr/bin/google-chrome"),
+        Path("/usr/bin/google-chrome-stable"),
+    ]
+    available = next((candidate for candidate in candidates if candidate and candidate.is_file()), None)
+    if available is None:
+        raise RuntimeError(
+            "No Chromium executable found. Run `python -m playwright install chromium` "
+            "or set CHROMIUM_PATH."
+        )
+    return str(available)
+
+
 def main() -> int:
     port = free_port()
     base_url = f"http://127.0.0.1:{port}"
@@ -150,14 +168,8 @@ def main() -> int:
         index_html, styles, demo_html, app_source = build_browser_sources()
         with sync_playwright() as playwright:
             progress("launching Chromium")
-            configured_chromium = os.environ.get("CHROMIUM_PATH")
-            bundled_chromium = Path(playwright.chromium.executable_path)
-            system_chromium = Path("/usr/bin/chromium")
-            executable_path = configured_chromium or (
-                str(bundled_chromium) if bundled_chromium.exists() else str(system_chromium)
-            )
             browser = playwright.chromium.launch(
-                executable_path=executable_path,
+                executable_path=chromium_executable(playwright),
                 headless=True,
                 args=["--no-sandbox", "--disable-dev-shm-usage"],
             )
