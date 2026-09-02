@@ -155,11 +155,11 @@ async function analyzeWithBrowserMcp(body) {
 
 async function executeMcpRecipe(body) {
   const client = getMcpClient(body.workspaceId);
-  const available = new Set((await client.listTools()).map((tool) => tool.name));
+  const tools = await client.listTools();
   return runMcpRecipe({
     executor: body.executor,
     input: body.input ?? {},
-    availableTools: available,
+    availableTools: tools,
     callTool: (name, args) => client.callTool(name, args),
     resultText: flattenMcpText,
   });

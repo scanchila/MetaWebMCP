@@ -136,11 +136,11 @@ export class BrowserMcpSession {
         body: JSON.stringify({ executor, input, workspaceId }),
       });
     }
-    const available = new Set((await client.listTools()).map((tool) => tool.name));
+    const tools = await client.listTools();
     return runMcpRecipe({
       executor,
       input,
-      availableTools: available,
+      availableTools: tools,
       callTool: (name, args) => client.callTool(name, args),
       resultText: flattenMcpText,
     });

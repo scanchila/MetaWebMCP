@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { analyzeAccessibilitySnapshot, analyzeHtml, parseAttributes, slugifyToolName } from '../lib/analyzer.mjs';
+import { runMcpRecipe } from '../public/js/mcp-recipe.js';
 
 const FIXTURE = `<!doctype html>
 <html><head><title>Tool Shop</title></head><body>
@@ -87,6 +88,7 @@ test('accessibility snapshot analysis produces browser MCP recipes', () => {
     ref: 'e3',
   });
   assert.deepEqual(Object.keys(search.inputSchema.properties), ['topic', 'level']);
+  assert.deepEqual(search.inputSchema.required, ['topic', 'level']);
   const add = result.capabilities.find((capability) => capability.name === 'add_to_itinerary');
   assert.ok(add);
   assert.equal(add.risk, 'write');
@@ -94,4 +96,100 @@ test('accessibility snapshot analysis produces browser MCP recipes', () => {
     { tool: 'browser_click', arguments: { element: 'Add to itinerary', ref: 'e4' } },
     { tool: 'browser_snapshot', arguments: {} },
   ]);
+});
+
+test('snapshot forms retain distant fields and generate unique required input names', () => {
+  const structuralLines = Array.from({ length: 18 }, (_, index) => `    - generic "layout ${index}"`).join('\n');
+  const snapshot = `- main "Store" [ref=e0]
+  - textbox "Username" [ref=e1]
+${structuralLines}
+  - textbox "Password" [ref=e2]
+  - textbox "Password" [ref=e3]
+  - button "Login" [ref=e4]`;
+  const result = analyzeAccessibilitySnapshot({ snapshot, url: 'https://shop.example/login', goal: 'Sign in.' });
+  const login = result.capabilities.find((capability) => capability.name === 'login');
+  assert.ok(login);
+  assert.deepEqual(Object.keys(login.inputSchema.properties), ['username', 'password', 'password_2']);
+  assert.deepEqual(login.inputSchema.required, ['username', 'password', 'password_2']);
+  assert.deepEqual(login.executor.steps.slice(0, 3).map((step) => step.arguments.ref), ['e1', 'e2', 'e3']);
+});
+
+test('snapshot forms retain fields before long combobox option lists', () => {
+  const options = [
+    'Afrikaans',
+    ...Array.from({ length: 85 }, (_, index) => `Language ${index + 1}`),
+    'English',
+  ].map((option) => `      - option "${option}"${option === 'English' ? ' [selected]' : ''}`).join('\n');
+  const snapshot = `- search [ref=e0]:
+  - searchbox "Search Wikipedia" [ref=e1]
+    - combobox "en" [ref=e2]:
+${options}
+  - button "Search" [ref=e3]`;
+  const result = analyzeAccessibilitySnapshot({ snapshot, url: 'https://wikipedia.example/', goal: 'Search for a topic.' });
+  const search = result.capabilities.find((capability) => capability.name === 'search');
+  assert.ok(search);
+  assert.deepEqual(Object.keys(search.inputSchema.properties), ['search_wikipedia', 'selection']);
+  assert.equal(search.inputSchema.properties.selection.enum[0], 'English');
+  assert.equal(search.inputSchema.properties.selection.enum.length, 60);
+  assert.deepEqual(search.inputSchema.required, ['search_wikipedia', 'selection']);
+  assert.deepEqual(search.executor.steps.slice(0, 2).map((step) => step.arguments.ref), ['e1', 'e2']);
+});
+
+test('repeated snapshot actions become one item-scoped tool with a bounded ref mapping', async () => {
+  const snapshot = `- list "Books" [ref=e0]
+  - listitem [ref=e1]
+    - article [ref=e2]
+      - link [ref=e3]
+        - 'img "A Light in the Attic" [ref=e3a]'
+      - link "A Light in the ..." [ref=e4]
+      - button "Add to basket" [ref=e5]
+  - listitem [ref=e6]
+    - article [ref=e7]
+      - link "Tipping the Velvet" [ref=e8]
+      - link "Tipping the Velvet" [ref=e9]
+      - button "Add to basket" [ref=e10]`;
+  const result = analyzeAccessibilitySnapshot({ snapshot, url: 'https://books.example/', goal: 'Add a book to the basket.' });
+  const add = result.capabilities.find((capability) => capability.name === 'add_to_basket');
+  assert.ok(add);
+  assert.equal(result.capabilities.filter((capability) => capability.title === 'Add to basket').length, 1);
+  assert.deepEqual(add.inputSchema.properties.item.enum, ['A Light in the Attic', 'Tipping the Velvet']);
+  assert.deepEqual(add.executor.steps[0].arguments.ref, {
+    $pick: 'item',
+    cases: { 'A Light in the Attic': 'e5', 'Tipping the Velvet': 'e10' },
+  });
+
+  const calls = [];
+  await runMcpRecipe({
+    executor: add.executor,
+    input: { item: 'Tipping the Velvet' },
+    availableTools: new Set(['browser_click', 'browser_snapshot']),
+    callTool: async (tool, args) => {
+      calls.push({ tool, args });
+      return { content: [{ type: 'text', text: `${tool} complete` }] };
+    },
+    resultText: (value) => value.content[0].text,
+  });
+  assert.deepEqual(calls[0], {
+    tool: 'browser_click',
+    args: { element: 'Add to basket for Tipping the Velvet', ref: 'e10' },
+  });
+
+  const currentCalls = [];
+  await runMcpRecipe({
+    executor: add.executor,
+    input: { item: 'A Light in the Attic' },
+    availableTools: [
+      { name: 'browser_click', inputSchema: { type: 'object', properties: { element: {}, target: {} }, required: ['target'] } },
+      { name: 'browser_snapshot', inputSchema: { type: 'object', properties: {} } },
+    ],
+    callTool: async (tool, args) => {
+      currentCalls.push({ tool, args });
+      return { content: [{ type: 'text', text: `${tool} complete` }] };
+    },
+    resultText: (value) => value.content[0].text,
+  });
+  assert.deepEqual(currentCalls[0], {
+    tool: 'browser_click',
+    args: { element: 'Add to basket for A Light in the Attic', target: 'e5' },
+  });
 });
