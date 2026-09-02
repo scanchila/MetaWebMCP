@@ -1,4 +1,4 @@
-import { McpHttpClient, flattenMcpText } from './mcp-http-client.js';
+import { McpHttpClient, McpSseClient, flattenMcpText } from './mcp-http-client.js';
 import { runMcpRecipe } from './mcp-recipe.js';
 
 const REQUIRED_TOOLS = ['browser_navigate', 'browser_snapshot'];
@@ -76,7 +76,8 @@ export class BrowserMcpSession {
     const configuration = await this.configuration();
     if (!configuration.browserMcpEndpoint) return null;
     if (!this.client) {
-      this.client = new McpHttpClient(configuration.browserMcpEndpoint, {
+      const Client = configuration.browserMcpTransport === 'sse' ? McpSseClient : McpHttpClient;
+      this.client = new Client(configuration.browserMcpEndpoint, {
         baseUrl: this.baseUrl,
         fetch: this.fetch,
       });
@@ -166,6 +167,12 @@ export class BrowserMcpSession {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ workspaceId }),
     });
+  }
+
+  closeOnPageHide() {
+    const client = this.client;
+    this.client = null;
+    return client?.sendToolCallKeepalive?.('browser_close', {}) ?? false;
   }
 }
 

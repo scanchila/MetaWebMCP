@@ -1,6 +1,6 @@
 # Test report
 
-Verification was performed on **2026-09-02T20:44Z** (**2026-09-03 03:44, Asia/Ho_Chi_Minh**).
+Verification was performed on **2026-09-02T21:12Z** (**2026-09-03 04:12, Asia/Ho_Chi_Minh**).
 
 ## Environment
 
@@ -15,12 +15,13 @@ Verification was performed on **2026-09-02T20:44Z** (**2026-09-03 03:44, Asia/Ho
 
 `npm test` runs static analysis, Node tests, and the Chromium journey.
 
-- Static repository checks: **45 repository files passed**.
-- Node unit and integration tests: **19 passed, 0 failed**.
+- Static repository checks: **52 repository files passed**.
+- Node unit and integration tests: **20 passed, 0 failed**.
+- Cloudflare Worker dry-run bundle: **passed** with Browser Run, Durable Object, Rate Limit, and Static Assets bindings.
 - Recursive Chromium end-to-end test: **passed** with no console or page errors.
 - Generated runtime evaluations: **4 passed, 0 failed, 0 skipped**.
 
-The Node suite covers HTML and accessibility-snapshot analysis, schema and tool-name generation, ZIP generation, runnable owner bundles, unsafe bundle rejection, SSRF and origin validation, Streamable HTTP MCP initialization and SSE/JSON handling, serialized MCP operations, strict Playwright tool contracts, server-side workspace isolation, and page-owned MCP session reuse and closure.
+The Node suite covers HTML and accessibility-snapshot analysis, schema and tool-name generation, ZIP generation, runnable owner bundles, unsafe bundle rejection, SSRF and origin validation, Streamable HTTP and long-lived SSE MCP clients, serialized MCP operations, strict Playwright tool contracts, server-side workspace isolation, and page-owned MCP session reuse and closure.
 
 The browser journey verifies the following sequence:
 
@@ -53,6 +54,6 @@ npm test
 
 The automated browser suite injects a narrow implementation of the documented imperative `registerTool`, `getTools`, `executeTool`, cancellation, and tool-lifecycle shape. Production modules are otherwise executed unchanged, and every test invocation goes through that WebMCP-shaped surface. Native-client verification remains a separate deployment gate because WebMCP availability depends on the browser build and feature rollout.
 
-The Streamable HTTP Browser MCP client is tested against JSON and SSE responses, including session reuse, closure, concurrency, page-owned execution, and isolation through the MetaWebMCP server. The supplied Compose command follows the official Playwright MCP long-running HTTP configuration. A deployed smoke test must still be performed in ChatGPT's supported in-app browser and, for arbitrary-site mode, against the actual browser runtime.
+The Browser MCP clients are tested against Streamable HTTP JSON/event responses and a long-lived SSE control connection, including session reuse, closure, concurrency, page-owned execution, and isolation through the MetaWebMCP server. The hosted Cloudflare path has also completed a live Browser Run navigation and accessibility-snapshot smoke test. Native-client verification in ChatGPT's supported in-app browser remains a separate deployment gate because WebMCP availability depends on that browser build and feature rollout.
 
 The end-to-end suite renders production HTML and modules in a network-independent page harness and bridges same-origin requests to the real Node server through Playwright's exposed-function mechanism. This keeps the test deterministic while exercising the real server endpoints and browser modules.

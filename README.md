@@ -2,6 +2,8 @@
 
 **A WebMCP application that creates other WebMCP applications.**
 
+**Live application:** https://metawebmcp.neuryta.com
+
 MetaWebMCP exposes a permanent WebMCP control plane that lets an agent inspect a website, turn observed workflows into narrow semantic tools, register those tools immediately on the same top-level page, verify their execution, and export a standalone native integration repository.
 
 The central demonstration is recursive:
@@ -176,12 +178,13 @@ See [`TEST_REPORT.md`](TEST_REPORT.md) for the exact environment and latest run.
 
 The repository includes:
 
+- `deploy/cloudflare/` for the live single-origin Worker, Browser Run Durable Object, rate limiter, and static assets.
 - `Dockerfile` for any container host.
 - `render.yaml` for a basic Render deployment.
 - `docker-compose.yml` for MetaWebMCP plus Playwright MCP.
 - GitHub Actions CI for static, unit, and Chromium end-to-end tests.
 
-For the hackathon demo, deploy MetaWebMCP at a stable HTTPS URL. The controlled recursive path does not require the Browser MCP sidecar, so it can run on a small single-container host. Add the sidecar only for the “any site” path.
+The showcase deployment runs at https://metawebmcp.neuryta.com. Its page-owned MCP session uses Cloudflare Browser Rendering for the “any site” path; the controlled recursive flow and native exports use the same origin without requiring a browser session. See [`deploy/cloudflare/README.md`](deploy/cloudflare/README.md) for the reproducible deployment and compatibility pins.
 
 ## Repository guide
 

@@ -52,6 +52,14 @@ export function flattenMcpText(result) {
   return JSON.stringify(result);
 }
 
+function checkedToolResult(name, result) {
+  if (result?.isError) {
+    const detail = flattenMcpText(result) || 'Unknown tool error.';
+    throw new Error(`MCP tool ${name} failed: ${detail}`);
+  }
+  return result;
+}
+
 export class McpHttpClient {
   constructor(endpoint, options = {}) {
     const baseUrl = options.baseUrl ?? globalThis.location?.href;
@@ -140,8 +148,21 @@ export class McpHttpClient {
   async callTool(name, args = {}) {
     return this.run(async () => {
       await this.initialize();
-      return this._request('tools/call', { name, arguments: args });
+      return checkedToolResult(name, await this._request('tools/call', { name, arguments: args }));
     });
+  }
+
+  sendToolCallKeepalive(name, args = {}) {
+    if (!this.sessionId || !this.initialized) return false;
+    const headers = {
+      accept: 'application/json, text/event-stream',
+      'content-type': 'application/json',
+      'mcp-session-id': this.sessionId,
+      'mcp-protocol-version': this.negotiatedVersion || this.protocolVersion,
+    };
+    const payload = { jsonrpc: '2.0', id: this.nextId++, method: 'tools/call', params: { name, arguments: args } };
+    this.fetch(this.endpoint, { method: 'POST', headers, body: JSON.stringify(payload), keepalive: true }).catch(() => {});
+    return true;
   }
 
   async close() {
@@ -159,5 +180,211 @@ export class McpHttpClient {
       this.sessionId = null;
       this.initialized = false;
     }
+  }
+}
+
+function sseBlock(block) {
+  let event = 'message';
+  const data = [];
+  for (const line of block.split(/\r?\n/)) {
+    if (line.startsWith('event:')) event = line.slice(6).trim();
+    if (line.startsWith('data:')) data.push(line.slice(5).trimStart());
+  }
+  return { event, data: data.join('\n') };
+}
+
+export class McpSseClient {
+  constructor(endpoint, options = {}) {
+    const baseUrl = options.baseUrl ?? globalThis.location?.href;
+    this.endpoint = new URL(endpoint, baseUrl).href;
+    this.fetch = options.fetch ?? globalThis.fetch;
+    this.clientInfo = options.clientInfo ?? { name: 'metawebmcp-browser-bridge', version: '1.0.0' };
+    this.protocolVersion = options.protocolVersion ?? DEFAULT_PROTOCOL_VERSION;
+    this.requestTimeoutMs = options.requestTimeoutMs ?? 60_000;
+    this.nextId = 1;
+    this.pending = new Map();
+    this.initialized = false;
+    this.connectionPromise = null;
+    this.connectionAbort = null;
+    this.messageEndpoint = null;
+    this._queue = Promise.resolve();
+    this.closed = false;
+  }
+
+  fail(error) {
+    const failure = error instanceof Error ? error : new Error(String(error));
+    for (const pending of this.pending.values()) {
+      clearTimeout(pending.timer);
+      pending.reject(failure);
+    }
+    this.pending.clear();
+  }
+
+  handleEvent(block, resolveEndpoint) {
+    const event = sseBlock(block);
+    if (event.event === 'endpoint' && event.data) {
+      this.messageEndpoint = new URL(event.data, this.endpoint).href;
+      resolveEndpoint(this.messageEndpoint);
+      return;
+    }
+    if (event.event !== 'message' || !event.data) return;
+    let message;
+    try {
+      message = JSON.parse(event.data);
+    } catch {
+      return;
+    }
+    if (message.id === undefined) return;
+    const pending = this.pending.get(message.id);
+    if (!pending) return;
+    this.pending.delete(message.id);
+    clearTimeout(pending.timer);
+    if (message.error) pending.reject(new Error(`MCP request failed: ${message.error.message || JSON.stringify(message.error)}`));
+    else pending.resolve(message.result);
+  }
+
+  async consume(body, resolveEndpoint, rejectEndpoint) {
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let endpointSeen = false;
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        while (true) {
+          const boundary = buffer.match(/\r?\n\r?\n/);
+          if (!boundary || boundary.index === undefined) break;
+          const block = buffer.slice(0, boundary.index);
+          buffer = buffer.slice(boundary.index + boundary[0].length);
+          const parsed = sseBlock(block);
+          if (parsed.event === 'endpoint') endpointSeen = true;
+          this.handleEvent(block, resolveEndpoint);
+        }
+      }
+      if (!this.closed) throw new Error('MCP SSE connection closed unexpectedly.');
+    } catch (error) {
+      if (!endpointSeen) rejectEndpoint(error);
+      if (!this.closed) this.fail(error);
+    }
+  }
+
+  async connect() {
+    if (this.closed) throw new Error('MCP SSE client is closed.');
+    if (this.connectionPromise) return this.connectionPromise;
+    this.connectionPromise = new Promise(async (resolve, reject) => {
+      this.connectionAbort = new AbortController();
+      try {
+        const response = await this.fetch(this.endpoint, {
+          method: 'GET',
+          headers: { accept: 'text/event-stream' },
+          signal: this.connectionAbort.signal,
+        });
+        if (!response.ok || !response.body) {
+          const detail = await response.text().catch(() => '');
+          throw new Error(`MCP SSE connection failed with HTTP ${response.status}${detail ? `: ${detail.slice(0, 200)}` : ''}.`);
+        }
+        this.consume(response.body, resolve, reject);
+      } catch (error) {
+        reject(error);
+      }
+    }).catch((error) => {
+      this.connectionPromise = null;
+      throw error;
+    });
+    return this.connectionPromise;
+  }
+
+  async post(payload) {
+    await this.connect();
+    const response = await this.fetch(this.messageEndpoint, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json, text/event-stream',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      throw new Error(`MCP request failed with HTTP ${response.status}${detail ? `: ${detail.slice(0, 200)}` : ''}.`);
+    }
+  }
+
+  async request(method, params = {}) {
+    await this.connect();
+    const id = this.nextId++;
+    let resolveResult;
+    let rejectResult;
+    const result = new Promise((resolve, reject) => {
+      resolveResult = resolve;
+      rejectResult = reject;
+    });
+    const timer = setTimeout(() => {
+      this.pending.delete(id);
+      rejectResult(new Error(`MCP request timed out: ${method}.`));
+    }, this.requestTimeoutMs);
+    this.pending.set(id, { resolve: resolveResult, reject: rejectResult, timer });
+    try {
+      await this.post({ jsonrpc: '2.0', id, method, params });
+    } catch (error) {
+      this.pending.delete(id);
+      clearTimeout(timer);
+      rejectResult(error);
+    }
+    return result;
+  }
+
+  async initialize() {
+    if (this.initialized) return;
+    const result = await this.request('initialize', {
+      protocolVersion: this.protocolVersion,
+      capabilities: {},
+      clientInfo: this.clientInfo,
+    });
+    if (!result) throw new Error('MCP initialize returned no result.');
+    await this.post({ jsonrpc: '2.0', method: 'notifications/initialized', params: {} });
+    this.initialized = true;
+  }
+
+  async run(operation) {
+    const next = this._queue.then(operation, operation);
+    this._queue = next.catch(() => {});
+    return next;
+  }
+
+  async listTools() {
+    return this.run(async () => {
+      await this.initialize();
+      const result = await this.request('tools/list', {});
+      return result?.tools ?? [];
+    });
+  }
+
+  async callTool(name, args = {}) {
+    return this.run(async () => {
+      await this.initialize();
+      return checkedToolResult(name, await this.request('tools/call', { name, arguments: args }));
+    });
+  }
+
+  sendToolCallKeepalive(name, args = {}) {
+    if (!this.messageEndpoint || !this.initialized || this.closed) return false;
+    const payload = { jsonrpc: '2.0', id: this.nextId++, method: 'tools/call', params: { name, arguments: args } };
+    this.fetch(this.messageEndpoint, {
+      method: 'POST',
+      headers: { accept: 'application/json, text/event-stream', 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => {});
+    return true;
+  }
+
+  async close() {
+    this.closed = true;
+    this.initialized = false;
+    this.connectionAbort?.abort();
+    this.fail(new Error('MCP SSE client closed.'));
   }
 }

@@ -814,6 +814,7 @@ function bindEvents() {
     if (event.origin !== location.origin || event.data?.type !== 'relay-state') return;
     state.latestTargetState = clone(event.data.state);
   });
+  window.addEventListener('pagehide', () => browserMcpSession.closeOnPageHide());
   window.addEventListener('keydown', (event) => {
     if (event.metaKey || event.ctrlKey || event.altKey || /INPUT|TEXTAREA|SELECT/.test(event.target?.tagName)) return;
     const actions = {
