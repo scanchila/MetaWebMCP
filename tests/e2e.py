@@ -79,16 +79,26 @@ def build_browser_sources() -> tuple[str, str, str, str]:
     demo_html = demo_html.replace('<link rel="stylesheet" href="/demo/demo.css">', f"<style>{demo_css}</style>")
     demo_html = demo_html.replace('<script type="module" src="/demo/demo.js"></script>', f"<script>{demo_js}</script>")
 
+    mcp_client_url = browser_module_url((ROOT / "public/js/mcp-http-client.js").read_text())
+    recipe_url = browser_module_url((ROOT / "public/js/mcp-recipe.js").read_text())
+    browser_session_source = (ROOT / "public/js/browser-mcp-session.js").read_text()
+    browser_session_source = browser_session_source.replace("'./mcp-http-client.js'", json.dumps(mcp_client_url))
+    browser_session_source = browser_session_source.replace("'./mcp-recipe.js'", json.dumps(recipe_url))
+    browser_session_url = browser_module_url(browser_session_source)
+
     runtime_source = (ROOT / "public/js/webmcp-runtime.js").read_text()
+    runtime_source = runtime_source.replace("'./browser-mcp-session.js'", json.dumps(browser_session_url))
     analyzer_source = (ROOT / "public/js/demo-analyzer.js").read_text().replace(
         "new URL('/demo/', location.href)",
         "new URL('/demo/', 'http://metawebmcp.test/')",
     )
+    analyzer_source = analyzer_source.replace("'./browser-mcp-session.js'", json.dumps(browser_session_url))
     runtime_url = browser_module_url(runtime_source)
     analyzer_url = browser_module_url(analyzer_source)
     app_source = (ROOT / "public/js/app.js").read_text()
     app_source = app_source.replace("'./demo-analyzer.js'", json.dumps(analyzer_url))
     app_source = app_source.replace("'./webmcp-runtime.js'", json.dumps(runtime_url))
+    app_source = app_source.replace("'./browser-mcp-session.js'", json.dumps(browser_session_url))
     return index_html, (ROOT / "public/styles.css").read_text(), demo_html, app_source
 
 

@@ -1,3 +1,5 @@
+import { browserMcpSession } from './browser-mcp-session.js';
+
 const TOOL_NAME = /^[a-z][a-z0-9_]{0,63}$/;
 
 function clone(value) {
@@ -256,14 +258,7 @@ async function executeDomSpec(spec, input, context) {
 }
 
 async function executeMcpSpec(spec, input, context) {
-  const response = await fetch('/api/mcp/execute', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ executor: spec.executor, input, workspaceId: context.workspaceId }),
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok || payload.ok === false) throw new Error(payload.error || `Browser MCP execution failed with HTTP ${response.status}.`);
-  return payload;
+  return browserMcpSession.execute({ executor: spec.executor, input, workspaceId: context.workspaceId });
 }
 
 export async function executeGeneratedSpec(spec, input, context = {}) {

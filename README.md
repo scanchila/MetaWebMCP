@@ -41,7 +41,7 @@ No model API key is required. The browser agent supplies the reasoning and calls
 - Dynamic registration and unregistration through `document.modelContext.registerTool(...)` and `AbortController`.
 - A dependency-free native integration ZIP generator. The controlled demo export includes the target UI and executes as a standalone WebMCP site.
 - URL and pasted-HTML analysis for site owners.
-- An optional Streamable HTTP client for the official Playwright MCP server, used as the low-level runtime for third-party sites. Each open MetaWebMCP page receives an independent MCP transport session.
+- An optional Streamable HTTP client for the official Playwright MCP server, used as the low-level runtime for third-party sites. A same-origin deployment keeps the transport session in the open page; the local Node service provides an isolated server-side fallback.
 - SSRF defenses, an allowlisted browser recipe executor, risk annotations, and disabled consequential actions.
 - Node unit tests and a Chromium end-to-end test that drives the full recursive sequence through a WebMCP-shaped browser mock.
 
@@ -125,7 +125,7 @@ npx @playwright/mcp@latest \
 BROWSER_MCP_URL=http://127.0.0.1:8931/mcp npm start
 ```
 
-The public server validates initial URLs, blocks private/reserved networks by default, and can restrict initial browser targets with `BROWSER_ALLOWED_ORIGINS`. Playwright MCP itself is not a security boundary. Run it in an isolated container or equivalent sandbox and do not give the public demo persistent authenticated profiles.
+The Node bridge validates initial URLs, blocks private/reserved networks by default, and can restrict initial browser targets with `BROWSER_ALLOWED_ORIGINS`. A same-origin browser endpoint also rejects obvious local and private targets before navigation. Playwright MCP itself is not a security boundary. Run it in an isolated runtime with outbound controls and do not give the public demo persistent authenticated profiles.
 
 ## Configuration
 
@@ -158,7 +158,7 @@ The end-to-end test launches the included server and an available Chromium build
 7. The exported ZIP opens and contains directly registered WebMCP source.
 8. The extracted repository registers and executes its four generated WebMCP tools against the bundled target UI.
 
-The unit/integration suite also verifies that Browser MCP transport sessions are isolated per MetaWebMCP workspace.
+The unit/integration suite also verifies both transport layouts: isolated server-side workspaces and one Streamable HTTP session owned by the open page from analysis through generated-tool execution.
 
 See [`TEST_REPORT.md`](TEST_REPORT.md) for the exact environment and latest run.
 
@@ -188,7 +188,9 @@ For the hackathon demo, deploy MetaWebMCP at a stable HTTPS URL. The controlled 
 ```text
 lib/analyzer.mjs             conservative HTML and accessibility-tree analysis
 lib/generator.mjs            native integration repository generator
-lib/mcp-http-client.mjs      dependency-free Streamable HTTP MCP client
+public/js/mcp-http-client.js shared dependency-free Streamable HTTP MCP client
+public/js/browser-mcp-session.js page-scoped browser session with Node fallback
+public/js/mcp-recipe.js      shared allowlisted recipe interpreter
 lib/security.mjs             URL, DNS, redirect, and network validation
 lib/zip.mjs                  dependency-free ZIP writer
 public/js/app.js             meta-tool control plane and UI state machine

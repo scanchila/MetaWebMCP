@@ -1,5 +1,6 @@
 import { analyzeControlledDemo, analyzeStaticSource, analyzeThroughBrowserMcp } from './demo-analyzer.js';
 import { ToolRegistry, compactRegistryState, executeGeneratedSpec } from './webmcp-runtime.js';
+import { browserMcpSession } from './browser-mcp-session.js';
 
 const $ = (selector) => document.querySelector(selector);
 const elements = {
@@ -623,11 +624,7 @@ async function resetWorkspace() {
   registry.unregisterOrigin(GENERATED_ORIGIN);
   try { elements.targetFrame.contentWindow?.demoApp?.reset(); } catch { /* The demo may still be loading. */ }
   if (state.analysis?.source?.kind === 'browser_mcp') {
-    fetch('/api/mcp/reset', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ workspaceId }),
-    }).catch(() => {});
+    browserMcpSession.reset(workspaceId).catch(() => {});
   }
   clearBuildState({ keepTrace: false });
   addTrace('Workspace reset', 'The meta-tool control plane remains registered; generated tools and project state were removed.');
@@ -751,8 +748,7 @@ async function checkBrowserMcp() {
   elements.mcpNotice.classList.remove('connected', 'error');
   elements.mcpCopy.textContent = 'Checking the configured Streamable HTTP endpoint.';
   try {
-    const response = await fetch(`/api/mcp/status?workspace_id=${encodeURIComponent(workspaceId)}`);
-    const payload = await response.json();
+    const payload = await browserMcpSession.status(workspaceId);
     state.browserMcp = { checked: true, configured: Boolean(payload.configured), tools: payload.tools || [] };
     if (payload.configured) {
       elements.mcpNotice.classList.add('connected');
@@ -761,7 +757,7 @@ async function checkBrowserMcp() {
     } else {
       elements.mcpNotice.classList.add('error');
       elements.mcpTitle.textContent = 'Browser MCP optional';
-      elements.mcpCopy.textContent = 'Set BROWSER_MCP_URL to use arbitrary sites. The recursive controlled demo and native exports work without it.';
+      elements.mcpCopy.textContent = 'This deployment has no browser runtime configured. The controlled demo and native exports remain available.';
     }
   } catch (error) {
     state.browserMcp = { checked: true, configured: false, tools: [] };

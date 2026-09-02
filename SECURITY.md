@@ -18,9 +18,9 @@ These controls reduce, but do not mathematically eliminate, DNS-rebinding and ne
 
 ### Browser MCP bridge
 
-- The MCP endpoint is server-side configuration, not a user-provided URL.
-- Each open MetaWebMCP page uses a separate MCP transport session keyed by an unguessable workspace identifier; inactive clients expire automatically.
-- Initial browser targets pass the same network validation.
+- The MCP endpoint is deployment configuration, not a user-provided URL.
+- A same-origin deployment gives each open page its own MCP transport session and closes it on reset. The Node fallback keys distinct server-side sessions by unguessable workspace identifiers and expires inactive clients.
+- The Node bridge performs DNS and private-network validation. The page-scoped bridge rejects non-HTTP schemes, credentials, local names, and direct private IPs before navigation.
 - `BROWSER_ALLOWED_ORIGINS` can constrain initial navigation.
 - Generated recipes contain at most twelve steps.
 - Only the following MCP tools can be called by recipes:
@@ -37,6 +37,8 @@ These controls reduce, but do not mathematically eliminate, DNS-rebinding and ne
 - The supplied Compose service uses an isolated, headless browser profile and omits image responses.
 
 Playwright MCP is not a security boundary. Its own origin controls do not cover every redirect case. Use an isolated runtime with restricted egress, no cloud metadata access, no host filesystem mounts, and no persistent authenticated browser profile.
+
+A public same-origin MCP route is a powerful resource even when the product UI exposes only semantic generated tools. Apply origin checks, rate limits, browser quotas, and abuse monitoring at the deployment edge.
 
 ### Generated tool execution
 
