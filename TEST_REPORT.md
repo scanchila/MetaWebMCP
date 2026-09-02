@@ -1,6 +1,6 @@
 # Test report
 
-Verification was performed on **2026-09-02T22:53Z** (**2026-09-03 05:53, Asia/Ho_Chi_Minh**).
+Verification was performed on **2026-09-02T22:57Z** (**2026-09-03 05:57, Asia/Ho_Chi_Minh**).
 
 ## Environment
 
@@ -23,6 +23,7 @@ Verification was performed on **2026-09-02T22:53Z** (**2026-09-03 05:53, Asia/Ho
 - Recursive Chromium end-to-end test: **passed** with no console or page errors.
 - Generated runtime evaluations: **4 passed, 0 failed, 0 skipped**.
 - Production Lighthouse: **100 performance, 100 accessibility, 100 best practices, 100 SEO, and 100 agentic browsing**. The equivalent local development-server profile scored 99 for performance and 100 in the other four categories.
+- Generated native preview Lighthouse: **100 performance, 100 accessibility, 100 best practices, 100 SEO, and 100 agentic browsing**.
 
 The Node suite covers HTML and accessibility-snapshot analysis, required form fields across deep trees, repeated item-action grouping, bounded input-to-reference mappings, current and legacy Playwright reference schemas, ZIP generation with portable Unix file modes, runnable owner bundles, unsafe bundle rejection, SSRF and origin validation, Streamable HTTP and long-lived SSE MCP clients, serialized MCP operations, server-side workspace isolation, and page-owned MCP session reuse and closure.
 

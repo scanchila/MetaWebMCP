@@ -1,5 +1,5 @@
 {
-  "baseUrl": "http://127.0.0.1:46721",
+  "baseUrl": "http://127.0.0.1:37625",
   "checks": [
     "server health endpoint",
     "seven native meta-tools; target has no WebMCP registry",
@@ -82,7 +82,7 @@
       {
         "tool": "find_sessions",
         "status": "passed",
-        "durationMs": 96,
+        "durationMs": 93,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -276,7 +276,7 @@
       {
         "tool": "clear_itinerary",
         "status": "passed",
-        "durationMs": 73,
+        "durationMs": 74,
         "checks": [
           {
             "name": "registered in generated tool registry",
