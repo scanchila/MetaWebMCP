@@ -1,6 +1,6 @@
 # Test report
 
-Verification was performed on **2026-09-02T21:37Z** (**2026-09-03 04:37, Asia/Ho_Chi_Minh**).
+Verification was performed on **2026-09-02T21:48Z** (**2026-09-03 04:48, Asia/Ho_Chi_Minh**).
 
 ## Environment
 
@@ -35,6 +35,7 @@ The browser journey verifies the following sequence:
 7. `meta_test_webmcp` passes registration, schema, execution, and visible-postcondition checks for all four generated tools.
 8. `meta_export_webmcp` returns a valid repository ZIP with direct `document.modelContext.registerTool(...)` source.
 9. The extracted exported site registers its own four tools and executes them against its bundled target UI.
+10. A browser-derived export registers on a separate owned-page fixture, searches and changes the requested item without MetaWebMCP or a browser bridge, then fails closed when that item disappears.
 
 Evidence from the final run is retained in:
 
@@ -69,4 +70,4 @@ The automated browser suite injects a narrow implementation of the documented im
 
 The Browser MCP clients are tested against Streamable HTTP JSON/event responses and a long-lived SSE control connection, including session reuse, closure, concurrency, page-owned execution, and isolation through the MetaWebMCP server. The hosted Cloudflare path has also completed a live Browser Run navigation and accessibility-snapshot smoke test. Native-client verification in ChatGPT's supported in-app browser remains a separate deployment gate because WebMCP availability depends on that browser build and feature rollout.
 
-The end-to-end suite renders production HTML and modules in a network-independent page harness and bridges same-origin requests to the real Node server through Playwright's exposed-function mechanism. This keeps the test deterministic while exercising the real server endpoints and browser modules.
+The end-to-end suite renders production HTML and modules in a network-independent page harness and bridges same-origin requests to the real Node server through Playwright's exposed-function mechanism. This keeps the control-plane test deterministic while exercising the real server endpoints and browser modules. It then crosses the export API and ZIP boundary twice: once for the controlled application and once for a browser-derived form plus repeated item action. Both generated modules register and execute on clean pages; the latter has no MetaWebMCP bridge global.
