@@ -45,7 +45,7 @@ function renderSessions() {
     const selected = state.itinerary.includes(session.id);
     return `<article class="session-card" data-entity="session" data-entity-id="${session.id}" ${visibleIds.has(session.id) ? '' : 'hidden'}>
       <div class="session-meta"><span>${session.dayLabel} · ${session.time}</span><span>${session.level}</span></div>
-      <h3>${session.title}</h3>
+      <h2>${session.title}</h2>
       <p>${session.speaker} · ${session.summary}</p>
       <button type="button" data-action="add-to-itinerary" data-entity="session" data-entity-id="${session.id}" class="${selected ? 'selected' : ''}">${selected ? 'Added to itinerary' : 'Add to itinerary'}</button>
     </article>`;
