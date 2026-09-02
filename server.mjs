@@ -8,6 +8,7 @@ import { analyzeAccessibilitySnapshot, analyzeHtml } from './lib/analyzer.mjs';
 import { generateProjectZip } from './lib/generator.mjs';
 import { McpHttpClient, flattenMcpText } from './lib/mcp-http-client.mjs';
 import { fetchTargetHtml, validateBrowserTarget } from './lib/security.mjs';
+import { runMcpRecipe } from './public/js/mcp-recipe.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_ROOT = path.join(ROOT, 'public');
@@ -137,32 +138,6 @@ async function closeMcpClient(workspaceId) {
 const mcpPruneTimer = setInterval(pruneMcpClients, Math.min(MCP_SESSION_TTL_MS, 60_000));
 mcpPruneTimer.unref?.();
 
-const ALLOWED_MCP_TOOLS = new Set([
-  'browser_navigate',
-  'browser_snapshot',
-  'browser_find',
-  'browser_type',
-  'browser_fill_form',
-  'browser_click',
-  'browser_select_option',
-  'browser_wait_for',
-  'browser_tabs',
-]);
-
-function renderTemplate(value, input) {
-  if (typeof value === 'string') {
-    return value.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (_, key) => {
-      if (!(key in input)) throw new Error(`Generated recipe requires input “${key}”.`);
-      return String(input[key]);
-    });
-  }
-  if (Array.isArray(value)) return value.map((item) => renderTemplate(item, input));
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, renderTemplate(item, input)]));
-  }
-  return value;
-}
-
 async function analyzeWithBrowserMcp(body) {
   const parsed = await validateBrowserTarget(body.url);
   const client = getMcpClient(body.workspaceId);
@@ -179,23 +154,15 @@ async function analyzeWithBrowserMcp(body) {
 }
 
 async function executeMcpRecipe(body) {
-  const executor = body.executor;
-  const input = body.input && typeof body.input === 'object' ? body.input : {};
-  if (!executor || executor.type !== 'mcp-recipe' || !Array.isArray(executor.steps)) {
-    throw new Error('A valid MCP recipe is required.');
-  }
-  if (executor.steps.length < 1 || executor.steps.length > 12) throw new Error('MCP recipes must contain 1–12 steps.');
   const client = getMcpClient(body.workspaceId);
   const available = new Set((await client.listTools()).map((tool) => tool.name));
-  const trace = [];
-  for (const step of executor.steps) {
-    if (!step || !ALLOWED_MCP_TOOLS.has(step.tool)) throw new Error(`MCP tool ${step?.tool || '(missing)'} is not allowed.`);
-    if (!available.has(step.tool)) throw new Error(`Connected MCP server does not expose ${step.tool}.`);
-    const args = renderTemplate(step.arguments || {}, input);
-    const result = await client.callTool(step.tool, args);
-    trace.push({ tool: step.tool, arguments: args, result: flattenMcpText(result).slice(0, 18_000) });
-  }
-  return { ok: true, trace, result: trace.at(-1)?.result || '' };
+  return runMcpRecipe({
+    executor: body.executor,
+    input: body.input ?? {},
+    availableTools: available,
+    callTool: (name, args) => client.callTool(name, args),
+    resultText: flattenMcpText,
+  });
 }
 
 function pruneDownloads() {
@@ -212,6 +179,7 @@ async function handleApi(req, res, pathname, searchParams) {
     return sendJson(res, 200, {
       ok: true,
       browserMcpConfigured: Boolean(BROWSER_MCP_URL),
+      browserMcpEndpoint: '',
       allowPrivateTargets: process.env.ALLOW_PRIVATE_TARGETS === '1',
     });
   }
@@ -241,6 +209,17 @@ async function handleApi(req, res, pathname, searchParams) {
   if (pathname === '/api/mcp/analyze' && req.method === 'POST') {
     const body = await readJson(req);
     const analysis = await analyzeWithBrowserMcp(body);
+    return sendJson(res, 200, { ok: true, analysis });
+  }
+
+  if (pathname === '/api/mcp/analyze-snapshot' && req.method === 'POST') {
+    const body = await readJson(req);
+    const parsed = await validateBrowserTarget(body.url);
+    const analysis = analyzeAccessibilitySnapshot({
+      snapshot: String(body.snapshot || ''),
+      url: parsed.href,
+      goal: String(body.goal || ''),
+    });
     return sendJson(res, 200, { ok: true, analysis });
   }
 

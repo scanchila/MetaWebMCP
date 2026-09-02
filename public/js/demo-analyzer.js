@@ -1,3 +1,5 @@
+import { browserMcpSession } from './browser-mcp-session.js';
+
 function waitForFrame(frame) {
   if (frame.contentDocument?.readyState === 'complete' && frame.contentWindow?.demoApp) return Promise.resolve();
   return new Promise((resolve, reject) => {
@@ -108,6 +110,5 @@ export async function analyzeStaticSource({ source, url, html, goal }) {
 }
 
 export async function analyzeThroughBrowserMcp({ url, goal, workspaceId }) {
-  const payload = await postJson('/api/mcp/analyze', { url, goal, workspaceId });
-  return payload.analysis;
+  return browserMcpSession.analyze({ url, goal, workspaceId });
 }

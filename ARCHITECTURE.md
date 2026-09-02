@@ -79,9 +79,11 @@ WebMCP agent
     │ semantic tool call
     ▼
 MetaWebMCP top-level generated tool
-    │ POST /api/mcp/execute
+    │ shared allowlisted recipe interpreter
     ▼
-MCP Streamable HTTP client
+Page-scoped MCP client ── same-origin /mcp
+          or
+Node workspace bridge ── configured MCP endpoint
     │ tools/call
     ▼
 Isolated Playwright MCP server
@@ -92,7 +94,9 @@ Third-party site
 
 Initial analysis uses `browser_navigate` and `browser_snapshot`. MetaWebMCP parses interactive roles and references into candidate semantic tools. Execution is constrained to an allowlist in `server.mjs`.
 
-Each open MetaWebMCP workspace receives a random workspace identifier and a distinct server-side MCP client/session. Resetting or expiring one workspace closes only that session, preventing browser state from leaking between concurrent users.
+On the hosted path, one `BrowserMcpSession` instance lives in the top-level page. It retains the MCP session identifier across analysis and every generated semantic tool call, then closes that session on reset. This aligns browser lifetime with the ChatGPT-opened page and avoids depending on process-local state in a serverless deployment.
+
+The Node deployment remains compatible with a separate Playwright MCP service. In that layout, each open page receives a random workspace identifier and a distinct server-side client/session. Resetting or expiring one workspace closes only that session. Both layouts use the same MCP client and recipe interpreter.
 
 This is a virtual, session-scoped adapter. It does not modify the third-party origin or claim that the target itself is natively WebMCP-compatible.
 

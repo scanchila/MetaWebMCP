@@ -270,6 +270,19 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
   const capability = analyzedPayload.analysis.capabilities.find((item) => item.name === 'find_sessions');
   assert.ok(capability);
 
+  const snapshotAnalyzed = await fetch(`${base}/api/mcp/analyze-snapshot`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      snapshot: '- textbox "Query" [ref=s1]\n- button "Search" [ref=s2]',
+      url: 'https://shop.example/',
+      goal: 'Search the catalog.',
+    }),
+  });
+  assert.equal(snapshotAnalyzed.status, 200);
+  const snapshotPayload = await snapshotAnalyzed.json();
+  assert.equal(snapshotPayload.analysis.capabilities[0].name, 'search');
+
   const executed = await fetch(`${base}/api/mcp/execute`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
