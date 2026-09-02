@@ -46,6 +46,7 @@ A public same-origin MCP route is a powerful resource even when the product UI e
 - Runtime inputs are checked against their JSON schemas, including required fields, primitive types, enumerations, arrays, and unknown properties.
 - Consequential tools are never auto-executed in the public studio.
 - Browser MCP write recipes are skipped by automated tests pending explicit review.
+- Native item-scoped exports require the selected item context to remain present and fail instead of falling back to another same-label control.
 - Target content is returned under `untrustedContentHint`.
 - Risk inference is visible and explicitly documented as requiring review.
 - Dynamic generated tools can be removed independently via `AbortController`.
@@ -64,6 +65,7 @@ A public same-origin MCP route is a powerful resource even when the product UI e
 - HTML analysis is heuristic and does not prove business semantics.
 - Risk classification is linguistic inference, not authorization policy.
 - DOM selectors can drift and can target the wrong control after a redesign.
+- Accessible-name compatibility lookups in browser-derived exports can drift; install them only in owned source and replace them with stable application functions before production use.
 - The target may contain prompt injection intended to manipulate the calling agent.
 - A click or navigation can reach a different origin after initial validation.
 - Generated tools run with the page's signed-in authority; they must not bypass normal application permissions or confirmations.

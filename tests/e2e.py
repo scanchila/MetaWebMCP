@@ -11,6 +11,7 @@ real Chromium JavaScript/DOM environment.
 from __future__ import annotations
 
 import base64
+import io
 import json
 import os
 import re
@@ -455,6 +456,205 @@ def main() -> int:
                 assert "1 SESSION" in generated_inspect["visibleState"]
                 result["checks"].append("exported repository registers and executes its four native WebMCP tools")
                 generated_page.close()
+
+                progress("executing standalone browser-derived export")
+                browser_export_payload = {
+                    "projectName": "catalog-browser-adapter",
+                    "target": {"url": "https://catalog.example/", "title": "Catalog"},
+                    "goal": "Search products and add a selected product to the cart.",
+                    "mode": "browser_mcp",
+                    "tools": [
+                        {
+                            "id": "mcp_form_search_catalog",
+                            "kind": "form",
+                            "name": "search_catalog",
+                            "title": "Search catalog",
+                            "description": "Search the owned product catalog and return the resulting visible state.",
+                            "risk": "read",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {"query": {"type": "string", "description": "Catalog query."}},
+                                "required": ["query"],
+                                "additionalProperties": False,
+                            },
+                            "sampleArgs": {"query": "WebMCP"},
+                            "evidence": [
+                                {"type": "textbox", "ref": "e1", "label": "Catalog query"},
+                                {"type": "button", "ref": "e2", "label": "Search catalog"},
+                            ],
+                            "executor": {
+                                "type": "mcp-recipe",
+                                "steps": [
+                                    {
+                                        "tool": "browser_type",
+                                        "arguments": {
+                                            "element": "Catalog query",
+                                            "ref": "e1",
+                                            "text": "{{query}}",
+                                        },
+                                    },
+                                    {
+                                        "tool": "browser_click",
+                                        "arguments": {"element": "Search catalog", "ref": "e2"},
+                                    },
+                                    {"tool": "browser_snapshot", "arguments": {}},
+                                ],
+                            },
+                        },
+                        {
+                            "id": "mcp_group_add_to_cart",
+                            "kind": "action-group",
+                            "name": "add_to_cart",
+                            "title": "Add to cart",
+                            "description": "Add one visible product to the owned cart and return the changed state.",
+                            "risk": "write",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "item": {
+                                        "type": "string",
+                                        "description": "Visible product to add.",
+                                        "enum": ["Alpha", "Beta"],
+                                    }
+                                },
+                                "required": ["item"],
+                                "additionalProperties": False,
+                            },
+                            "sampleArgs": {"item": "Alpha"},
+                            "evidence": [
+                                {"type": "button", "ref": "e3", "label": "Add to cart", "item": "Alpha"},
+                                {"type": "button", "ref": "e4", "label": "Add to cart", "item": "Beta"},
+                            ],
+                            "executor": {
+                                "type": "mcp-recipe",
+                                "steps": [
+                                    {
+                                        "tool": "browser_click",
+                                        "arguments": {
+                                            "element": "Add to cart for {{item}}",
+                                            "ref": {"$pick": "item", "cases": {"Alpha": "e3", "Beta": "e4"}},
+                                        },
+                                    },
+                                    {"tool": "browser_snapshot", "arguments": {}},
+                                ],
+                            },
+                        },
+                    ],
+                    "ownerBundle": {
+                        "html": """<!doctype html><html><body>
+                          <form id="catalog-search"><label for="catalog-query">Catalog query</label><input id="catalog-query"><button>Search catalog</button></form>
+                          <output id="search-result" aria-live="polite"></output>
+                          <section id="products">
+                            <article data-item="Alpha"><h2>Alpha</h2><button type="button">Add to cart</button></article>
+                            <article data-item="Beta"><h2>Beta</h2><button type="button">Add to cart</button></article>
+                          </section>
+                          <output id="cart-state" aria-live="polite">Cart is empty</output>
+                          <script src="./target.js"></script>
+                        </body></html>""",
+                        "files": {
+                            "target.js": """document.querySelector('#catalog-search').addEventListener('submit', (event) => {
+                              event.preventDefault();
+                              document.querySelector('#search-result').textContent = `Results for ${document.querySelector('#catalog-query').value}`;
+                            });
+                            document.querySelectorAll('#products button').forEach((button) => button.addEventListener('click', () => {
+                              document.querySelector('#cart-state').textContent = `Cart: ${button.closest('article').dataset.item}`;
+                            }));""",
+                        },
+                    },
+                }
+                browser_export = page.evaluate(
+                    """async payload => {
+                      const response = await fetch('/api/export', {
+                        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload)
+                      });
+                      const result = await response.json();
+                      if (!response.ok) throw new Error(result.error || `Export failed: ${response.status}`);
+                      return result;
+                    }""",
+                    browser_export_payload,
+                )
+                browser_archive = fetch_bytes(f"{base_url}{browser_export['downloadUrl']}")
+                with zipfile.ZipFile(io.BytesIO(browser_archive)) as archive:
+                    browser_source = archive.read(
+                        "catalog-browser-adapter/src/webmcp.generated.js"
+                    ).decode("utf-8")
+                    browser_html = archive.read("catalog-browser-adapter/index.html").decode("utf-8")
+                    browser_target_js = archive.read("catalog-browser-adapter/target.js").decode("utf-8")
+
+                browser_adapter_page = context.new_page()
+                browser_adapter_page.set_default_timeout(12_000)
+                browser_adapter_page.on(
+                    "console",
+                    lambda message: console_errors.append(f"browser export: {message.text}")
+                    if message.type == "error"
+                    else None,
+                )
+                browser_adapter_page.on(
+                    "pageerror", lambda error: console_errors.append(f"browser export: {error}")
+                )
+                browser_shell = re.sub(
+                    r'<script[^>]+src="\./target\.js"[^>]*></script>', "", browser_html
+                )
+                browser_shell = re.sub(
+                    r'<script[^>]+src="\./src/webmcp\.generated\.js"[^>]*></script>', "", browser_shell
+                )
+                browser_adapter_page.set_content(browser_shell, wait_until="domcontentloaded")
+                browser_adapter_page.evaluate(
+                    """() => {
+                      const registered = Object.create(null);
+                      Object.defineProperty(document, 'modelContext', {
+                        configurable: true,
+                        value: {
+                          async registerTool(tool) { registered[tool.name] = tool; },
+                          async getTools() { return Object.values(registered).map(({ execute, ...tool }) => tool); },
+                          async executeTool(tool, inputJson = '{}') {
+                            return registered[tool.name].execute(JSON.parse(inputJson));
+                          }
+                        }
+                      });
+                      window.__callNative = async (name, input = {}) => {
+                        const tool = (await document.modelContext.getTools()).find(candidate => candidate.name === name);
+                        return document.modelContext.executeTool(tool, JSON.stringify(input));
+                      };
+                    }"""
+                )
+                browser_adapter_page.add_script_tag(content=browser_target_js)
+                browser_adapter_page.add_script_tag(content=browser_source, type="module")
+                browser_adapter_page.wait_for_function(
+                    "document.modelContext.getTools().then(tools => tools.length === 2)"
+                )
+                assert browser_adapter_page.evaluate("window.MetaWebMCPBrowserBridge === undefined") is True
+                native_search = browser_adapter_page.evaluate(
+                    "async () => window.__callNative('search_catalog', { query: 'WebMCP' })"
+                )
+                assert native_search["ok"] is True
+                assert browser_adapter_page.locator("#search-result").inner_text() == "Results for WebMCP"
+                native_add = browser_adapter_page.evaluate(
+                    "async () => window.__callNative('add_to_cart', { item: 'Beta' })"
+                )
+                assert native_add["ok"] is True
+                assert browser_adapter_page.locator("#cart-state").inner_text() == "Cart: Beta"
+                browser_adapter_page.locator('article[data-item="Beta"] button').evaluate("element => element.remove()")
+                browser_adapter_page.locator("#cart-state").evaluate(
+                    "element => { element.textContent = 'Cart is empty'; }"
+                )
+                missing_item = browser_adapter_page.evaluate(
+                    """async () => {
+                      try {
+                        await window.__callNative('add_to_cart', { item: 'Beta' });
+                        return { rejected: false, message: '' };
+                      } catch (error) {
+                        return { rejected: true, message: String(error.message || error) };
+                      }
+                    }"""
+                )
+                assert missing_item["rejected"] is True, missing_item
+                assert "Beta" in missing_item["message"]
+                assert browser_adapter_page.locator("#cart-state").inner_text() == "Cart is empty"
+                result["checks"].append(
+                    "browser-derived export executes natively without the bridge and fails closed when an item disappears"
+                )
+                browser_adapter_page.close()
 
                 final_state = page.evaluate("window.MetaWebMCP.getState()")
                 assert final_state["phase"] == 5

@@ -1,5 +1,5 @@
 {
-  "baseUrl": "http://127.0.0.1:49435",
+  "baseUrl": "http://127.0.0.1:39141",
   "checks": [
     "server health endpoint",
     "seven native meta-tools; target has no WebMCP registry",
@@ -9,7 +9,8 @@
     "generated tools execute against real target state",
     "four deterministic runtime evaluations",
     "downloadable runnable repository, expected files, and generated JavaScript syntax",
-    "exported repository registers and executes its four native WebMCP tools"
+    "exported repository registers and executes its four native WebMCP tools",
+    "browser-derived export executes natively without the bridge and fails closed when an item disappears"
   ],
   "screenshot": "test-artifacts/metawebmcp-e2e.png",
   "exportArchive": "test-artifacts/relay-sessions-webmcp.zip",
@@ -21,7 +22,7 @@
       {
         "tool": "find_sessions",
         "status": "passed",
-        "durationMs": 95,
+        "durationMs": 94,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -77,7 +78,7 @@
       {
         "tool": "add_session_to_itinerary",
         "status": "passed",
-        "durationMs": 74,
+        "durationMs": 73,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -215,7 +216,7 @@
       {
         "tool": "clear_itinerary",
         "status": "passed",
-        "durationMs": 75,
+        "durationMs": 73,
         "checks": [
           {
             "name": "registered in generated tool registry",

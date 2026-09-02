@@ -41,7 +41,7 @@ No model API key is required. The browser agent supplies the reasoning and calls
 - A controlled “legacy” conference planner with no WebMCP implementation of its own.
 - Live DOM analysis that derives four domain tools from that target.
 - Dynamic registration and unregistration through `document.modelContext.registerTool(...)` and `AbortController`.
-- A dependency-free native integration ZIP generator. The controlled demo export includes the target UI and executes as a standalone WebMCP site.
+- A dependency-free native integration ZIP generator. Controlled and browser-derived ToolSpecs both execute on an owned page without MetaWebMCP; bundled targets are tested as standalone WebMCP sites.
 - URL and pasted-HTML analysis for site owners.
 - An optional Streamable HTTP client for the official Playwright MCP server, used as the low-level runtime for third-party sites. A same-origin deployment keeps the transport session in the open page; the local Node service provides an isolated server-side fallback.
 - SSRF defenses, an allowlisted browser recipe executor, risk annotations, and disabled consequential actions.
@@ -107,6 +107,8 @@ The generated module contains direct `document.modelContext.registerTool(...)` c
 MetaWebMCP can connect to a standard Streamable HTTP browser MCP endpoint. The generated WebMCP tools stay semantic; low-level `browser_snapshot`, `browser_type`, `browser_click`, and related calls remain hidden behind the adapter.
 
 The recipe runtime reads the connected tool schemas and supports both the current Playwright MCP `target` reference field and the Cloudflare package's `ref` field. Repeated controls such as product-level “Add to basket” buttons are collapsed into one item-scoped tool instead of flooding the registry with duplicate actions.
+
+Exporting this mode produces the same reviewed ToolSpecs with an owned-page runtime based on accessible names and bounded item context. Developers can install the generated module directly in the target application without shipping MetaWebMCP or a browser service, then replace compatibility lookups with stable application functions as they harden the integration.
 
 Start both services with Docker Compose:
 

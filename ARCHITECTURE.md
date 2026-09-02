@@ -35,7 +35,7 @@ meta_export_webmcp
   └─ standalone repository ZIP from the same ToolSpec[]
 ```
 
-The same tool contract drives immediate execution and native export. There is no separate hard-coded export model. When target source is available, the export also bundles the target page and assets, installs the generated module into the top-level document, and retains a separate integration report for review. The controlled demo exercises both the virtual adapter and this standalone native export.
+The same tool contract drives immediate execution and native export. There is no separate hard-coded export model. Browser-derived recipes use MCP references while the session is open and accessible-name/item-context resolution after installation in an owned page. When target source is available, the export also bundles the target page and assets, installs the generated module into the top-level document, and retains a separate integration report for review. The browser suite exercises both virtual execution and standalone native exports.
 
 ## ToolSpec
 
@@ -102,6 +102,8 @@ The public deployment mounts Cloudflare's Playwright MCP agent as a Durable Obje
 
 This is a virtual, session-scoped adapter. It does not modify the third-party origin or claim that the target itself is natively WebMCP-compatible.
 
+Export is a separate, source-owner path: the generated module interprets the reviewed recipe against the owned page's normal controls. It does not include MetaWebMCP and does not need a browser MCP service. Item-scoped actions resolve within the matching visible item's container and fail closed if that item is no longer present.
+
 ## Generated repository
 
 `lib/generator.mjs` serializes the reviewed ToolSpec array into a standalone module. The generated module:
@@ -111,6 +113,7 @@ This is a virtual, session-scoped adapter. It does not modify the third-party or
 - Uses one `AbortController` per tool.
 - Sets read-only and untrusted-content annotations.
 - Implements the same deterministic executor types.
+- Executes browser-derived form and item recipes through constrained owned-page DOM lookups, with an optional explicit browser bridge.
 - Documents where source owners should replace selectors with application functions.
 
 The dependency-free ZIP implementation uses stored entries, UTF-8 filenames, CRC32, central directory records, and safe relative paths.
