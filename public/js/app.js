@@ -352,6 +352,10 @@ async function analyzeTarget(input = {}) {
   if (['url', 'browser_mcp'].includes(request.source) && !request.url) throw new Error('A target URL is required.');
   if (request.source === 'html' && !request.html.trim()) throw new Error('Paste target HTML before analysis.');
 
+  elements.goal.value = request.goal;
+  if (['url', 'browser_mcp'].includes(request.source)) elements.targetUrl.value = request.url;
+  if (request.source === 'html') elements.targetHtml.value = request.html;
+
   clearBuildState({ keepTrace: true });
   addTrace('Observing target', `Source: ${request.source}. Goal: ${request.goal}`, 'warning');
   let analysis;

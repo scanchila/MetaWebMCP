@@ -286,8 +286,11 @@ def main() -> int:
                     "clear_itinerary",
                 ], capability_names
                 assert all(item["evidence"] for item in analysis["capabilities"])
+                assert page.locator("#goal").input_value() == (
+                    "Find conference sessions, add useful sessions to an itinerary, and inspect schedule conflicts."
+                )
                 assert page.locator("#capability-section").evaluate("element => element.open") is True
-                result["checks"].append("live target analysis and four evidence-backed candidates")
+                result["checks"].append("live target analysis, synchronized agent brief, and four evidence-backed candidates")
 
                 progress("invoking meta_create_webmcp")
                 created = page.evaluate("async () => window.__callNative('meta_create_webmcp', {})")
