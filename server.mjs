@@ -172,7 +172,7 @@ async function analyzeWithBrowserMcp(body) {
     if (!names.has(required)) throw new Error(`Connected MCP server does not expose required tool ${required}.`);
   }
   await client.callTool('browser_navigate', { url: parsed.href });
-  const snapshotResult = await client.callTool('browser_snapshot', { depth: 8 });
+  const snapshotResult = await client.callTool('browser_snapshot', {});
   const snapshot = flattenMcpText(snapshotResult);
   const analysis = analyzeAccessibilitySnapshot({ snapshot, url: parsed.href, goal: String(body.goal || '') });
   return { ...analysis, mcp: { endpointConfigured: true, availableTools: [...names].sort() } };

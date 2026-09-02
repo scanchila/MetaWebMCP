@@ -71,8 +71,27 @@ test('accessibility snapshot analysis produces browser MCP recipes', () => {
   assert.ok(search);
   assert.equal(search.executor.type, 'mcp-recipe');
   assert.equal(search.executor.steps.at(-1).tool, 'browser_snapshot');
+  assert.deepEqual(search.executor.steps.at(-1).arguments, {});
+  assert.deepEqual(search.executor.steps[0].arguments, {
+    element: 'Topic',
+    ref: 'e1',
+    text: '{{topic}}',
+  });
+  assert.deepEqual(search.executor.steps[1].arguments, {
+    element: 'Level',
+    ref: 'e2',
+    values: ['{{level}}'],
+  });
+  assert.deepEqual(search.executor.steps[2].arguments, {
+    element: 'Find sessions',
+    ref: 'e3',
+  });
   assert.deepEqual(Object.keys(search.inputSchema.properties), ['topic', 'level']);
   const add = result.capabilities.find((capability) => capability.name === 'add_to_itinerary');
   assert.ok(add);
   assert.equal(add.risk, 'write');
+  assert.deepEqual(add.executor.steps, [
+    { tool: 'browser_click', arguments: { element: 'Add to itinerary', ref: 'e4' } },
+    { tool: 'browser_snapshot', arguments: {} },
+  ]);
 });
