@@ -4,7 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="MetaWebMCP uses WebMCP tools to create, activate, test, and export other WebMCP integrations.">
+  <meta name="theme-color" content="#f2efe6">
   <title>MetaWebMCP — WebMCP builds WebMCP</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -12,8 +14,9 @@
     <header class="topbar">
       <a class="brand" href="/" aria-label="MetaWebMCP home">
         <span class="brand-mark" aria-hidden="true">M/</span>
-        <span><strong>MetaWebMCP</strong><small>WebMCP builds WebMCP</small></span>
+        <span><strong>MetaWebMCP</strong><small>Interface foundry</small></span>
       </a>
+      <p class="topbar-thesis"><span>Live workspace</span> WebMCP builds WebMCP</p>
       <div class="topbar-status">
         <span id="native-status" class="status-pill"><i></i>Checking WebMCP</span>
         <span id="tool-count" class="tool-count">0 tools</span>
@@ -23,18 +26,19 @@
 
     <main class="workspace">
       <section class="target-column" aria-labelledby="target-title">
-        <div class="section-heading">
-          <span class="eyebrow">01 / Target</span>
-          <h1 id="target-title">Give the agent a site and an outcome.</h1>
+        <div class="section-heading target-heading">
+          <span class="eyebrow">Build brief</span>
+          <h2 id="target-title">Choose a surface.</h2>
+          <p>Start with a page you own, or observe a public site through an isolated browser session.</p>
         </div>
 
         <div class="mode-switch" role="tablist" aria-label="MetaWebMCP mode">
-          <button id="owner-mode" class="mode-button active" type="button" role="tab" aria-selected="true">Own the site</button>
-          <button id="adapter-mode" class="mode-button" type="button" role="tab" aria-selected="false">Use any site</button>
+          <button id="owner-mode" class="mode-button active" type="button" role="tab" aria-selected="true"><strong>Owned page</strong><small>Native export</small></button>
+          <button id="adapter-mode" class="mode-button" type="button" role="tab" aria-selected="false"><strong>Any public site</strong><small>Browser adapter</small></button>
         </div>
 
         <div id="owner-source-controls" class="source-controls">
-          <label class="field-label" for="source-kind">Source</label>
+          <label class="field-label" for="source-kind">Page source</label>
           <select id="source-kind">
             <option value="demo">Controlled legacy demo</option>
             <option value="url">Public URL · static HTML scan</option>
@@ -53,12 +57,12 @@
         </div>
 
         <div class="field">
-          <label class="field-label" for="goal">What should agents be able to do?</label>
+          <label class="field-label" for="goal">Desired outcome</label>
           <textarea id="goal" rows="3">Find conference sessions, add the useful ones to an itinerary, and inspect the resulting plan.</textarea>
         </div>
 
         <button id="analyze-button" class="primary-button" type="button">
-          <span>Analyze capabilities</span><kbd>1</kbd>
+          <span>Observe this interface</span><kbd>1</kbd>
         </button>
 
         <div id="mcp-notice" class="mcp-notice hidden">
@@ -68,7 +72,7 @@
 
         <div class="target-stage">
           <div class="stage-toolbar">
-            <span id="stage-label">Uninstrumented target</span>
+            <span class="stage-address"><i aria-hidden="true"></i><span id="stage-label">Uninstrumented target</span></span>
             <span id="stage-state">No WebMCP</span>
           </div>
           <iframe id="target-frame" title="Uninstrumented conference planner" src="/demo/"></iframe>
@@ -81,38 +85,50 @@
       </section>
 
       <section class="build-column" aria-labelledby="build-title">
-        <div class="section-heading compact">
-          <span class="eyebrow">02 / Build trace</span>
-          <h2 id="build-title">A reviewable path from interface to tool.</h2>
+        <div class="section-heading conversation-heading">
+          <span class="eyebrow">Meta workspace / 01</span>
+          <h1 id="build-title">Turn a website into an interface agents can use.</h1>
+          <p>Observe the real UI, shape narrow tools, run them now, then ship the same contracts as native code.</p>
         </div>
 
         <ol class="pipeline" aria-label="Build pipeline">
-          <li id="pipeline-analyze" class="pipeline-step current"><span>1</span><div><strong>Observe</strong><small>Interface evidence</small></div></li>
-          <li id="pipeline-create" class="pipeline-step"><span>2</span><div><strong>Contract</strong><small>Semantic tools</small></div></li>
-          <li id="pipeline-activate" class="pipeline-step"><span>3</span><div><strong>Activate</strong><small>Runtime registry</small></div></li>
-          <li id="pipeline-test" class="pipeline-step"><span>4</span><div><strong>Verify</strong><small>Tool and state evals</small></div></li>
-          <li id="pipeline-export" class="pipeline-step"><span>5</span><div><strong>Ship</strong><small>Native integration pack</small></div></li>
+          <li id="pipeline-analyze" class="pipeline-step current"><span>01</span><div><strong>Observe</strong><small>Interface evidence</small></div></li>
+          <li id="pipeline-create" class="pipeline-step"><span>02</span><div><strong>Shape</strong><small>Semantic contracts</small></div></li>
+          <li id="pipeline-activate" class="pipeline-step"><span>03</span><div><strong>Activate</strong><small>Live registry</small></div></li>
+          <li id="pipeline-test" class="pipeline-step"><span>04</span><div><strong>Verify</strong><small>State checks</small></div></li>
+          <li id="pipeline-export" class="pipeline-step"><span>05</span><div><strong>Ship</strong><small>Native repository</small></div></li>
         </ol>
 
-        <div class="trace-header">
-          <h3>Agent-visible progress</h3>
-          <span id="progress-summary">Ready to inspect the demo</span>
-        </div>
-        <div id="trace" class="trace" aria-live="polite"></div>
-
-        <div id="capability-section" class="capability-section hidden">
-          <div class="subheading">
-            <div><span class="eyebrow">Evidence-backed candidates</span><h3>Select the surface to expose</h3></div>
-            <button id="select-all-button" type="button" class="text-button">Select all</button>
+        <section class="conversation" aria-labelledby="conversation-title">
+          <div class="trace-header">
+            <div><span class="conversation-presence" aria-hidden="true"></span><h2 id="conversation-title">Build conversation</h2></div>
+            <span id="progress-summary">Ready to inspect the demo</span>
           </div>
-          <div id="capability-list" class="capability-list"></div>
-          <button id="create-button" class="secondary-button" type="button"><span>Create WebMCP contracts</span><kbd>2</kbd></button>
-        </div>
+          <div id="trace" class="trace" aria-live="polite"></div>
 
-        <div class="build-actions">
-          <button id="activate-button" class="secondary-button" type="button" disabled><span>Activate generated tools</span><kbd>3</kbd></button>
-          <button id="test-button" class="secondary-button" type="button" disabled><span>Run end-to-end evals</span><kbd>4</kbd></button>
-          <button id="export-button" class="primary-button" type="button" disabled><span>Export native repo</span><kbd>5</kbd></button>
+          <details id="capability-section" class="capability-section hidden">
+            <summary class="capability-summary">
+              <span><span class="eyebrow">Capability review</span><strong>Evidence-backed surface</strong></span>
+              <span class="disclosure-copy">Review selection</span>
+            </summary>
+            <div class="capability-body">
+              <div class="subheading">
+                <h3>Select the capabilities to expose</h3>
+                <button id="select-all-button" type="button" class="text-button">Select all</button>
+              </div>
+              <div id="capability-list" class="capability-list"></div>
+              <button id="create-button" class="secondary-button" type="button"><span>Shape selected tools</span><kbd>2</kbd></button>
+            </div>
+          </details>
+        </section>
+
+        <div class="action-dock">
+          <div class="action-dock-heading"><span>Next moves</span><small>Every step is also available as a native WebMCP tool.</small></div>
+          <div class="build-actions">
+            <button id="activate-button" class="secondary-button" type="button" disabled><span>Activate tools</span><kbd>3</kbd></button>
+            <button id="test-button" class="secondary-button" type="button" disabled><span>Run live checks</span><kbd>4</kbd></button>
+            <button id="export-button" class="primary-button" type="button" disabled><span>Export native repository</span><kbd>5</kbd></button>
+          </div>
         </div>
 
         <a id="download-link" class="download-card hidden" href="#" download>
@@ -124,8 +140,9 @@
 
       <aside class="tools-column" aria-labelledby="tools-title">
         <div class="section-heading compact">
-          <span class="eyebrow">03 / Tool registry</span>
-          <h2 id="tools-title">The page rewrites its own agent surface.</h2>
+          <span class="eyebrow">Live context</span>
+          <h2 id="tools-title">What the agent sees.</h2>
+          <p>The permanent foundry tools stay put. Generated tools join this registry for the current session.</p>
         </div>
 
         <div class="registry-summary">
@@ -146,7 +163,7 @@
         </div>
 
         <details class="architecture-note">
-          <summary>Why this is recursive</summary>
+          <summary>How recursion works</summary>
           <p>The permanent tools analyze, create, activate, test, and export. Activation registers a second, domain-specific set of WebMCP tools on the same top-level page.</p>
         </details>
       </aside>

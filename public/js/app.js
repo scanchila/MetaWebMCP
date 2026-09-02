@@ -211,6 +211,7 @@ function clearBuildState({ keepTrace = true } = {}) {
   state.selectedToolName = null;
   if (!keepTrace) state.trace = [];
   elements.capabilitySection.classList.add('hidden');
+  elements.capabilitySection.open = false;
   elements.capabilityList.replaceChildren();
   elements.downloadLink.classList.add('hidden');
   elements.downloadLink.removeAttribute('href');
@@ -251,6 +252,7 @@ function renderCapabilities() {
     label.append(checkbox, copy, risk);
     elements.capabilityList.append(label);
   }
+  elements.capabilitySection.open = true;
   elements.capabilitySection.classList.toggle('hidden', !state.analysis?.capabilities?.length);
 }
 
@@ -270,7 +272,7 @@ function renderRegistry() {
   elements.toolCount.textContent = `${tools.length} tool${tools.length === 1 ? '' : 's'}`;
   elements.toolList.replaceChildren();
 
-  for (const tool of tools) {
+  for (const tool of [...generated, ...meta]) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = `tool-card ${tool.origin === GENERATED_ORIGIN ? 'generated' : ''}`;
@@ -414,6 +416,7 @@ async function createWebMcp(input = {}) {
   state.evals = [];
   state.export = null;
   elements.downloadLink.classList.add('hidden');
+  elements.capabilitySection.open = false;
   setPhase(2);
   renderActions();
   renderTargetStage();

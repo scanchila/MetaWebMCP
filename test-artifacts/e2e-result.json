@@ -1,5 +1,5 @@
 {
-  "baseUrl": "http://127.0.0.1:39141",
+  "baseUrl": "http://127.0.0.1:43293",
   "checks": [
     "server health endpoint",
     "seven native meta-tools; target has no WebMCP registry",
@@ -10,9 +10,69 @@
     "four deterministic runtime evaluations",
     "downloadable runnable repository, expected files, and generated JavaScript syntax",
     "exported repository registers and executes its four native WebMCP tools",
-    "browser-derived export executes natively without the bridge and fails closed when an item disappears"
+    "browser-derived export executes natively without the bridge and fails closed when an item disappears",
+    "workspace has no horizontal overflow from 390px through 1440px"
   ],
   "screenshot": "test-artifacts/metawebmcp-e2e.png",
+  "responsiveScreenshot": "test-artifacts/metawebmcp-mobile.png",
+  "responsiveLayouts": [
+    {
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "targetWidth": 300,
+      "buildWidth": 853,
+      "toolsWidth": 285
+    },
+    {
+      "viewport": 1221,
+      "documentWidth": 1221,
+      "targetWidth": 300,
+      "buildWidth": 634,
+      "toolsWidth": 285
+    },
+    {
+      "viewport": 1220,
+      "documentWidth": 1220,
+      "targetWidth": 438.46875,
+      "buildWidth": 779.53125,
+      "toolsWidth": 1218
+    },
+    {
+      "viewport": 1024,
+      "documentWidth": 1024,
+      "targetWidth": 367.90625,
+      "buildWidth": 654.09375,
+      "toolsWidth": 1022
+    },
+    {
+      "viewport": 901,
+      "documentWidth": 901,
+      "targetWidth": 323.625,
+      "buildWidth": 575.375,
+      "toolsWidth": 899
+    },
+    {
+      "viewport": 900,
+      "documentWidth": 900,
+      "targetWidth": 900,
+      "buildWidth": 900,
+      "toolsWidth": 900
+    },
+    {
+      "viewport": 768,
+      "documentWidth": 768,
+      "targetWidth": 768,
+      "buildWidth": 768,
+      "toolsWidth": 768
+    },
+    {
+      "viewport": 390,
+      "documentWidth": 390,
+      "targetWidth": 390,
+      "buildWidth": 390,
+      "toolsWidth": 390
+    }
+  ],
   "exportArchive": "test-artifacts/relay-sessions-webmcp.zip",
   "nativeToolCount": 11,
   "evaluation": {
@@ -22,7 +82,7 @@
       {
         "tool": "find_sessions",
         "status": "passed",
-        "durationMs": 94,
+        "durationMs": 97,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -216,7 +276,7 @@
       {
         "tool": "clear_itinerary",
         "status": "passed",
-        "durationMs": 73,
+        "durationMs": 75,
         "checks": [
           {
             "name": "registered in generated tool registry",

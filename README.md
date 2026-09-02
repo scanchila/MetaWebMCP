@@ -163,6 +163,7 @@ The end-to-end test launches the included server and an available Chromium build
 6. Deterministic evals pass.
 7. The exported ZIP opens and contains directly registered WebMCP source.
 8. The extracted repository registers and executes its four generated WebMCP tools against the bundled target UI.
+9. The completed workspace remains usable from desktop down to a 390 px mobile viewport without horizontal overflow.
 
 The unit/integration suite also verifies both transport layouts: isolated server-side workspaces and one Streamable HTTP session owned by the open page from analysis through generated-tool execution.
 
