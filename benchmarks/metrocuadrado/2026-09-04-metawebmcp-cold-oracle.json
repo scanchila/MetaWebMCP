@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "metrocuadrado-cheapest-visible-v1",
+  "source": {
+    "site": "Metrocuadrado",
+    "url": "https://www.metrocuadrado.com/apartamentos/arriendo/bogota/economicos/",
+    "startedAt": "2026-09-03T20:44:11.298Z",
+    "completedAt": "2026-09-03T20:44:16.730Z",
+    "volatile": true
+  },
+  "task": {
+    "requestedResults": 10,
+    "scope": "All promoted and ordinary linked apartment cards visible on the first Menor precio page.",
+    "minimumBedrooms": 2,
+    "minimumAreaM2": 45,
+    "maximumAreaM2": 100,
+    "ranking": "Displayed monthly rent ascending, then area descending, then canonical URL ascending."
+  },
+  "capture": {
+    "snapshotCharacters": 132418,
+    "snapshotSha256": "362dd4f73cd47e81d8c2aee5c1f5198fe794a6e01ac1e14dbb95124a7339447f",
+    "rawListingLinks": 53,
+    "uniqueListingLinks": 53,
+    "duplicateOccurrences": 0,
+    "qualifyingUniqueListings": 16,
+    "completeVisibleTop10": true
+  },
+  "expected": [
+    {
+      "rank": 1,
+      "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-ingles-2-habitaciones-1-banos/MC6112356",
+      "rentCop": 580000,
+      "bedrooms": 2,
+      "areaM2": 55
+    },
+    {
+      "rank": 2,
+      "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-nueva-delly-3-habitaciones-1-banos/3222-M6963978",
+      "rentCop": 700000,
+      "bedrooms": 3,
+      "areaM2": 50
+    },
+    {
+      "rank": 3,
+      "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-2-habitaciones-1-banos/20825-M6825862",
+      "rentCop": 700000,
+      "bedrooms": 2,
+      "areaM2": 46
+    },
+    {
+      "rank": 4,
+      "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-bosa-2-habitaciones-1-banos/3222-M6986372",
+      "rentCop": 700000,
+      "bedrooms": 2,
+      "areaM2": 45
+    },
+    {
+      "rank": 5,
+      "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-compostela-2-habitaciones-1-banos/18552-M6884285",
+      "rentCop": 750000,
+      "bedrooms": 2,
+      "areaM2": 45
+    },
+    {
+      "rank": 6,
+      "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-bosconia-2-habitaciones-1-banos/4058-M5793290",
+      "rentCop": 800000,
+      "bedrooms": 2,
+      "areaM2": 60
+    },
+    {
+      "rank": 7,
+      "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-el-cortijo-2-habitaciones-1-banos/5082-M6945188",
+      "rentCop": 800000,
+      "bedrooms": 2,
+      "areaM2": 45
+    },
+    {
+      "rank": 8,
+      "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-villa-israel-2-habitaciones-1-banos/164-M6968138",
+      "rentCop": 800000,
+      "bedrooms": 2,
+      "areaM2": 45
+    },
+    {
+      "rank": 9,
+      "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-codito-2-habitaciones-1-banos/164-M6047256",
+      "rentCop": 830000,
+      "bedrooms": 2,
+      "areaM2": 65
+    },
+    {
+      "rank": 10,
+      "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-bosa-2-habitaciones-1-banos/11813-M5940843",
+      "rentCop": 844000,
+      "bedrooms": 2,
+      "areaM2": 48
+    }
+  ],
+  "limitations": [
+    "This is a point-in-time observation of volatile third-party listings, not availability or price verification.",
+    "Completeness is scoped to cards rendered on the first public results page, including promoted cards; it is not a claim about every Metrocuadrado listing.",
+    "A fixed tall viewport is required because the site lazy-renders result cards below the fold."
+  ]
+}

@@ -21,10 +21,23 @@ export const COLLECTION_AUTHORING_GUIDE = Object.freeze({
     rawFields: ['$text', '$url'],
   },
   computed: [{ operator: 'sum', shape: { name: 'total', fields: ['field_a', 'field_b'] } }],
+  pageCapture: {
+    optional: true,
+    shape: { snapshotAfterNavigate: true, waitSeconds: 'integer 0–10' },
+    purpose: 'Use a bounded wait and fresh accessibility snapshot when results render after navigation completes.',
+  },
   pagination: {
     type: 'page-template',
     placeholder: 'urlTemplate must contain exactly one {{page}}.',
-    stopWhen: 'Optional page-minimum-exceeds-ranked requires a monotonic numeric lower bound and must cover the maximum result limit.',
+    stopWhen: {
+      optional: true,
+      shape: {
+        type: 'page-minimum-exceeds-ranked',
+        sourceField: 'parsed numeric field that lower-bounds resultField',
+        resultField: 'primary ascending sort field',
+        rank: 'integer that covers the maximum result limit',
+      },
+    },
   },
   limits: { fields: 24, computed: 10, filters: 20, sort: 4, pages: 20, items: 500, results: 100 },
 });
@@ -204,6 +217,17 @@ export function validateCollectionExecutor(executor, { inputSchema } = {}) {
   }
   const names = inputNames(inputSchema);
   const scope = normalizedScope(executor.scope);
+  if (executor.pageCapture != null) {
+    const capture = executor.pageCapture;
+    if (!isRecord(capture)
+      || capture.snapshotAfterNavigate !== true
+      || !Number.isInteger(capture.waitSeconds ?? 0)
+      || (capture.waitSeconds ?? 0) < 0
+      || (capture.waitSeconds ?? 0) > 10
+      || Object.keys(capture).some((key) => !['snapshotAfterNavigate', 'waitSeconds'].includes(key))) {
+      throw new Error('Collection pageCapture must request a post-navigation snapshot with an optional integer waitSeconds from 0 to 10.');
+    }
+  }
   if (executor.startUrl != null) {
     if (typeof executor.startUrl !== 'string' || executor.startUrl.length > 1_000) {
       throw new Error('Collection startUrl must be a URL of at most 1,000 characters.');
@@ -497,6 +521,12 @@ export async function runMcpCollection({ executor, inputSchema, input = {}, avai
   if ((executor.startUrl || executor.pagination) && !available.has('browser_navigate')) {
     throw new Error('Connected MCP server does not expose browser_navigate.');
   }
+  if (executor.pageCapture?.snapshotAfterNavigate && !available.has('browser_snapshot')) {
+    throw new Error('Collection pageCapture requires browser_snapshot.');
+  }
+  if ((executor.pageCapture?.waitSeconds ?? 0) > 0 && !available.has('browser_wait_for')) {
+    throw new Error('Collection pageCapture.waitSeconds requires browser_wait_for.');
+  }
 
   const candidates = new Map();
   const itemLinks = (snapshot) => extractSnapshotLinks(snapshot, executor.scope.origin)
@@ -510,9 +540,17 @@ export async function runMcpCollection({ executor, inputSchema, input = {}, avai
     }
     return false;
   };
-  const initialSnapshot = String(resultText(executor.startUrl
-    ? await callTool('browser_navigate', { url: urlWithinScope(executor.startUrl, normalizedScope(executor.scope), 'Collection startUrl').href })
-    : await callTool('browser_snapshot', {})));
+  const captureNavigation = async (url) => {
+    const navigation = await callTool('browser_navigate', { url });
+    if (!executor.pageCapture?.snapshotAfterNavigate) return String(resultText(navigation));
+    if ((executor.pageCapture.waitSeconds ?? 0) > 0) {
+      await callTool('browser_wait_for', { time: executor.pageCapture.waitSeconds });
+    }
+    return String(resultText(await callTool('browser_snapshot', {})));
+  };
+  const initialSnapshot = executor.startUrl
+    ? await captureNavigation(urlWithinScope(executor.startUrl, normalizedScope(executor.scope), 'Collection startUrl').href)
+    : String(resultText(await callTool('browser_snapshot', {})));
   const initialLinks = itemLinks(initialSnapshot);
   let reachedItemLimit = addLinks(initialLinks);
   let pagesScanned = 1;
@@ -526,8 +564,7 @@ export async function runMcpCollection({ executor, inputSchema, input = {}, avai
     for (let offset = 0; offset < executor.pagination.maxPages - 1; offset += 1) {
       if (reachedItemLimit) break;
       const page = executor.pagination.startPage + offset;
-      const navigation = await callTool('browser_navigate', { url: pageUrl(executor, page) });
-      const snapshot = String(resultText(navigation));
+      const snapshot = await captureNavigation(pageUrl(executor, page));
       pagesScanned += 1;
       const links = itemLinks(snapshot);
       if (!links.length) {

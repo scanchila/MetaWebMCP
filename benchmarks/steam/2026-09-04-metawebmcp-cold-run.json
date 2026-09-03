@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "steam-discounted-games-first-20-pages-v1",
+  "arm": "metawebmcp-cold-agent",
+  "trial": 1,
+  "repositoryBaselineCommit": "643db6c8e80e4e0f489c5d17d5a6b9bfb77ace20",
+  "startedAt": "2026-09-03T21:21:28.294Z",
+  "completedAt": "2026-09-03T21:26:15.974Z",
+  "environment": {
+    "codexCli": "0.150.1",
+    "model": "gpt-5.6-sol",
+    "reasoningEffort": "max",
+    "node": "v24.5.0",
+    "browser": "Google Chrome 147.0.7727.116",
+    "playwrightMcp": "0.0.55"
+  },
+  "isolation": {
+    "ephemeral": true,
+    "emptyWorkingDirectory": true,
+    "userConfigurationLoaded": false,
+    "repositoryInstructionsLoaded": false,
+    "appsEnabled": false,
+    "preExistingDomainTool": false,
+    "warmToolTrial": false,
+    "separateBrowserFromOracle": true
+  },
+  "inputs": {
+    "promptSha256": "8748193647c9d34330fd6db1c8ca155cbd42c0f0432a46fb9be9dd8421ee07c2",
+    "resultSchemaSha256": "abbea9ddbe5d0622cafcc3ad619aed5c466a50fbdf96d151be10b84a4c4cca23",
+    "mcpBridgeSha256": "500d46a8a56f8c62dfbd5b164d79be59adc28a8c0c2d67d3aa1d4721b59280d8",
+    "collectionRuntimeSha256": "1dfd18f17e2a734869733aea75c0731a770c5f52b99b6174c281756918fb4f5b",
+    "oracleParserBeforeCorrectionSha256": "0c1951358f01bad7f97cb4ee5462a0f8eb48cacb8b82e67a0310f3c03548c648",
+    "oracleParserAfterCorrectionSha256": "ce2dde97e297f9ac8fce1dd9d6d4a2f021e6b556120b6051b1d5696bdd4a1812",
+    "scorerSha256": "1fd887f5758c76aaec4f94cc899cdf0cb2fcbe0c31181d1d5938670a2c382b80",
+    "resultSha256": "1a0403a4e97d3f37a11636eef5de905e85f37e11bbc6c9a79dc10165e1e2de21",
+    "traceSha256": "6b139bd10f85f3472109024e6031b4421d723dc1ef754be90eb8624b15679b8d",
+    "rawEventLogSha256": "05d98099f40a6d31577290f14f2af062de7ead1baf26e14983fda2494e2b5a8a",
+    "correctedOracleSha256": "6bc7ce21b2a95fc4fdf2df85d27b1f16dbe5f604cf74a4abe0ce4bf1f4ee242c",
+    "rawToolScoreSha256": "afb850a52109531fadcbcaf0e6fd8063f4ff82bba9e2e2315de7c8c707107193",
+    "finalScoreSha256": "617fc9598482b925ecafea2c753e1ab3031d8f9f2c696c6ac14d8349d2a00222"
+  },
+  "result": {
+    "status": "completed",
+    "rawGeneratedToolQualityGatePassed": true,
+    "finalAnswerQualityGatePassed": true,
+    "results": 50,
+    "exactApps": 50,
+    "exactFields": 50,
+    "exactRanks": 50,
+    "duplicates": 0,
+    "pagesVisited": 20
+  },
+  "timing": {
+    "wallMs": 287680,
+    "analysisCalls": 1,
+    "analysisCallsTotalMs": 1508,
+    "analysisToValidContractMs": 70330,
+    "localAnalysisMs": 6.026,
+    "localAuthoringValidationMs": 3.009,
+    "collectionExecutionMs": 56890
+  },
+  "agent": {
+    "mcpOnly": true,
+    "nonMcpToolCalls": 0,
+    "metaToolCalls": 5,
+    "toolNames": [
+      "meta_analyze_site",
+      "meta_create_webmcp",
+      "meta_activate_webmcp",
+      "meta_invoke_webmcp",
+      "meta_get_state"
+    ],
+    "authoringAttempts": 1,
+    "failedAuthoringAttempts": 0,
+    "semanticResponseCharacters": 33340,
+    "tokenUsage": {
+      "input": 237948,
+      "cachedInput": 202112,
+      "output": 10941,
+      "reasoningOutput": 5795,
+      "processedTotal": 248889,
+      "nonCachedTotal": 46777
+    }
+  },
+  "browser": {
+    "internalCalls": 62,
+    "navigate": 21,
+    "snapshot": 21,
+    "wait": 20,
+    "internalResponseCharacters": 1983155
+  },
+  "execution": {
+    "tool": "list_steam_page_1_20_price_matches",
+    "pagesScanned": 20,
+    "recordsScannedByExactUrl": 500,
+    "matchedRecordsByExactUrl": 235,
+    "resultCount": 50,
+    "executorComplete": false,
+    "terminationReason": "maximum item limit reached"
+  },
+  "authorshipAudit": {
+    "acceptedCreateArgumentsExactTraceDefinitions": true,
+    "acceptedCreateArgumentsSha256": "35045a46bc60f850ea4a22f84cd4a91f02c49f3dd98a9d455993e9bb63cdb4b3",
+    "traceAuthoredDefinitionsSha256": "35045a46bc60f850ea4a22f84cd4a91f02c49f3dd98a9d455993e9bb63cdb4b3",
+    "rawExecutionResultsExactFinalResults": true,
+    "manualToolEdits": false,
+    "runtimeSuppliedFields": ["scope", "startUrl"]
+  },
+  "oracle": {
+    "correctedStartedAt": "2026-09-03T21:37:13.114Z",
+    "correctedCompletedAt": "2026-09-03T21:37:31.522Z",
+    "rawGameLinks": 500,
+    "uniqueApps": 490,
+    "qualifyingApps": 235,
+    "completeScopedTop50": true,
+    "preRunFrozenGatePassed": false,
+    "preRunFrozenExactApps": 47,
+    "postRunParserCorrection": "Allowed the single-quoted YAML link-key form emitted when an accessible game name contains a colon."
+  },
+  "limitations": [
+    "This is one cold trial, not a repeated statistical estimate.",
+    "The original frozen oracle skipped single-quoted accessibility link keys. Its failed score is retained; a one-line parser correction with a regression test produced the reported independent 50/50 gate after both arms completed.",
+    "The corrected oracle was captured after both benchmark arms rather than immediately before this arm.",
+    "The generic executor deduplicates exact URLs, so tracking-query variants contributed 500 records for 490 unique app IDs. The returned top 50 nevertheless contained 50 unique app IDs and matched the oracle exactly.",
+    "The executor reports incomplete after reaching its 500-item safety ceiling even though it visited every page in the benchmark's explicitly finite 20-page scope.",
+    "Processed token totals include cached input on every model turn. Non-cached totals subtract cached input but are not a monetary cost calculation."
+  ]
+}

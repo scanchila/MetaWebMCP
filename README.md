@@ -39,17 +39,63 @@ The deployed build has been exercised through a real browser `document.modelCont
 
 Screenshots and redacted machine-readable results are retained in [`evidence/`](evidence/). Three mobile Lighthouse samples gave the production workspace a 100 median performance score (99–100) and 100 for accessibility, best practices, SEO, and agentic browsing; the independently served native export scored 100 in all five categories. The exact production-generated [`relay-sessions-webmcp.zip`](evidence/relay-sessions-webmcp.zip) is retained alongside its SHA-256 digest and independent execution result.
 
-The first retained live-site benchmark asks for the 50 cheapest Bogotá rental
-apartments satisfying numeric and description-level conditions. Both arms
-returned the exact oracle result. Direct browser parsing took 634.630 seconds;
-the cold MetaWebMCP agent took 290.550 seconds including analysis, five
-ToolSpec authoring attempts, activation, execution, and final output. That is
-a 2.18× wall-time improvement for this captured task. It used 17.3× fewer
-processed tokens, 4.70× fewer non-cached tokens, and 23.5× less model-facing
-tool-response text. A separate 19.568-second warm executor run is retained as
-a runtime diagnostic, not the headline comparison. The task, limitations,
-oracle, token accounting, and machine-readable results are in
-[`benchmarks/fincaraiz/`](benchmarks/fincaraiz/).
+### Live-site benchmark summary
+
+Fresh, isolated Codex processes ran each arm with the same model and reasoning
+effort. The direct arm repeatedly read Playwright accessibility snapshots; the
+MetaWebMCP arm started without a domain tool, analyzed the site, authored and
+activated a constrained ToolSpec, and invoked it. Cold analysis, authoring
+retries, activation, execution, and final formatting are included in every
+MetaWebMCP wall time.
+
+In the table, values are **MetaWebMCP / direct browser**. A reduction factor
+greater than 1× favors MetaWebMCP.
+
+| Benchmark | Scope and quality gate | Wall time M / D | Wall-time result | Processed tokens M / D | Non-cached tokens M / D | Model-facing tool text M / D |
+|---|---|---:|---:|---:|---:|---:|
+| FincaRaíz pair 1 | 13 pages; top 50, both 50/50 exact | 290.550 / 634.630 s | **2.18× faster** | 345,737 / 5,997,779 · **17.35× fewer** | 71,689 / 336,723 · **4.70× fewer** | 51,277 / 1,205,716 chars · **23.51× less** |
+| FincaRaíz pair 2 | 13 pages; top 50, both 50/50 exact | 373.607 / 713.181 s | **1.91× faster** | 473,796 / 4,657,195 · **9.83× fewer** | 62,276 / 423,851 · **6.81× fewer** | 53,506 / 3,066,487 chars · **57.31× less** |
+| **FincaRaíz median** | **Two matched pairs; all four arms passed** | **332.079 / 673.906 s** | **2.03× faster** | **409,767 / 5,327,487 · 13.00× fewer** | **66,983 / 380,287 · 5.68× fewer** | **52,392 / 2,136,102 chars · 40.77× less** |
+| Metrocuadrado | 1 lazy page; both 10/10 exact end to end¹ | 159.678 / 114.470 s | **1.40× slower** | 319,868 / 147,997 · 2.16× more | 46,332 / 59,421 · **1.28× fewer** | 133,952 / 549,894 chars · **4.11× less** |
+| Steam | 20 pages, 500 cards; both 50/50 exact² | 287.680 / 399.300 s | **1.39× faster** | 248,889 / 2,634,279 · **10.58× fewer** | 46,777 / 240,935 · **5.15× fewer** | 33,340 / 628,090 chars · **18.84× less** |
+
+The strongest consistent benefit in these limited tests is **context
+compression**. MetaWebMCP kept repetitive browser output behind a typed
+semantic tool and reduced model-facing tool text by 4.11× to 57.31× and
+non-cached tokens by 1.28× to 6.81× in every matched run. On the multipage
+FincaRaíz and Steam workloads, that reduction also outweighed cold tool
+authoring cost and improved wall time by 1.39× to 2.18×. MetaWebMCP did not
+need fewer browser operations in every case—the Steam tool deliberately used
+fresh snapshots and waits internally—but those low-level responses did not
+enter the managing agent's context.
+
+Metrocuadrado is the useful latency counterexample, but it still shows the
+context-efficiency benefit clearly. Even though direct inspection finished
+45.208 seconds sooner, MetaWebMCP used **22% fewer non-cached tokens** (46,332
+versus 59,421) and exposed **76% less model-facing tool text** (133,952 versus
+549,894 characters, a 4.11× reduction). Total processed tokens, which include
+repeated cached context, were 2.16× higher because the one-off workload was too
+short to amortize cold analysis and authoring. These results support a
+crossover claim, not a blanket speed claim: generated semantic tools provided
+substantial context savings in every test and improved wall time when they
+replaced enough repeated parsing.
+
+¹ Metrocuadrado's generated tool retained tracking parameters; the managing
+agent canonicalized URLs in the schema-constrained final answer. This result
+therefore validates the end-to-end workflow, not reusable URL canonicalization
+inside that ToolSpec.
+
+² Steam's untouched generated execution and final answer both passed 50/50.
+The initially frozen oracle missed quoted accessibility keys; its failed score
+is retained, and a documented post-run parser correction produced the reported
+gate. A preregistered repeat remains desirable.
+
+These are two FincaRaíz pairs and one pair on each other site, all against
+volatile third-party pages—not a statistical performance estimate. Full
+methods, prompts, limitations, oracles, token accounting, and machine-readable
+results are in [`benchmarks/fincaraiz/`](benchmarks/fincaraiz/),
+[`benchmarks/metrocuadrado/`](benchmarks/metrocuadrado/), and
+[`benchmarks/steam/`](benchmarks/steam/).
 
 ## Run it with native WebMCP
 
@@ -91,7 +137,7 @@ The controlled fallback needs no account, credentials, model API, or external se
 - A dependency-free native integration ZIP generator. Controlled and browser-derived ToolSpecs both execute on an owned page without MetaWebMCP; bundled targets are tested as standalone WebMCP sites.
 - A URL-first hosted inspector that keeps the rendered target, accessibility model, generated recipes, and resulting state visible in one workspace.
 - Managing-agent authoring of up to twelve domain tools grounded in observed capabilities, using constrained action recipes or typed collection plans.
-- Reusable collection parsers, filters, computed fields, stable sorting, deduplication, bounded pagination, and ordered stopping proofs.
+- Reusable collection parsers, filters, computed fields, stable sorting, deduplication, bounded lazy-page capture, pagination, and ordered stopping proofs.
 - Agent/API inputs for URL, HTML, and caller-controlled accessibility observations without exposing raw snapshot entry in the human interface.
 - Browser-local IndexedDB autosave for drafts, analysis, reviewed contracts, recipes, evaluation state, and active generated tools.
 - A Streamable HTTP client for the official Playwright MCP server. The Cloudflare deployment keeps one isolated target session in the open page; the local Node service supports an isolated server-side equivalent when configured.

@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "fincaraiz-cheapest-with-laundry-v1",
+  "arm": "metawebmcp-cold-agent",
+  "trial": 2,
+  "repositoryBaselineCommit": "643db6c8e80e4e0f489c5d17d5a6b9bfb77ace20",
+  "startedAt": "2026-09-03T20:14:45.439Z",
+  "completedAt": "2026-09-03T20:20:59.046Z",
+  "environment": {
+    "codexCli": "0.150.1",
+    "model": "gpt-5.6-sol",
+    "reasoningEffort": "max",
+    "node": "v24.5.0",
+    "browser": "Google Chrome 147.0.7727.116",
+    "playwrightMcp": "0.0.55"
+  },
+  "isolation": {
+    "ephemeral": true,
+    "emptyWorkingDirectory": true,
+    "userConfigurationLoaded": false,
+    "repositoryInstructionsLoaded": false,
+    "appsEnabled": false,
+    "preExistingDomainTool": false,
+    "warmToolTrial": false
+  },
+  "inputs": {
+    "promptSha256": "f95670add5845bb3beeee429a4a1d8439f0eff58265080861cf4ca6118a9fe9e",
+    "resultSchemaSha256": "90802b6b7dab7aa9401113c12dce1b5aed40849885f029b4ce6846ade90369a4",
+    "mcpBridgeSha256": "4a73a64351f78a048490a3b7718e5bb249e29c30acce6488877acccb1f430cf7",
+    "resultSha256": "65ed0901bc3e25184792bf299bbd5ad55cf4aa9c737fe0a125d941ede1f3baf6",
+    "scoreSha256": "c28430eaaf4690d5c96d8efcc388d69bc3c0460c333cc08924cbc3d8b375d0c9",
+    "oracleSha256": "4fe68311bae2fff3bba9ff3928c6993ddd0ea230182f1723e11a17e8c983b228",
+    "traceSha256": "a656f253289588fa8eed75f77c2c7628905abc7acbba3ddcd58607883af9e31e",
+    "rawEventLogSha256": "053dea5ebdacc65cdc639d185db414555c3ac440bc4b3f7dae6eb6322a6e7be2"
+  },
+  "result": {
+    "status": "completed",
+    "qualityGatePassed": true,
+    "results": 50,
+    "exactUrls": 50,
+    "exactFields": 50,
+    "exactRanks": 50,
+    "duplicates": 0,
+    "pagesVisited": 13
+  },
+  "timing": {
+    "wallMs": 373607,
+    "analysisCallMs": 2975,
+    "localAnalysisMs": 9.835,
+    "analysisToValidContractMs": 207117,
+    "localAuthoringValidationMs": 0.952,
+    "collectionExecutionMs": 16791
+  },
+  "agent": {
+    "mcpOnly": true,
+    "nonMcpToolCalls": 0,
+    "metaToolCalls": 11,
+    "toolNames": [
+      "meta_analyze_site",
+      "meta_get_state",
+      "meta_create_webmcp",
+      "meta_activate_webmcp",
+      "meta_invoke_webmcp"
+    ],
+    "authoringAttempts": 7,
+    "failedAuthoringAttempts": 6,
+    "failedAuthoringReason": "Five attempts guessed the omitted stopWhen field names; a sixth used rank zero outside the allowed range.",
+    "semanticResponseCharacters": 53506,
+    "tokenUsage": {
+      "input": 457233,
+      "cachedInput": 411520,
+      "output": 16563,
+      "reasoningOutput": 6131,
+      "processedTotal": 473796,
+      "nonCachedTotal": 62276
+    }
+  },
+  "browser": {
+    "internalCalls": 15,
+    "navigate": 14,
+    "snapshot": 1,
+    "internalResponseCharacters": 1202507
+  },
+  "execution": {
+    "tool": "find_cheapest_bogota_apartments_with_laundry",
+    "pagesScanned": 13,
+    "recordsScanned": 263,
+    "matchedRecords": 73,
+    "complete": true,
+    "terminationReason": "page minimum rent_cop exceeded ranked total_monthly_cop at rank 50"
+  },
+  "oracle": {
+    "startedAt": "2026-09-03T20:14:29.518Z",
+    "completedAt": "2026-09-03T20:14:30.825Z",
+    "pagesVisited": 13,
+    "rawListingsSeen": 273,
+    "uniqueListingsSeen": 263,
+    "qualifyingListingsSeen": 73,
+    "completeTop50": true
+  },
+  "comparisonToDirectBrowser": {
+    "directWallMs": 713181,
+    "wallSpeedup": 1.9089,
+    "directProcessedTokens": 4657195,
+    "processedTokenReductionFactor": 9.8295,
+    "directNonCachedTokens": 423851,
+    "nonCachedTokenReductionFactor": 6.806,
+    "directModelFacingResponseCharacters": 3066487,
+    "modelFacingResponseReductionFactor": 57.3111,
+    "directBrowserCalls": 38,
+    "browserCallReductionRate": 0.6053
+  },
+  "limitations": [
+    "This is the second cold-agent trial; two trials per arm remain insufficient for a statistical performance claim.",
+    "The paired direct-browser arm began about 37 seconds after this run and used its own immediately preceding oracle on a volatile site.",
+    "Non-interactive Codex cannot discover browser-native Site Tools, so a thin stdio MCP transport adapter exposed the production analysis, validation, registry, and collection runtime. It contained no domain ToolSpec or FincaRaiz parsing logic.",
+    "The generic guide used during this captured run omitted exact stopWhen property names; all rejected retries remain in wall time and token usage.",
+    "Processed token totals include cached input on every model turn. Non-cached totals subtract cached input but are not a monetary cost calculation."
+  ]
+}

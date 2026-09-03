@@ -1,6 +1,6 @@
 # Test report
 
-Local regression verification completed on **2026-09-03T19:52:52Z** (**2026-09-04 02:52:52, Asia/Ho_Chi_Minh**) against the working tree based on source commit `ee788c535efb182f1c592a4214b99e626b092d7e`. This run covers managing-agent-authored action and collection tools plus the cold and direct FincaRaíz benchmark paths before deployment.
+Local regression verification completed on **2026-09-03T21:45:47Z** (**2026-09-04 04:45:47, Asia/Ho_Chi_Minh**) against the working tree based on source commit `643db6c8e80e4e0f489c5d17d5a6b9bfb77ace20`. This run covers managing-agent-authored action and collection tools, bounded lazy-page capture, two cold/direct FincaRaíz pairs, the cross-site Metrocuadrado case, and the Steam multipage benchmark.
 
 The retained production-native and Lighthouse evidence below was captured earlier against deployed Worker version `c5ac5494-8d79-413e-9a9c-8db3dcd3339c`, built from source commit `178f2ff8dd63dc6f1c29558f5ed36cf4798b23e8`.
 
@@ -20,11 +20,11 @@ The retained production-native and Lighthouse evidence below was captured earlie
 ## Automated results
 
 - Capture-script syntax checks: **passed**.
-- Static repository checks: **140 repository files passed**.
-- Node unit and integration tests: **106 passed, 0 failed**.
+- Static repository checks: **passed**.
+- Node unit and integration tests: **118 passed, 0 failed**.
 - Evidence provenance tests: **11 passed, 0 failed**.
 - Cloudflare Worker dry-run bundle: **passed** with Browser Run, Durable Object, Rate Limit, Static Assets, and Worker Version Metadata bindings.
-- Recursive Chromium end-to-end journey: **20 checks passed** with no console or page errors.
+- Recursive Chromium end-to-end journey: **21 checks passed** with no console or page errors.
 - Generated runtime evaluations: **4 contracts evaluated, 4 passed, 0 failed, 0 skipped, 0 not run**.
 - Retained production Lighthouse: **100 median performance (99–100 across three mobile samples)** and **100 accessibility, best practices, SEO, and agentic browsing in every sample**. Maximum CLS was **0.000106**; console errors were **0**.
 - Retained independently served native export Lighthouse: **100 performance, accessibility, best practices, SEO, and agentic browsing**. CLS and console errors were **0**.
@@ -32,29 +32,84 @@ The retained production-native and Lighthouse evidence below was captured earlie
 ## Cold FincaRaíz benchmark
 
 Fresh ephemeral Codex processes using CLI 0.150.1, `gpt-5.6-sol`, maximum
-reasoning, Chrome 147, and Playwright MCP 0.0.55 ran the same task from empty
-working directories. Both returned the exact 50 oracle URLs, fields,
-calculations, and ranks with no duplicates:
+reasoning, Chrome 147, and Playwright MCP 0.0.55 ran two matched pairs from
+empty working directories. All four candidates returned the 50 oracle URLs,
+numeric fields, normalized laundry evidence, calculations, and ranks with no
+duplicates:
+
+| Pair | Arm | Wall time | Processed / non-cached tokens | Model-facing tool response | Calls |
+|---|---|---:|---:|---:|---:|
+| 1 | Direct browser parsing | 634.630 s | 5,997,779 / 336,723 | 1,205,716 characters | 15 browser navigations |
+| 1 | Cold MetaWebMCP agent | 290.550 s | 345,737 / 71,689 | 51,277 characters | 8 semantic; 15 internal browser calls |
+| 2 | Direct browser parsing | 713.181 s | 4,657,195 / 423,851 | 3,066,487 characters | 38 browser navigations |
+| 2 | Cold MetaWebMCP agent | 373.607 s | 473,796 / 62,276 | 53,506 characters | 11 semantic; 15 internal browser calls |
+
+The ratio of arm-median wall times was **2.029×** in MetaWebMCP's favor.
+Median processed tokens fell **13.001×**, non-cached tokens fell **5.677×**,
+and model-facing tool-response text fell **40.772×**. Pair-level wall ratios
+were 2.184× and 1.909×. The cold timings retain every analysis, rejected
+contract, activation, collection traversal, and final schema-generation cost.
+Event audits contain no prohibited tools.
+
+Each arm used a separate adjacent oracle because listings are volatile.
+Non-interactive Codex used a thin stdio transport adapter for MetaWebMCP
+because it cannot discover page-native Site Tools; the adapter called the
+production analyzer, authoring validator, registry, and collection executor
+and contained no domain ToolSpec or FincaRaíz parser. Two trials per arm are
+still not a statistical estimate.
+
+## Metrocuadrado crossover benchmark
+
+The same cold isolation was applied to a one-page Metrocuadrado task with a
+fixed 1280×20000 viewport so all lazy-rendered cards were observable. Both
+arms returned the exact oracle top 10 with exact card fields and ranks:
 
 | Arm | Wall time | Processed / non-cached tokens | Model-facing tool response | Calls |
 |---|---:|---:|---:|---:|
-| Direct browser parsing | 634.630 s | 5,997,779 / 336,723 | 1,205,716 characters | 15 browser navigations |
-| Cold MetaWebMCP managing agent | 290.550 s | 345,737 / 71,689 | 51,277 characters | 8 semantic; 15 internal browser calls |
+| Direct browser parsing | 114.470 s | 147,997 / 59,421 | 549,894 characters | 5 browser calls |
+| Cold MetaWebMCP agent | 159.678 s | 319,868 / 46,332 | 133,952 characters | 7 semantic; 7 internal browser calls |
 
-The cold end-to-end speedup was **2.184×**. Processed tokens fell **17.348×**,
-non-cached tokens fell **4.697×**, and model-facing tool-response text fell
-**23.514×**. The cold time includes analysis, four rejected contract attempts,
-a successful fifth attempt, activation, a 21.771-second collection traversal,
-and final schema generation. The event audits contain no prohibited tools.
+Direct browsing was **45.208 seconds faster**, making MetaWebMCP **1.395× slower**
+on wall time. Even in that latency loss, MetaWebMCP exposed **75.6% less
+model-facing tool text** (**4.105×**) and used **22.0% fewer non-cached tokens**
+(**1.283×**). Its total processed tokens including cached context were
+**2.161× higher**. This single-page counterexample shows that cold analysis and
+ToolSpec authoring have fixed cost that does not always amortize, while the
+semantic boundary can still keep substantial raw page content out of the
+managing agent's context. The quality gate is end to end: the captured ToolSpec
+preserved tracking queries and the managing agent removed them in its final
+schema-constrained response.
 
-The arms ran about eleven minutes apart against separate immediately preceding
-oracles because FincaRaíz listings are volatile. Non-interactive Codex used a
-thin stdio transport adapter for MetaWebMCP because it cannot discover
-page-native Site Tools; the adapter called the production analyzer, authoring
-validator, registry, and collection executor and contained no domain ToolSpec
-or FincaRaíz parser. This is a single trial per arm, not a statistical estimate.
+## Steam multipage benchmark
 
-The Node suite covers HTML and accessibility-snapshot analysis, repeated-link collection discovery, managing-agent ToolSpec grounding, risk floors, common field parsers, filtering, computed fields, stable ranking, bounded pagination and stopping proofs, caller-browser recipe and collection handoff, inline hosted-browser image capture, complete form containment, required and constrained fields, rejection of ambiguous forms, repeated item-action grouping, bounded input-to-reference mappings, current and legacy Playwright reference schemas, response-scoped reference refresh, consequential-action classification, untrusted metadata containment, ZIP generation with portable Unix modes, runnable owner bundles, generated collection parity, unsafe bundle rejection, public-network target validation across reserved IPv4 and IPv6 ranges, DNS validation and proxy pinning, navigation and redirect validation, Streamable HTTP and long-lived SSE MCP clients, failed-analysis teardown, serialized operations, server-side workspace isolation, Cloudflare hosted-browser deployment gating, signed capability expiry and tamper rejection, cookie attributes, page-owned MCP session reuse and closure, capability-owned single-use exports, and deployment provenance enforcement. The Cloudflare compatibility check also executes the patched agent factory and proves that two Durable Object instances receive distinct MCP protocol servers.
+A cold 20-page Steam storefront task inspected 500 linked app cards, filtered
+on displayed discount and two displayed prices, deduplicated app identities,
+and applied a four-level ordering before returning 50 records. The untouched
+generated execution, the cold final answer, and the direct-browser answer all
+matched the corrected independent oracle for all 50 app IDs, fields, and
+ranks:
+
+| Arm | Wall time | Processed / non-cached tokens | Model-facing tool response | Calls |
+|---|---:|---:|---:|---:|
+| Direct browser parsing | 399.300 s | 2,634,279 / 240,935 | 628,090 characters | 21 browser calls |
+| Cold MetaWebMCP agent | 287.680 s | 248,889 / 46,777 | 33,340 characters | 5 semantic; 62 internal browser calls |
+
+MetaWebMCP was **1.388× faster**, saving 111.620 seconds. Processed tokens fell
+**10.584×**, non-cached tokens **5.151×**, and model-facing response text
+**18.839×**. The generated ToolSpec passed validation on its first authoring
+attempt. An event/trace audit gives the accepted definition the same SHA-256
+on both sides, and the raw execution result is byte-identical to the cold
+agent's final result array.
+
+The initially frozen oracle skipped Steam accessibility link keys enclosed in
+single quotes when a title contained a colon, producing failed 47/50 and 48/50
+gates even though the arms agreed. Those failures are retained. After both
+arms completed, a one-character optional-quote parser correction and regression
+test captured all 500 occurrences; all three corrected gates passed 50/50.
+This post-run correction is a limitation, and a preregistered repeat is still
+needed before treating the measured ratio as an expected effect size.
+
+The Node suite covers HTML and accessibility-snapshot analysis, repeated-link collection discovery, managing-agent ToolSpec grounding, risk floors, common field parsers, filtering, computed fields, stable ranking, bounded lazy-page capture, pagination and stopping proofs, caller-browser recipe and collection handoff, independent FincaRaíz, Metrocuadrado, and Steam oracle/scoring behavior, inline hosted-browser image capture, complete form containment, required and constrained fields, rejection of ambiguous forms, repeated item-action grouping, bounded input-to-reference mappings, current and legacy Playwright reference schemas, response-scoped reference refresh, consequential-action classification, untrusted metadata containment, ZIP generation with portable Unix modes, runnable owner bundles, generated collection parity, unsafe bundle rejection, public-network target validation across reserved IPv4 and IPv6 ranges, DNS validation and proxy pinning, navigation and redirect validation, Streamable HTTP and long-lived SSE MCP clients, failed-analysis teardown, serialized operations, server-side workspace isolation, Cloudflare hosted-browser deployment gating, signed capability expiry and tamper rejection, cookie attributes, page-owned MCP session reuse and closure, capability-owned single-use exports, and deployment provenance enforcement. The Cloudflare compatibility check also executes the patched agent factory and proves that two Durable Object instances receive distinct MCP protocol servers.
 
 The deterministic browser journey verifies:
 
@@ -66,18 +121,19 @@ The deterministic browser journey verifies:
 6. Workspace reset awaits browser cleanup even before a successful analysis.
 7. Caller-supplied observation produces a delegated recipe, exposes the collection authoring grammar, accepts a managing-agent-authored collection through the native meta-tool, and returns it as an explicit incomplete plan.
 8. The human workspace is URL-first, has no snapshot/HTML data-entry controls, and retains a keyboard-accessible sample.
-9. Hosted inspection displays the rendered page and accessibility model in switchable views.
-10. The fallback contains untrusted evidence, prevents risk downgrades, requires reviewed metadata, and never reports skipped verification as complete.
-11. Seven permanent meta-tools register on the top-level page while the target iframe has no WebMCP registry.
-12. `meta_analyze_site` derives four evidence-backed capabilities from the controlled target.
-13. `meta_create_webmcp` constructs constrained ToolSpecs.
-14. `meta_activate_webmcp` changes the top-level registry from seven to eleven tools.
-15. The generated tools search sessions, add an itinerary item, inspect visible state, and clear it.
-16. `meta_test_webmcp` completes registration, schema, execution, and visible-postcondition checks for all four tools.
-17. `meta_export_webmcp` returns a valid 13-file repository ZIP with direct `document.modelContext.registerTool(...)` source.
-18. The extracted site independently registers and executes all four exported tools, including a zero-item postcondition after `clear_itinerary`.
-19. A browser-derived export validates inputs before effects, rejects form ambiguity, runs without MetaWebMCP or a browser bridge, and fails closed when the requested item disappears.
-20. The completed workspace has no horizontal overflow from 390 px through 1440 px.
+9. Hosted-browser rate limits expose agent-browser guidance and open the Run path guide.
+10. Hosted inspection displays the rendered page and accessibility model in switchable views.
+11. The fallback contains untrusted evidence, prevents risk downgrades, requires reviewed metadata, and never reports skipped verification as complete.
+12. Seven permanent meta-tools register on the top-level page while the target iframe has no WebMCP registry.
+13. `meta_analyze_site` derives four evidence-backed capabilities from the controlled target.
+14. `meta_create_webmcp` constructs constrained ToolSpecs.
+15. `meta_activate_webmcp` changes the top-level registry from seven to eleven tools.
+16. The generated tools search sessions, add an itinerary item, inspect visible state, and clear it.
+17. `meta_test_webmcp` completes registration, schema, execution, and visible-postcondition checks for all four tools.
+18. `meta_export_webmcp` returns a valid 13-file repository ZIP with direct `document.modelContext.registerTool(...)` source.
+19. The extracted site independently registers and executes all four exported tools, including a zero-item postcondition after `clear_itinerary`.
+20. A browser-derived export validates inputs before effects, rejects form ambiguity, runs without MetaWebMCP or a browser bridge, and fails closed when the requested item disappears.
+21. The completed workspace has no horizontal overflow from 390 px through 1440 px.
 
 Deterministic local artifacts are retained in:
 

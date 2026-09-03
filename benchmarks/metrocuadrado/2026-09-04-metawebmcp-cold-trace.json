@@ -1,0 +1,480 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "metrocuadrado-cheapest-visible-v1",
+  "arm": "metawebmcp-cold-agent",
+  "serverStartedAt": "2026-09-03T20:40:36.806Z",
+  "browserEndpoint": "http://localhost:8936/sse",
+  "metaCalls": [
+    {
+      "name": "meta_analyze_site",
+      "startedAt": "2026-09-03T20:40:54.759Z",
+      "durationMs": 5572,
+      "ok": true
+    },
+    {
+      "name": "meta_get_state",
+      "startedAt": "2026-09-03T20:41:18.701Z",
+      "durationMs": 0,
+      "ok": true
+    },
+    {
+      "name": "meta_get_state",
+      "startedAt": "2026-09-03T20:41:26.087Z",
+      "durationMs": 0,
+      "ok": true
+    },
+    {
+      "name": "meta_analyze_site",
+      "startedAt": "2026-09-03T20:41:40.747Z",
+      "durationMs": 3326,
+      "ok": true
+    },
+    {
+      "name": "meta_create_webmcp",
+      "startedAt": "2026-09-03T20:42:22.299Z",
+      "durationMs": 4,
+      "ok": true
+    },
+    {
+      "name": "meta_activate_webmcp",
+      "startedAt": "2026-09-03T20:42:28.007Z",
+      "durationMs": 2,
+      "ok": true
+    },
+    {
+      "name": "meta_invoke_webmcp",
+      "startedAt": "2026-09-03T20:42:36.994Z",
+      "durationMs": 5860,
+      "ok": true
+    }
+  ],
+  "browserCalls": [
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://www.metrocuadrado.com/apartamentos/arriendo/bogota/economicos/"
+      },
+      "durationMs": 5394,
+      "responseCharacters": 134086,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 124,
+      "responseCharacters": 132413,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://www.metrocuadrado.com/apartamentos/arriendo/bogota/economicos/"
+      },
+      "durationMs": 3199,
+      "responseCharacters": 134322,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 119,
+      "responseCharacters": 132331,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://www.metrocuadrado.com/apartamentos/arriendo/bogota/economicos/"
+      },
+      "durationMs": 3554,
+      "responseCharacters": 134426,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2152,
+      "responseCharacters": 132534,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 138,
+      "responseCharacters": 132435,
+      "ok": true
+    }
+  ],
+  "analysis": {
+    "targetUrl": "https://www.metrocuadrado.com/apartamentos/arriendo/bogota/economicos/",
+    "goal": "Author one semantic read-only single-page collection over every promoted and ordinary linked apartment card visible on the first page. Use bounded pageCapture with snapshotAfterNavigate true and waitSeconds 2. From explicitly displayed card values, keep listings with bedrooms >= 2 and area 45..100 m² inclusive; canonicalize absolute listing URLs by removing tracking query parameters; deduplicate by canonical URL; sort by monthly rent ascending, area descending, canonical URL ascending; return the cheapest 10. Do not paginate. Report completion status and limitations from observable evidence.",
+    "snapshotCharacters": 132331,
+    "snapshotSha256": "a7e322dea75de31b756913d52aeaebace2da47c3d1ee04d9aec3e574491a9526",
+    "durationMs": 6.665,
+    "summary": {
+      "controls": 283,
+      "buttons": 120,
+      "inputs": 3,
+      "links": 160,
+      "collections": 3,
+      "candidates": 12,
+      "discoveredCandidates": 18,
+      "omittedCandidates": 6
+    },
+    "warnings": [
+      "Found 18 candidate workflows. Returned 12 using goal-token relevance and omitted 6; ties preserve document order.",
+      "53 buttons had no accessible name and could not become reliable tools.",
+      "1 dropdown did not expose its choices and was omitted from generated tool inputs.",
+      "2 inputs could not be associated with a named search or submit action. The caller must inspect and operate that control directly unless the source owner gives its submit action an accessible name."
+    ]
+  },
+  "authoredDefinitions": [
+    {
+      "name": "cheapest_bogota_apartments_first_page",
+      "description": "Read every promoted and ordinary linked apartment card observable on the analyzed first page after a bounded lazy-render capture; use only displayed card rent, bedroom, and area values; keep cards with at least 2 bedrooms and 45 through 100 square metres; return up to 10 unique listings ordered by monthly rent ascending, area descending, then normalized absolute listing URL ascending.",
+      "risk": "read",
+      "capability_ids": [
+        "mcp_collection_1_list_inmueble"
+      ],
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 10,
+            "maximum": 10,
+            "description": "Return up to the first 10 qualifying unique listings."
+          }
+        },
+        "additionalProperties": false
+      },
+      "sample_args": {
+        "limit": 10
+      },
+      "executor": {
+        "type": "mcp-collection",
+        "item": {
+          "urlContains": "/inmueble/",
+          "minTextLength": 20
+        },
+        "fields": [
+          {
+            "name": "url",
+            "source": "url",
+            "parser": {
+              "type": "identity"
+            },
+            "required": true
+          },
+          {
+            "name": "rent_cop",
+            "source": "text",
+            "parser": {
+              "type": "currency",
+              "occurrence": 0
+            },
+            "required": true
+          },
+          {
+            "name": "bedrooms",
+            "source": "text",
+            "parser": {
+              "type": "number-before",
+              "marker": "hab."
+            },
+            "required": true
+          },
+          {
+            "name": "area_m2",
+            "source": "text",
+            "parser": {
+              "type": "number-before",
+              "marker": "m²"
+            },
+            "required": true
+          }
+        ],
+        "filters": [
+          {
+            "field": "bedrooms",
+            "operator": "gte",
+            "value": {
+              "value": 2
+            }
+          },
+          {
+            "field": "area_m2",
+            "operator": "gte",
+            "value": {
+              "value": 45
+            }
+          },
+          {
+            "field": "area_m2",
+            "operator": "lte",
+            "value": {
+              "value": 100
+            }
+          }
+        ],
+        "computed": [],
+        "sort": [
+          {
+            "field": "rent_cop",
+            "direction": "asc"
+          },
+          {
+            "field": "area_m2",
+            "direction": "desc"
+          },
+          {
+            "field": "url",
+            "direction": "asc"
+          }
+        ],
+        "limit": {
+          "input": "limit",
+          "default": 10,
+          "maximum": 10
+        },
+        "maxItems": 500,
+        "pageCapture": {
+          "snapshotAfterNavigate": true,
+          "waitSeconds": 2
+        }
+      }
+    }
+  ],
+  "authoredTools": [
+    {
+      "id": "authored_1_cheapest_bogota_apartments_first_page",
+      "kind": "agent-authored",
+      "name": "cheapest_bogota_apartments_first_page",
+      "title": "cheapest bogota apartments first page",
+      "description": "Read every promoted and ordinary linked apartment card observable on the analyzed first page after a bounded lazy-render capture; use only displayed card rent, bedroom, and area values; keep cards with at least 2 bedrooms and 45 through 100 square metres; return up to 10 unique listings ordered by monthly rent ascending, area descending, then normalized absolute listing URL ascending.",
+      "risk": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 10,
+            "maximum": 10,
+            "description": "Return up to the first 10 qualifying unique listings."
+          }
+        },
+        "additionalProperties": false
+      },
+      "sampleArgs": {
+        "limit": 10
+      },
+      "evidence": [
+        {
+          "type": "collection-item",
+          "ref": "e544",
+          "label": "Foto de Apartamento en Arriendo en CABRERA, Bogotá D.C. con 3 habitaciones, 5 baños, área 290 m2, 3 garaje - 5586-M2472282 Destacado CABRERA | Norte | Bogotá D.C. $17.000.000 Apartamento en Arriendo, CABRERA, Bogotá D.C. 290 m² 3 hab. 5 bañ. 3 par.",
+          "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-la-cabrera-3-habitaciones-5-banos-3-garajes/5586-M2472282?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F"
+        },
+        {
+          "type": "collection-item",
+          "ref": "e628",
+          "label": "Foto de Apartamento en Arriendo en San Jose De Bavaria, Bogotá D.C. con 2 habitaciones, 1 baños, área 43 m2 - 21003-M6877180 Destacado San Jose De Bavaria | Bogotá D.C. $1.550.000 Apartamento en Arriendo, San Jose De Bavaria, Bogotá D.C. 43 m² 2 hab. 1 bañ.",
+          "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-san-jose-de-bavaria-2-habitaciones-1-banos/21003-M6877180?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F"
+        },
+        {
+          "type": "collection-item",
+          "ref": "e704",
+          "label": "Foto de Apartamento en Arriendo en Centro, Bogotá D.C. con 1 habitaciones, 1 baños, área 38 m2, 1 garaje - 4186-M6772716 Destacado Centro | Bogotá D.C. $2.100.000 Apartamento en Arriendo, Centro, Bogotá D.C. 38 m² 1 hab. 1 bañ. 1 par.",
+          "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-centro-1-habitaciones-1-banos-1-garajes/4186-M6772716?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F"
+        },
+        {
+          "type": "collection-item",
+          "ref": "e793",
+          "label": "Foto de Apartamento en Arriendo en Bosa, Bogotá D.C. con 1 habitaciones, 1 baños, área 12 m2 - 11813-M6893772 Bosa | Bogotá D.C. $500.000 Apartamento en Arriendo, Bosa, Bogotá D.C. 12 m² 1 hab. 1 bañ.",
+          "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-bosa-1-habitaciones-1-banos/11813-M6893772?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F"
+        },
+        {
+          "type": "collection-item",
+          "ref": "e857",
+          "label": "Foto de Apartamento en Arriendo en SOACHA CIUDAD VERDE, Bogotá D.C. con 2 habitaciones, 1 baños, área 42 m2 - 4058-M5450756 SOACHA CIUDAD VERDE | Chapinero | Bogotá D.C. $500.000 Apartamento en Arriendo, SOACHA CIUDAD VERDE, Bogotá D.C. 42 m² 2 hab. 1 bañ.",
+          "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-las-americas-2-habitaciones-1-banos/4058-M5450756?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F"
+        }
+      ],
+      "executor": {
+        "type": "mcp-collection",
+        "item": {
+          "urlContains": "/inmueble/",
+          "minTextLength": 20
+        },
+        "fields": [
+          {
+            "name": "url",
+            "source": "url",
+            "parser": {
+              "type": "identity"
+            },
+            "required": true
+          },
+          {
+            "name": "rent_cop",
+            "source": "text",
+            "parser": {
+              "type": "currency",
+              "occurrence": 0
+            },
+            "required": true
+          },
+          {
+            "name": "bedrooms",
+            "source": "text",
+            "parser": {
+              "type": "number-before",
+              "marker": "hab."
+            },
+            "required": true
+          },
+          {
+            "name": "area_m2",
+            "source": "text",
+            "parser": {
+              "type": "number-before",
+              "marker": "m²"
+            },
+            "required": true
+          }
+        ],
+        "filters": [
+          {
+            "field": "bedrooms",
+            "operator": "gte",
+            "value": {
+              "value": 2
+            }
+          },
+          {
+            "field": "area_m2",
+            "operator": "gte",
+            "value": {
+              "value": 45
+            }
+          },
+          {
+            "field": "area_m2",
+            "operator": "lte",
+            "value": {
+              "value": 100
+            }
+          }
+        ],
+        "computed": [],
+        "sort": [
+          {
+            "field": "rent_cop",
+            "direction": "asc"
+          },
+          {
+            "field": "area_m2",
+            "direction": "desc"
+          },
+          {
+            "field": "url",
+            "direction": "asc"
+          }
+        ],
+        "limit": {
+          "input": "limit",
+          "default": 10,
+          "maximum": 10
+        },
+        "maxItems": 500,
+        "pageCapture": {
+          "snapshotAfterNavigate": true,
+          "waitSeconds": 2
+        },
+        "scope": {
+          "origin": "https://www.metrocuadrado.com",
+          "pathPrefix": "/apartamentos/arriendo/bogota/economicos"
+        },
+        "startUrl": "https://www.metrocuadrado.com/apartamentos/arriendo/bogota/economicos/"
+      }
+    }
+  ],
+  "execution": {
+    "tool": "cheapest_bogota_apartments_first_page",
+    "input": {
+      "limit": 10
+    },
+    "durationMs": 5859,
+    "complete": true,
+    "terminationReason": "single page collection",
+    "pagesScanned": 1,
+    "recordsScanned": 53,
+    "matchedRecords": 16,
+    "resultCount": 10,
+    "results": [
+      {
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-ingles-2-habitaciones-1-banos/MC6112356?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F",
+        "rent_cop": 580000,
+        "bedrooms": 2,
+        "area_m2": 55
+      },
+      {
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-nueva-delly-3-habitaciones-1-banos/3222-M6963978?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F",
+        "rent_cop": 700000,
+        "bedrooms": 3,
+        "area_m2": 50
+      },
+      {
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-2-habitaciones-1-banos/20825-M6825862?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F",
+        "rent_cop": 700000,
+        "bedrooms": 2,
+        "area_m2": 46
+      },
+      {
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-bosa-2-habitaciones-1-banos/3222-M6986372?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F",
+        "rent_cop": 700000,
+        "bedrooms": 2,
+        "area_m2": 45
+      },
+      {
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-compostela-2-habitaciones-1-banos/18552-M6884285?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F",
+        "rent_cop": 750000,
+        "bedrooms": 2,
+        "area_m2": 45
+      },
+      {
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-bosconia-2-habitaciones-1-banos/4058-M5793290?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F",
+        "rent_cop": 800000,
+        "bedrooms": 2,
+        "area_m2": 60
+      },
+      {
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-el-cortijo-2-habitaciones-1-banos/5082-M6945188?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F",
+        "rent_cop": 800000,
+        "bedrooms": 2,
+        "area_m2": 45
+      },
+      {
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-villa-israel-2-habitaciones-1-banos/164-M6968138?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F",
+        "rent_cop": 800000,
+        "bedrooms": 2,
+        "area_m2": 45
+      },
+      {
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-codito-2-habitaciones-1-banos/164-M6047256?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F",
+        "rent_cop": 830000,
+        "bedrooms": 2,
+        "area_m2": 65
+      },
+      {
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-bosa-2-habitaciones-1-banos/11813-M5940843?src_url=%2Fapartamentos%2Farriendo%2Fbogota%2Feconomicos%2F",
+        "rent_cop": 844000,
+        "bedrooms": 2,
+        "area_m2": 48
+      }
+    ]
+  },
+  "authoringValidationMs": 2.755
+}

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "metrocuadrado-cheapest-visible-v1",
+  "arm": "codex-direct-browser-fresh",
+  "trial": 1,
+  "repositoryBaselineCommit": "643db6c8e80e4e0f489c5d17d5a6b9bfb77ace20",
+  "startedAt": "2026-09-03T20:44:50.231Z",
+  "completedAt": "2026-09-03T20:46:44.701Z",
+  "environment": {
+    "codexCli": "0.150.1",
+    "model": "gpt-5.6-sol",
+    "reasoningEffort": "max",
+    "node": "v24.5.0",
+    "browser": "Google Chrome 147.0.7727.116",
+    "playwrightMcp": "0.0.55",
+    "viewport": "1280x20000"
+  },
+  "isolation": {
+    "ephemeral": true,
+    "emptyWorkingDirectory": true,
+    "userConfigurationLoaded": false,
+    "repositoryInstructionsLoaded": false,
+    "appsEnabled": false,
+    "warmToolTrial": false
+  },
+  "inputs": {
+    "promptSha256": "b6e8147c14007ebdd10a6cd71bc5c40895b7372d2233db8b4e88f743cc58f1d7",
+    "resultSchemaSha256": "06486ccb8bf6f439535e6f7f68ccdbc972bbb6239f683410d492602aed083f8f",
+    "resultSha256": "4ba48344d6addcb3fa7dd70ce1d267463629e2cb2b35724807f17933879bf2a6",
+    "scoreSha256": "9f33f4c4444397b11611aac5ce0a7472474961242d71124deaa7a74425535cc3",
+    "oracleSha256": "dec6a9e5712990148bf01e206663ed4360fe2044ad3a5fa3939d510b68bcb5b0",
+    "rawEventLogSha256": "589e24ed6fad1abcaa09c2ac4e51410171c9213f710aedc65bff0f5559ecc9a0"
+  },
+  "result": {
+    "status": "completed",
+    "qualityGatePassed": true,
+    "results": 10,
+    "exactUrls": 10,
+    "exactFields": 10,
+    "exactRanks": 10,
+    "duplicates": 0,
+    "pagesVisited": 1
+  },
+  "timing": {
+    "wallMs": 114470
+  },
+  "agent": {
+    "browserMcpOnly": true,
+    "nonBrowserToolCalls": 0,
+    "browserCalls": 5,
+    "navigateCalls": 1,
+    "waitCalls": 1,
+    "snapshotCalls": 3,
+    "uniquePages": 1,
+    "browserResponseCharacters": 549894,
+    "tokenUsage": {
+      "input": 142780,
+      "cachedInput": 88576,
+      "output": 5217,
+      "reasoningOutput": 4258,
+      "processedTotal": 147997,
+      "nonCachedTotal": 59421
+    }
+  },
+  "oracle": {
+    "startedAt": "2026-09-03T20:44:29.729Z",
+    "completedAt": "2026-09-03T20:44:35.788Z",
+    "rawListingsSeen": 53,
+    "uniqueListingsSeen": 53,
+    "qualifyingListingsSeen": 16,
+    "completeVisibleTop10": true
+  },
+  "comparisonToColdMetaWebMcp": {
+    "metaWebMcpWallMs": 159678,
+    "metaWebMcpWallTimeFactor": 1.3949,
+    "directFasterByMs": 45208,
+    "metaWebMcpProcessedTokens": 319868,
+    "metaWebMcpProcessedTokenFactor": 2.1613,
+    "metaWebMcpNonCachedTokens": 46332,
+    "nonCachedTokenReductionFactor": 1.2825,
+    "metaWebMcpSemanticResponseCharacters": 133952,
+    "modelFacingResponseReductionFactor": 4.1052,
+    "metaWebMcpInternalBrowserCalls": 7
+  },
+  "limitations": [
+    "This is one matched trial per arm, not a repeated statistical estimate.",
+    "The scope is every linked card rendered on one public results page, not every listing on the site.",
+    "Both arms used the same unusually tall fixed viewport because Metrocuadrado lazy-renders below-fold cards.",
+    "The direct agent removed src_url tracking queries while forming its final schema-constrained response.",
+    "Processed token totals include cached input on every model turn. Non-cached totals subtract cached input but are not a monetary cost calculation."
+  ]
+}
