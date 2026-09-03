@@ -8,10 +8,17 @@ import {
 } from '../deploy/cloudflare/browser-egress-proxy.mjs';
 import {
   BROWSER_MCP_TOOL_NAMES,
+  hostedBrowserEnabled,
   isBlockedBrowserHostname,
   validateBrowserTransportMessage,
   validatePublicTarget,
 } from '../deploy/cloudflare/browser-transport-policy.mjs';
+
+test('hosted Browser Run is disabled unless the deployment explicitly opts in', () => {
+  assert.equal(hostedBrowserEnabled({}), false);
+  assert.equal(hostedBrowserEnabled({ HOSTED_BROWSER_ENABLED: '0' }), false);
+  assert.equal(hostedBrowserEnabled({ HOSTED_BROWSER_ENABLED: '1' }), true);
+});
 
 function routedRequest({
   url = 'https://public.example/page',

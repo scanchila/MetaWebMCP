@@ -32,6 +32,25 @@ function renderValue(value, input) {
   return value;
 }
 
+export function prepareMcpRecipe({ executor, input = {} }) {
+  if (!executor || executor.type !== 'mcp-recipe' || !Array.isArray(executor.steps)) {
+    throw new Error('A valid MCP recipe is required.');
+  }
+  if (executor.steps.length < 1 || executor.steps.length > 12) {
+    throw new Error('MCP recipes must contain 1–12 steps.');
+  }
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    throw new Error('MCP recipe input must be an object.');
+  }
+
+  return executor.steps.map((step) => {
+    if (!step || !ALLOWED_MCP_TOOL_SET.has(step.tool)) {
+      throw new Error(`MCP tool ${step?.tool || '(missing)'} is not allowed.`);
+    }
+    return { tool: step.tool, arguments: renderValue(step.arguments || {}, input) };
+  });
+}
+
 function availableToolDetails(availableTools) {
   if (availableTools instanceof Set) return { names: availableTools, definitions: new Map() };
   const items = Array.isArray(availableTools) ? availableTools : [];
@@ -84,15 +103,7 @@ function refreshedReference(args, previousResultText) {
 }
 
 export async function runMcpRecipe({ executor, input = {}, availableTools, callTool, resultText }) {
-  if (!executor || executor.type !== 'mcp-recipe' || !Array.isArray(executor.steps)) {
-    throw new Error('A valid MCP recipe is required.');
-  }
-  if (executor.steps.length < 1 || executor.steps.length > 12) {
-    throw new Error('MCP recipes must contain 1–12 steps.');
-  }
-  if (!input || typeof input !== 'object' || Array.isArray(input)) {
-    throw new Error('MCP recipe input must be an object.');
-  }
+  const steps = prepareMcpRecipe({ executor, input });
   if (typeof callTool !== 'function' || typeof resultText !== 'function') {
     throw new Error('MCP recipe execution requires a tool client and result formatter.');
   }
@@ -100,12 +111,9 @@ export async function runMcpRecipe({ executor, input = {}, availableTools, callT
   const { names: available, definitions } = availableToolDetails(availableTools);
   const trace = [];
   let previousResultText = '';
-  for (const step of executor.steps) {
-    if (!step || !ALLOWED_MCP_TOOL_SET.has(step.tool)) {
-      throw new Error(`MCP tool ${step?.tool || '(missing)'} is not allowed.`);
-    }
+  for (const step of steps) {
     if (!available.has(step.tool)) throw new Error(`Connected MCP server does not expose ${step.tool}.`);
-    const normalizedArgs = normalizeReferenceArgument(step.tool, renderValue(step.arguments || {}, input), definitions);
+    const normalizedArgs = normalizeReferenceArgument(step.tool, step.arguments, definitions);
     const args = refreshedReference(normalizedArgs, previousResultText);
     const result = await callTool(step.tool, args);
     previousResultText = String(resultText(result));

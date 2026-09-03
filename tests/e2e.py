@@ -83,10 +83,12 @@ def build_browser_sources() -> tuple[str, str, str, str]:
     browser_session_source = browser_session_source.replace("'./mcp-http-client.js'", json.dumps(mcp_client_url))
     browser_session_source = browser_session_source.replace("'./mcp-recipe.js'", json.dumps(recipe_url))
     browser_session_source = browser_session_source.replace("'./network-policy.js'", json.dumps(network_policy_url))
+    browser_session_source += "\nglobalThis.__browserMcpSessionForTest = browserMcpSession;\n"
     browser_session_url = browser_module_url(browser_session_source)
 
     runtime_source = (ROOT / "public/js/webmcp-runtime.js").read_text()
     runtime_source = runtime_source.replace("'./browser-mcp-session.js'", json.dumps(browser_session_url))
+    runtime_source = runtime_source.replace("'./mcp-recipe.js'", json.dumps(recipe_url))
     analyzer_source = (ROOT / "public/js/demo-analyzer.js").read_text().replace(
         "new URL('/demo/', location.href)",
         "new URL('/demo/', 'http://metawebmcp.test/')",
@@ -358,6 +360,87 @@ def main() -> int:
                 assert page.locator("#native-status").inner_text() == "WebMCP active"
                 assert "7 tools are registered" in page.locator("#client-status-copy").inner_text()
 
+                page.evaluate(
+                    """() => {
+                      const session = window.__browserMcpSessionForTest;
+                      window.__originalBrowserReset = session.reset.bind(session);
+                      window.__resetStarted = false;
+                      window.__resetFinished = false;
+                      let release;
+                      session.reset = () => new Promise(resolve => {
+                        window.__resetStarted = true;
+                        release = resolve;
+                      });
+                      window.__releaseBrowserReset = () => release({ ok: true });
+                      window.__pendingWorkspaceReset = window.__callNative('meta_reset_workspace', {})
+                        .then(() => { window.__resetFinished = true; });
+                    }"""
+                )
+                page.wait_for_function("window.__resetStarted")
+                assert page.evaluate("window.__resetFinished") is False
+                page.evaluate("window.__releaseBrowserReset()")
+                page.evaluate("window.__pendingWorkspaceReset")
+                assert page.evaluate("window.__resetFinished") is True
+                page.evaluate(
+                    """() => {
+                      window.__browserMcpSessionForTest.reset = window.__originalBrowserReset;
+                    }"""
+                )
+                result["checks"].append("workspace reset awaits browser cleanup without requiring a successful analysis")
+
+                agent_snapshot = """- main "Property search" [ref=e0]
+  - textbox "City or neighborhood" [ref=e1]
+  - combobox "Property type" [ref=e2]
+  - button "Search properties" [ref=e3]"""
+                agent_analysis = page.evaluate(
+                    """async ({ snapshot }) => window.__callNative('meta_analyze_site', {
+                      source: 'agent_snapshot',
+                      url: 'https://example.com/',
+                      goal: 'Search for properties.',
+                      snapshot,
+                    })""",
+                    {"snapshot": agent_snapshot},
+                )
+                assert agent_analysis["source"]["kind"] == "agent_snapshot"
+                search_capability = next(
+                    capability for capability in agent_analysis["capabilities"]
+                    if capability["name"] == "search_properties"
+                )
+                assert search_capability["executor"]["type"] == "mcp-recipe"
+                page.evaluate(
+                    """async ({ capabilityId }) => {
+                      await window.__callNative('meta_create_webmcp', {
+                        capability_ids: [capabilityId],
+                        overrides: [{
+                          capability_id: capabilityId,
+                          name: 'search_properties',
+                          description: 'Search for properties with the caller-controlled browser and return visible results.'
+                        }]
+                      });
+                      await window.__callNative('meta_activate_webmcp', {});
+                    }""",
+                    {"capabilityId": search_capability["id"]},
+                )
+                delegated = page.evaluate(
+                    """async () => window.__callNative('search_properties', {
+                      city_or_neighborhood: 'Bogotá', property_type: 'Apartamento'
+                    })"""
+                )
+                assert delegated["execution"] == "agent_browser_required"
+                assert delegated["completed"] is False
+                assert delegated["targetUrl"] == "https://example.com/"
+                assert delegated["steps"][-1]["tool"] == "browser_snapshot"
+                agent_evaluation = page.evaluate(
+                    "async () => window.__callNative('meta_test_webmcp', {})"
+                )
+                assert agent_evaluation["complete"] is False
+                assert agent_evaluation["coverage"]["skipped"] == 1
+                assert "calling agent" in agent_evaluation["results"][0]["reason"].lower()
+                page.evaluate("async () => window.__callNative('meta_reset_workspace', {})")
+                result["checks"].append("calling-agent snapshot analysis and delegated browser recipe")
+
+                page.locator('#owner-mode').click()
+                page.wait_for_function("document.querySelector('#owner-mode').getAttribute('aria-pressed') === 'true'")
                 assert page.locator('[role="tablist"], [role="tab"], [aria-selected]').count() == 0
                 assert page.locator('#owner-mode[aria-pressed="true"]').count() == 1
                 assert page.locator('#adapter-mode[aria-pressed="false"]').count() == 1
@@ -365,6 +448,9 @@ def main() -> int:
                 page.keyboard.press('Enter')
                 assert page.locator('#owner-mode[aria-pressed="false"]').count() == 1
                 assert page.locator('#adapter-mode[aria-pressed="true"]').count() == 1
+                assert page.locator('#adapter-source-kind').input_value() == "agent_snapshot"
+                assert page.locator('#snapshot-field').is_visible()
+                assert page.locator('#mcp-title').inner_text() == "Caller-controlled browser"
                 page.locator('#owner-mode').focus()
                 page.keyboard.press('Space')
                 assert page.locator('#owner-mode[aria-pressed="true"]').count() == 1

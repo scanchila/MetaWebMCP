@@ -27,6 +27,36 @@ assert.equal(
   'the MCP SDK should stay on the reviewed compatibility pin',
 );
 
+const agentEntrySource = await readFile(
+  './node_modules/@cloudflare/playwright-mcp/lib/esm/index.js',
+  'utf8',
+);
+const evaluateAgentFactory = new Function(
+  'McpAgent',
+  'endpointURLString',
+  'createConnection',
+  agentEntrySource
+    .replace(/^import .*;\n/gm, '')
+    .replace(/\nexport \{ createMcpAgent \};\s*$/, '\nreturn createMcpAgent;'),
+);
+let connectionCount = 0;
+const createMcpAgent = evaluateAgentFactory(
+  class {},
+  String,
+  async () => ({ server: { id: ++connectionCount } }),
+);
+const IsolatedAgent = createMcpAgent('https://browser.example');
+const firstAgent = new IsolatedAgent();
+const secondAgent = new IsolatedAgent();
+const [firstServer, secondServer] = await Promise.all([firstAgent.server, secondAgent.server]);
+assert.equal(connectionCount, 2, 'each Durable Object instance should create its own MCP protocol server');
+assert.notStrictEqual(firstServer, secondServer, 'MCP protocol servers must not be shared across transports');
+assert.match(
+  await readFile('./node_modules/@cloudflare/playwright-mcp/lib/cjs/index.js', 'utf8'),
+  /this\.server = index\.createConnection\(connectionOptions\)/,
+  'the CommonJS agent factory should also isolate protocol servers by instance',
+);
+
 let snapshotOptions;
 const snapshot = await PageSnapshot.create({
   _wrapApiCall: (callback) => callback(),

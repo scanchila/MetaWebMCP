@@ -94,12 +94,14 @@ test('page-scoped Browser MCP session analyzes and executes through one transpor
   assert.equal(result.ok, true);
   assert.equal(result.trace.length, 4);
   await session.reset('workspace_page_1234567');
+  await session.reset('workspace_page_1234567');
 
   assert.equal(requests.filter((request) => request.pathname === '/api/browser-session').length, 1);
   assert.equal(requests.filter((request) => request.pathname === '/api/config').length, 1);
   assert.equal(requests.filter((request) => request.pathname === '/api/mcp/analyze-snapshot').length, 1);
   assert.equal(requests.some((request) => request.pathname === '/api/mcp/analyze'), false);
   assert.equal(requests.some((request) => request.pathname === '/api/mcp/execute'), false);
+  assert.equal(requests.some((request) => request.pathname === '/api/mcp/reset'), false);
   assert.deepEqual(toolCalls, [
     { name: 'browser_navigate', args: { url: 'https://shop.example/' } },
     { name: 'browser_snapshot', args: {} },
@@ -144,4 +146,77 @@ test('page-scoped Browser MCP session blocks local targets before navigation', a
     );
   }
   assert.deepEqual(toolCalls, []);
+});
+
+test('failed Browser MCP analysis closes its transport before a direct retry', async () => {
+  let initialized = 0;
+  const toolCalls = [];
+  const deletedSessions = [];
+  const tools = ['browser_navigate', 'browser_snapshot', 'browser_close']
+    .map((name) => ({ name, inputSchema: { type: 'object' } }));
+
+  const fetchMock = async (input, options = {}) => {
+    const url = new URL(input);
+    if (url.pathname === '/api/browser-session') return json({ ok: true, expiresInSeconds: 1200 }, { status: 201 });
+    if (url.pathname === '/api/config') return json({ ok: true, browserMcpConfigured: true, browserMcpEndpoint: '/mcp' });
+    if (url.pathname === '/api/mcp/analyze-snapshot') {
+      return json({ ok: true, analysis: analyzeAccessibilitySnapshot(JSON.parse(options.body)) });
+    }
+    if (options.method === 'DELETE') {
+      deletedSessions.push(options.headers['mcp-session-id']);
+      return new Response(null, { status: 204 });
+    }
+
+    const message = JSON.parse(options.body);
+    if (message.method === 'initialize') {
+      initialized += 1;
+      return json({
+        jsonrpc: '2.0',
+        id: message.id,
+        result: { protocolVersion: '2025-06-18', capabilities: {}, serverInfo: {} },
+      }, { headers: { 'mcp-session-id': `retry-session-${initialized}` } });
+    }
+    if (message.method === 'notifications/initialized') return new Response(null, { status: 202 });
+    if (message.method === 'tools/list') {
+      return json({ jsonrpc: '2.0', id: message.id, result: { tools } });
+    }
+    if (message.method === 'tools/call') {
+      const name = message.params.name;
+      toolCalls.push({ session: options.headers['mcp-session-id'], name });
+      if (name === 'browser_navigate' && initialized === 1) {
+        return json({
+          jsonrpc: '2.0',
+          id: message.id,
+          result: { isError: true, content: [{ type: 'text', text: 'Rate limit exceeded' }] },
+        });
+      }
+      const text = name === 'browser_snapshot'
+        ? '- textbox "Query" [ref=e1]\n- button "Search" [ref=e2]'
+        : `${name} complete`;
+      return json({ jsonrpc: '2.0', id: message.id, result: { content: [{ type: 'text', text }] } });
+    }
+    return json({ jsonrpc: '2.0', id: message.id, error: { code: -32601, message: 'Unexpected method' } });
+  };
+
+  const session = new BrowserMcpSession({ fetch: fetchMock, baseUrl: 'https://meta.example/' });
+  await assert.rejects(
+    session.analyze({ url: 'https://shop.example', goal: 'Search.', workspaceId: 'workspace_retry_123456' }),
+    /Hosted browser capacity is unavailable.*agent_snapshot/i,
+  );
+
+  const analysis = await session.analyze({
+    url: 'https://shop.example',
+    goal: 'Search.',
+    workspaceId: 'workspace_retry_123456',
+  });
+
+  assert.equal(analysis.capabilities.some((capability) => capability.name === 'search'), true);
+  assert.equal(initialized, 2);
+  assert.deepEqual(deletedSessions, ['retry-session-1']);
+  assert.deepEqual(toolCalls, [
+    { session: 'retry-session-1', name: 'browser_navigate' },
+    { session: 'retry-session-1', name: 'browser_close' },
+    { session: 'retry-session-2', name: 'browser_navigate' },
+    { session: 'retry-session-2', name: 'browser_snapshot' },
+  ]);
 });

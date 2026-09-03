@@ -66,7 +66,8 @@ The controlled fallback needs no account, credentials, model API, or external se
 - Dynamic registration and unregistration through `document.modelContext.registerTool(...)` and `AbortController`.
 - A dependency-free native integration ZIP generator. Controlled and browser-derived ToolSpecs both execute on an owned page without MetaWebMCP; bundled targets are tested as standalone WebMCP sites.
 - URL and pasted-HTML analysis for site owners.
-- An optional Streamable HTTP client for the official Playwright MCP server, used as the low-level runtime for third-party sites. A same-origin deployment keeps the transport session in the open page; the local Node service provides an isolated server-side fallback.
+- A quota-free caller-browser path for third-party sites: the agent navigates with its own browser, supplies an accessibility snapshot, and receives bounded recipes to execute itself.
+- An optional Streamable HTTP client for the official Playwright MCP server. A same-origin deployment can keep the transport session in the open page; the local Node service provides an isolated server-side fallback.
 - SSRF defenses, an allowlisted browser recipe executor, risk annotations, and disabled consequential actions.
 - Node unit tests and a Chromium end-to-end test that drives the full recursive sequence through a WebMCP-shaped browser mock.
 
@@ -129,7 +130,22 @@ The generated module contains direct `document.modelContext.registerTool(...)` c
 
 ### Any public site
 
-MetaWebMCP can connect to a standard Streamable HTTP browser MCP endpoint. The generated WebMCP tools stay semantic; low-level `browser_snapshot`, `browser_type`, `browser_click`, and related calls remain hidden behind the adapter.
+The default path spends no MetaWebMCP browser quota. The calling agent navigates the target with its own browser tools, captures an accessibility snapshot, and submits it to the existing analysis tool:
+
+```text
+meta_analyze_site({
+  source: "agent_snapshot",
+  url: "https://example.com/",
+  goal: "Search the catalog",
+  snapshot: "<accessibility snapshot from the caller's browser>"
+})
+```
+
+MetaWebMCP turns that observation into the same reviewed ToolSpecs and export. While those tools are active on the studio page, invoking one returns a validated `agent_browser_required` recipe with `completed: false`; the calling agent performs those steps in its retained target session and verifies the visible result. WebMCP does not currently provide a standard callback for a page tool to invoke another client-side browser tool, so the studio reports this handoff explicitly instead of claiming remote execution.
+
+Controls without accessible names are not converted into generic tools. The analysis reports how many were omitted and identifies inputs that could not be associated with a named submit action, so the caller knows where direct browser judgment or a source-site accessibility fix is still required.
+
+Deployments may also opt into a standard Streamable HTTP browser MCP endpoint. In that hosted path, generated WebMCP tools stay semantic while low-level `browser_snapshot`, `browser_type`, `browser_click`, and related calls remain hidden behind the adapter.
 
 The recipe runtime reads the connected tool schemas and supports both the current Playwright MCP `target` reference field and the Cloudflare package's `ref` field. Repeated controls such as product-level “Add to basket” buttons are collapsed into one item-scoped tool instead of flooding the registry with duplicate actions.
 
@@ -166,6 +182,8 @@ Browser operations also require a short-lived, signed, HttpOnly page capability,
 | `ALLOW_PRIVATE_TARGETS` | `0` | Local development override; never enable on a public deployment |
 | `BROWSER_ALLOWED_ORIGINS` | empty | Optional comma-separated initial target origin allowlist |
 
+The Cloudflare deployment additionally recognizes `HOSTED_BROWSER_ENABLED=1`. It defaults to `0`, so anonymous traffic cannot consume account-wide Browser Run capacity; the caller-browser snapshot path remains available.
+
 ## Tests
 
 ```bash
@@ -187,7 +205,7 @@ The end-to-end test launches the included server and an available Chromium build
 8. The extracted repository registers and executes its four generated WebMCP tools against the bundled target UI.
 9. The completed workspace remains usable from desktop down to a 390 px mobile viewport without horizontal overflow.
 
-The unit/integration suite also verifies both transport layouts: isolated server-side workspaces and one Streamable HTTP session owned by the open page from analysis through generated-tool execution.
+The unit/integration suite verifies caller-supplied snapshot analysis and recipe handoff plus both optional hosted transport layouts: isolated server-side workspaces and one Streamable HTTP session owned by the open page from analysis through generated-tool execution.
 
 See [`TEST_REPORT.md`](TEST_REPORT.md) for the exact environment and latest run.
 
@@ -200,7 +218,7 @@ Production-native and public-site evidence is retained in [`evidence/`](evidence
 - Target content and generated metadata are treated as untrusted.
 - Consequential tools can be generated for review but are not automatically executed in the public studio.
 - Browser MCP recipes are restricted to a small allowlist and have a maximum step count.
-- The static analyzer is intentionally conservative. Client-rendered sites should use Browser MCP mode.
+- The static analyzer is intentionally conservative. Client-rendered sites should use a caller-supplied accessibility snapshot or an explicitly enabled Browser MCP runtime.
 - The app remains usable as an ordinary human interface where WebMCP is not present; its internal registry provides the same deterministic demo path.
 
 ## Deployment
@@ -213,7 +231,7 @@ The repository includes:
 - `docker-compose.yml` for MetaWebMCP plus Playwright MCP.
 - GitHub Actions CI for static, unit, and Chromium end-to-end tests.
 
-The showcase deployment runs at https://metawebmcp.neuryta.com. Its page-owned MCP session uses Cloudflare Browser Rendering for the “any site” path; the controlled recursive flow and native exports do not require a Browser Rendering session. Export creation and download still use the page's short-lived signed capability. See [`deploy/cloudflare/README.md`](deploy/cloudflare/README.md) for the reproducible deployment and compatibility pins.
+The showcase deployment runs at https://metawebmcp.neuryta.com. Its default “any site” path uses the calling agent's browser and does not allocate Cloudflare Browser Run instances. Operators can explicitly enable the page-owned Cloudflare Browser Run adapter. The controlled recursive flow and native exports never require Browser Run; export creation and download still use the page's short-lived signed capability. See [`deploy/cloudflare/README.md`](deploy/cloudflare/README.md) for the reproducible deployment and compatibility pins.
 
 ## Repository guide
 

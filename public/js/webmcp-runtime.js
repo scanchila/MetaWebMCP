@@ -1,4 +1,5 @@
 import { browserMcpSession } from './browser-mcp-session.js';
+import { prepareMcpRecipe } from './mcp-recipe.js';
 
 const TOOL_NAME = /^[a-z][a-z0-9_]{0,63}$/;
 
@@ -285,6 +286,17 @@ async function executeDomSpec(spec, input, context) {
 }
 
 async function executeMcpSpec(spec, input, context) {
+  if (context.browserExecution === 'agent') {
+    return {
+      execution: 'agent_browser_required',
+      completed: false,
+      tool: spec.name,
+      risk: spec.risk,
+      targetUrl: context.targetUrl,
+      steps: prepareMcpRecipe({ executor: spec.executor, input }),
+      instruction: 'Execute these bounded steps in the same caller-controlled browser session, then inspect the visible result. Re-resolve stale references by exact accessible name.',
+    };
+  }
   return browserMcpSession.execute({ executor: spec.executor, input, workspaceId: context.workspaceId });
 }
 

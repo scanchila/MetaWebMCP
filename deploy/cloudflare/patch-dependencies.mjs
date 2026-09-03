@@ -1,5 +1,60 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
+const agentEntryFiles = [
+  {
+    file: 'node_modules/@cloudflare/playwright-mcp/lib/esm/index.js',
+    originalConnection: `  const connection = createConnection({
+    capabilities: ["core", "tabs", "pdf", "history", "wait", "files", "testing"],
+    browser: {
+      cdpEndpoint
+    },
+    ...options
+  });`,
+    isolatedConnection: `  const connectionOptions = {
+    capabilities: ["core", "tabs", "pdf", "history", "wait", "files", "testing"],
+    browser: {
+      cdpEndpoint
+    },
+    ...options
+  };`,
+    originalServer: '      this.server = connection.then((server) => server.server);',
+    isolatedServer: '      this.server = createConnection(connectionOptions).then((server) => server.server);',
+  },
+  {
+    file: 'node_modules/@cloudflare/playwright-mcp/lib/cjs/index.js',
+    originalConnection: `  const connection = index.createConnection({
+    capabilities: ["core", "tabs", "pdf", "history", "wait", "files", "testing"],
+    browser: {
+      cdpEndpoint
+    },
+    ...options
+  });`,
+    isolatedConnection: `  const connectionOptions = {
+    capabilities: ["core", "tabs", "pdf", "history", "wait", "files", "testing"],
+    browser: {
+      cdpEndpoint
+    },
+    ...options
+  };`,
+    originalServer: '      this.server = connection.then((server) => server.server);',
+    isolatedServer: '      this.server = index.createConnection(connectionOptions).then((server) => server.server);',
+  },
+];
+
+for (const { file, originalConnection, isolatedConnection, originalServer, isolatedServer } of agentEntryFiles) {
+  const installedSource = await readFile(file, 'utf8');
+  let source = installedSource;
+  if (!source.includes(isolatedConnection)) {
+    if (!source.includes(originalConnection)) throw new Error(`Unexpected Playwright MCP agent factory in ${file}.`);
+    source = source.replace(originalConnection, isolatedConnection);
+  }
+  if (!source.includes(isolatedServer)) {
+    if (!source.includes(originalServer)) throw new Error(`Unexpected Playwright MCP server assignment in ${file}.`);
+    source = source.replace(originalServer, isolatedServer);
+  }
+  if (source !== installedSource) await writeFile(file, source);
+}
+
 const snapshotFiles = [
   'node_modules/@cloudflare/playwright-mcp/lib/esm/src/pageSnapshot.js',
   'node_modules/@cloudflare/playwright-mcp/lib/cjs/src/pageSnapshot.js',

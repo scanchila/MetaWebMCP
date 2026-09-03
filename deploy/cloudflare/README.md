@@ -1,6 +1,6 @@
 # Cloudflare deployment
 
-This deployment serves the MetaWebMCP application, its analysis and export APIs, and an isolated Playwright MCP browser runtime from one HTTPS origin.
+This deployment serves the MetaWebMCP application and its analysis/export APIs. Third-party analysis defaults to snapshots supplied by the calling agent, so the public service does not need to allocate a browser. An isolated Playwright MCP runtime remains available as an explicit opt-in.
 
 ## Deploy
 
@@ -27,7 +27,8 @@ Set `MCP_CAPABILITY_SECRET` to a randomly generated value of at least 32 bytes. 
 - The Worker handles `/health`, analysis, export, and expiring ZIP downloads.
 - `PlaywrightMCP` is a Durable Object backed by the Browser Run binding.
 - `ExportStore` is a SQLite-backed Durable Object that retains bounded, expiring ZIP archives with atomic owner claims.
-- The page uses the package's SSE endpoint so one control connection remains open for the life of the browser session.
+- When hosted browsing is enabled, the page uses the package's SSE endpoint so one control connection remains open for the life of the browser session.
+- `HOSTED_BROWSER_ENABLED=0` disables the MCP transport routes by default. Set it to `1` only when the account has suitable Browser Run capacity and abuse monitoring.
 - Browser transport requests require a same-origin, short-lived signed capability stored in an HttpOnly SameSite cookie and are limited to 60 requests per source IP per minute.
 - Browser HTTP traffic is intercepted and fulfilled through the Worker's public-Internet `fetch()` path with manual redirects, a 20-second per-request deadline, a 2 MB request cap, and an 8 MB response cap. Worker contexts, service workers, and direct socket APIs are disabled rather than allowed to bypass that route.
 - Anonymous HTML and URL analysis is limited to 30 requests per source IP per minute. URL fetches share one 12-second deadline across redirects, and Worker fetches use public Internet routing rather than zone-origin routing.
@@ -36,7 +37,7 @@ Set `MCP_CAPABILITY_SECRET` to a randomly generated value of at least 32 bytes. 
 
 ## Compatibility pins
 
-`@cloudflare/playwright-mcp` is the current Cloudflare MCP package, but its published dependency ranges resolve obsolete Browser Run and agent clients. The deployment overrides those clients with `@cloudflare/playwright@1.3.6` and `agents@0.22.0`; the latter also resolves the reviewed MCP SDK 1.30.0. The current browser client requires response tracking to keep accessibility refs actionable and returns `{ full, incremental }` from `_snapshotForAI()`, while the MCP package expects the former untracked string result. Current locators also resolve tracked refs through `_resolveSelector()` and expose a public string representation instead of the package's former private `_generateLocatorString()` helper. Screenshot responses stay in memory because the Worker runtime has no persistent filesystem. The package's origin filters are not a network security boundary, so the compatibility patch also requires `blockPrivate` deployments to provide the connection-level request handler used here. The postinstall check applies these narrow adaptations to the package's ESM and CommonJS builds, verifies the runtime pins, and fails if the upstream shapes change instead of silently applying an unsafe patch.
+`@cloudflare/playwright-mcp` is the current Cloudflare MCP package, but its published dependency ranges resolve obsolete Browser Run and agent clients. The deployment overrides those clients with `@cloudflare/playwright@1.3.6` and `agents@0.22.0`; the latter also resolves the reviewed MCP SDK 1.30.0. The compatibility patch creates the MCP connection inside each Durable Object instance because the published factory otherwise shares one protocol server across transports. It also adapts current response-tracked snapshots and locator APIs, keeps screenshots in memory, enforces the deployment tool allowlist, and requires `blockPrivate` deployments to provide the connection-level request handler used here. The postinstall check covers both ESM and CommonJS builds, verifies the runtime pins and per-instance server behavior, and fails if upstream shapes change instead of silently applying an unsafe patch.
 
 The filesystem shim covers a legacy import in the MCP package. It throws if reached; the configured CDP browser-context path does not use persistent filesystem access.
 
@@ -50,4 +51,6 @@ curl https://metawebmcp.neuryta.com/health
 
 The healthy response includes `deploymentVersion`, `sourceCommit`, `deployedAt`, and `deploymentTag`. Evidence capture rejects the deployment if those live values do not match the expected source.
 
-Then open the site, choose **Any public site**, and analyze a public HTTP or HTTPS target. A healthy deployment reports the browser runtime as connected and preserves the same session through generated-tool execution and reset.
+Then open the site, choose **Any public site**, leave **Calling agent supplies snapshot** selected, and analyze a snapshot captured from a public target. This path should work while `/health` reports `browserMcpConfigured: false`.
+
+To smoke-test the optional hosted runtime, deploy with `HOSTED_BROWSER_ENABLED=1`, select **Hosted Browser MCP**, and analyze a public HTTP or HTTPS target. A healthy enabled deployment reports the runtime as connected and preserves one isolated session through generated-tool execution and reset.

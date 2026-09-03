@@ -1,6 +1,8 @@
 # Test report
 
-Verification completed on **2026-09-03T05:29:20Z** (**2026-09-03 12:29:20, Asia/Ho_Chi_Minh**) against deployed Worker version `c5ac5494-8d79-413e-9a9c-8db3dcd3339c`, built from source commit `178f2ff8dd63dc6f1c29558f5ed36cf4798b23e8`.
+Local regression verification completed on **2026-09-03T09:46:13Z** (**2026-09-03 16:46:13, Asia/Ho_Chi_Minh**) against the working tree based on source commit `d5a231df056e98b88cb0a6cd1c92bb2b0402bda0`. At the time of this verification, these working-tree changes had not yet been deployed.
+
+The retained production-native and Lighthouse evidence below was captured earlier against deployed Worker version `c5ac5494-8d79-413e-9a9c-8db3dcd3339c`, built from source commit `178f2ff8dd63dc6f1c29558f5ed36cf4798b23e8`.
 
 ## Environment
 
@@ -18,16 +20,16 @@ Verification completed on **2026-09-03T05:29:20Z** (**2026-09-03 12:29:20, Asia/
 ## Automated results
 
 - Capture-script syntax checks: **passed**.
-- Static repository checks: **95 repository files passed**.
-- Node unit and integration tests: **51 passed, 0 failed**.
-- Evidence provenance tests: **4 passed, 0 failed**.
+- Static repository checks: **106 repository files passed**.
+- Node unit and integration tests: **85 passed, 0 failed**.
+- Evidence provenance tests: **11 passed, 0 failed**.
 - Cloudflare Worker dry-run bundle: **passed** with Browser Run, Durable Object, Rate Limit, Static Assets, and Worker Version Metadata bindings.
-- Recursive Chromium end-to-end journey: **14 checks passed** with no console or page errors.
+- Recursive Chromium end-to-end journey: **16 checks passed** with no console or page errors.
 - Generated runtime evaluations: **4 contracts evaluated, 4 passed, 0 failed, 0 skipped, 0 not run**.
-- Production Lighthouse: **100 median performance (99–100 across three mobile samples)** and **100 accessibility, best practices, SEO, and agentic browsing in every sample**. Maximum CLS was **0.000106**; console errors were **0**.
-- Independently served native export Lighthouse: **100 performance, accessibility, best practices, SEO, and agentic browsing**. CLS and console errors were **0**.
+- Retained production Lighthouse: **100 median performance (99–100 across three mobile samples)** and **100 accessibility, best practices, SEO, and agentic browsing in every sample**. Maximum CLS was **0.000106**; console errors were **0**.
+- Retained independently served native export Lighthouse: **100 performance, accessibility, best practices, SEO, and agentic browsing**. CLS and console errors were **0**.
 
-The Node suite covers HTML and accessibility-snapshot analysis, complete form containment, required and constrained fields, rejection of ambiguous forms, repeated item-action grouping, bounded input-to-reference mappings, current and legacy Playwright reference schemas, response-scoped reference refresh, consequential-action classification, untrusted metadata containment, ZIP generation with portable Unix modes, runnable owner bundles, unsafe bundle rejection, public-network target validation across reserved IPv4 and IPv6 ranges, DNS validation and proxy pinning, navigation and redirect validation, Streamable HTTP and long-lived SSE MCP clients, serialized operations, server-side workspace isolation, signed capability expiry and tamper rejection, cookie attributes, page-owned MCP session reuse and closure, capability-owned single-use exports, and deployment provenance enforcement.
+The Node suite covers HTML and accessibility-snapshot analysis, caller-browser recipe rendering, complete form containment, required and constrained fields, rejection of ambiguous forms, repeated item-action grouping, bounded input-to-reference mappings, current and legacy Playwright reference schemas, response-scoped reference refresh, consequential-action classification, untrusted metadata containment, ZIP generation with portable Unix modes, runnable owner bundles, unsafe bundle rejection, public-network target validation across reserved IPv4 and IPv6 ranges, DNS validation and proxy pinning, navigation and redirect validation, Streamable HTTP and long-lived SSE MCP clients, failed-analysis teardown, serialized operations, server-side workspace isolation, Cloudflare hosted-browser opt-in policy, signed capability expiry and tamper rejection, cookie attributes, page-owned MCP session reuse and closure, capability-owned single-use exports, and deployment provenance enforcement. The Cloudflare compatibility check also executes the patched agent factory and proves that two Durable Object instances receive distinct MCP protocol servers.
 
 The deterministic browser journey verifies:
 
@@ -61,9 +63,9 @@ The deployed Browser MCP routes were also checked at their HTTP boundary. Ninete
 
 Exact production-native records are retained in [`evidence/native-webmcp-result.json`](evidence/native-webmcp-result.json), [`evidence/relay-sessions-webmcp.zip`](evidence/relay-sessions-webmcp.zip), and [`evidence/deployment-security-gates.json`](evidence/deployment-security-gates.json).
 
-## Public-site Browser MCP validation
+## Opt-in hosted Browser MCP validation
 
-The production Cloudflare deployment was exercised through Chrome's native `document.modelContext`, MetaWebMCP's generated semantic tools, and its page-owned Playwright MCP session:
+Before hosted browsing became opt-in, the production Cloudflare deployment was exercised through Chrome's native `document.modelContext`, MetaWebMCP's generated semantic tools, and its page-owned Playwright MCP session:
 
 | Public target | Generated tool | Observed result |
 |---|---|---|
@@ -97,4 +99,4 @@ The deterministic browser suite injects a narrow implementation of the documente
 
 The separate production-native run proves the current Chrome boundary without treating the deterministic mock as browser-native evidence. Native discovery in any particular client still depends on that client's WebMCP availability and rollout.
 
-The Browser MCP clients are tested against Streamable HTTP JSON/event responses and a long-lived SSE control connection, including session reuse, closure, concurrency, page-owned execution, capability binding, and server-side workspace isolation. The hosted Cloudflare path completed three live-site journeys with semantic postconditions and target screenshots. Verification inside ChatGPT's built-in browser remains client-specific and is therefore described in the usage instructions rather than represented as an automated result.
+The caller-browser path is tested through the native `meta_analyze_site` surface, including snapshot analysis, generated recipe handoff, explicit `completed: false` reporting, and skipped hosted verification. Browser MCP clients remain tested against Streamable HTTP JSON/event responses and a long-lived SSE control connection, including session reuse, failure cleanup, closure, concurrency, page-owned execution, capability binding, and server-side workspace isolation. The opt-in hosted Cloudflare path previously completed three live-site journeys with semantic postconditions and target screenshots. Verification inside ChatGPT's built-in browser remains client-specific and is therefore described in the usage instructions rather than represented as an automated result.

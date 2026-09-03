@@ -13,6 +13,10 @@ export const BROWSER_MCP_TOOL_NAMES = Object.freeze([
 
 const BROWSER_MCP_TOOL_SET = new Set(BROWSER_MCP_TOOL_NAMES);
 
+export function hostedBrowserEnabled(bindings) {
+  return bindings?.HOSTED_BROWSER_ENABLED === '1';
+}
+
 export function isBlockedBrowserHostname(rawHostname) {
   return isBlockedPublicHostname(rawHostname);
 }

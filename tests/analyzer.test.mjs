@@ -168,6 +168,22 @@ test('accessibility snapshot analysis produces browser MCP recipes', () => {
   ]);
 });
 
+test('snapshot analysis explains unnamed actions instead of generating a generic button tool', () => {
+  const result = analyzeAccessibilitySnapshot({
+    snapshot: `- main "Property search"
+  - textbox "Busca por ubicación o palabra clave" [ref=e1]
+  - button [ref=e2]
+  - button "Buscar por código" [ref=e3]`,
+    url: 'https://property.example/',
+    goal: 'Search for a property.',
+  });
+
+  assert.equal(result.capabilities.some((capability) => capability.name === 'button'), false);
+  assert.equal(result.capabilities.some((capability) => capability.name === 'buscar_por_codigo'), true);
+  assert.equal(result.warnings.some((warning) => /no accessible name/i.test(warning)), true);
+  assert.equal(result.warnings.some((warning) => /could not be associated/i.test(warning)), true);
+});
+
 test('accessibility snapshot analysis rejects oversized and control-heavy input', () => {
   assert.throws(
     () => analyzeAccessibilitySnapshot({ snapshot: 'x'.repeat(250_001) }),

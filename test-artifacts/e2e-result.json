@@ -1,8 +1,10 @@
 {
-  "baseUrl": "http://127.0.0.1:48161",
+  "baseUrl": "http://127.0.0.1:33719",
   "checks": [
     "server health endpoint",
     "native client prerequisites, readable judge guidance, and responsive five-step fallback",
+    "workspace reset awaits browser cleanup without requiring a successful analysis",
+    "calling-agent snapshot analysis and delegated browser recipe",
     "mode controls expose pressed-button semantics and native keyboard activation",
     "fallback contains untrusted evidence, prevents risk downgrades, requires reviewed metadata, and keeps skipped verification incomplete after export",
     "seven native meta-tools; target has no WebMCP registry",
@@ -150,7 +152,7 @@
       {
         "tool": "add_session_to_itinerary",
         "status": "passed",
-        "durationMs": 72,
+        "durationMs": 75,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -219,7 +221,7 @@
       {
         "tool": "inspect_itinerary",
         "status": "passed",
-        "durationMs": 1,
+        "durationMs": 3,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -288,7 +290,7 @@
       {
         "tool": "clear_itinerary",
         "status": "passed",
-        "durationMs": 72,
+        "durationMs": 75,
         "checks": [
           {
             "name": "registered in generated tool registry",

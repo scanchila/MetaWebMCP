@@ -17,6 +17,7 @@ import { ExportStore } from './export-store.mjs';
 import { MAX_EXPORT_ARCHIVE_BYTES } from './export-store-core.mjs';
 import {
   BROWSER_MCP_TOOL_NAMES,
+  hostedBrowserEnabled,
   validateBrowserTransportMessage,
   validatePublicTarget,
 } from './browser-transport-policy.mjs';
@@ -262,7 +263,7 @@ async function handleApi(request, bindings, pathname, browserCapability) {
     return json({
       ok: true,
       service: 'MetaWebMCP',
-      browserMcpConfigured: true,
+      browserMcpConfigured: hostedBrowserEnabled(bindings),
       runtime: 'cloudflare',
       deploymentVersion,
       sourceCommit,
@@ -274,9 +275,9 @@ async function handleApi(request, bindings, pathname, browserCapability) {
   if (pathname === '/api/config' && request.method === 'GET') {
     return json({
       ok: true,
-      browserMcpConfigured: true,
-      browserMcpEndpoint: '/sse',
-      browserMcpTransport: 'sse',
+      browserMcpConfigured: hostedBrowserEnabled(bindings),
+      browserMcpEndpoint: hostedBrowserEnabled(bindings) ? '/sse' : '',
+      browserMcpTransport: hostedBrowserEnabled(bindings) ? 'sse' : 'none',
       allowPrivateTargets: false,
     });
   }
@@ -296,7 +297,20 @@ async function handleApi(request, bindings, pathname, browserCapability) {
       analysis.source.kind = 'url';
       return json({ ok: true, analysis });
     }
-    throw new Error('source must be “url” or “html”.');
+    if (body.source === 'agent_snapshot') {
+      const snapshot = String(body.snapshot || '');
+      if (!snapshot.trim()) throw new Error('A caller-supplied accessibility snapshot is required.');
+      const target = validatePublicTarget(body.url);
+      const analysis = analyzeAccessibilitySnapshot({
+        snapshot,
+        url: target.href,
+        goal: String(body.goal || ''),
+      });
+      analysis.source.kind = 'agent_snapshot';
+      analysis.warnings.push('The calling agent supplied this snapshot and remains responsible for live browser execution and verification.');
+      return json({ ok: true, analysis });
+    }
+    throw new Error('source must be “url”, “html”, or “agent_snapshot”.');
   }
 
   if (pathname === '/api/mcp/analyze-snapshot' && request.method === 'POST') {
@@ -419,12 +433,14 @@ export default {
         : null;
       if (pathname === '/mcp') {
         if (!sameOrigin(request)) return json({ ok: false, error: 'Same-origin browser session required.' }, { status: 403 });
+        if (!hostedBrowserEnabled(bindings)) return json({ ok: false, error: 'Hosted Browser MCP is disabled. Supply an agent_snapshot instead.' }, { status: 503 });
         if (!await browserRequestWithinLimit(request, bindings)) return json({ ok: false, error: 'Browser request limit reached.' }, { status: 429 });
         await validateBrowserTransportRequest(request);
         return PlaywrightMCP.serve('/mcp').fetch(request, bindings, context);
       }
       if (pathname === '/sse' || pathname === '/sse/message') {
         if (!sameOrigin(request)) return json({ ok: false, error: 'Same-origin browser session required.' }, { status: 403 });
+        if (!hostedBrowserEnabled(bindings)) return json({ ok: false, error: 'Hosted Browser MCP is disabled. Supply an agent_snapshot instead.' }, { status: 503 });
         if (!await browserRequestWithinLimit(request, bindings)) return json({ ok: false, error: 'Browser request limit reached.' }, { status: 429 });
         await validateBrowserTransportRequest(request);
         return PlaywrightMCP.serveSSE('/sse').fetch(request, bindings, context);

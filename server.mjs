@@ -368,7 +368,20 @@ async function handleApi(req, res, pathname, searchParams) {
         result.source.url = fetched.finalUrl;
         return sendJson(res, 200, { ok: true, analysis: result });
       }
-      throw new Error('source must be “url” or “html”.');
+      if (body.source === 'agent_snapshot') {
+        const snapshot = String(body.snapshot || '');
+        if (!snapshot.trim()) throw new Error('A caller-supplied accessibility snapshot is required.');
+        const target = await validateBrowserTarget(body.url, { allowPrivate: false });
+        const result = analyzeAccessibilitySnapshot({
+          snapshot,
+          url: target.href,
+          goal: String(body.goal || ''),
+        });
+        result.source.kind = 'agent_snapshot';
+        result.warnings.push('The calling agent supplied this snapshot and remains responsible for live browser execution and verification.');
+        return sendJson(res, 200, { ok: true, analysis: result });
+      }
+      throw new Error('source must be “url”, “html”, or “agent_snapshot”.');
     } finally {
       releaseAnalysisSlot();
     }

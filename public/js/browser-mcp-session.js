@@ -87,33 +87,42 @@ export class BrowserMcpSession {
   }
 
   async analyze({ url, goal, workspaceId }) {
-    const client = await this.directClient();
-    if (!client) {
-      const payload = await this.json('/api/mcp/analyze', {
+    try {
+      const client = await this.directClient();
+      if (!client) {
+        const payload = await this.json('/api/mcp/analyze', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ url, goal, workspaceId }),
+        });
+        return payload.analysis;
+      }
+
+      const targetUrl = normalizedTargetUrl(url);
+      const tools = await client.listTools();
+      const available = new Set(tools.map((tool) => tool.name));
+      for (const required of REQUIRED_TOOLS) {
+        if (!available.has(required)) throw new Error(`Connected MCP server does not expose required tool ${required}.`);
+      }
+      await client.callTool('browser_navigate', { url: targetUrl });
+      const snapshot = flattenMcpText(await client.callTool('browser_snapshot', {}));
+      const payload = await this.json('/api/mcp/analyze-snapshot', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ url, goal, workspaceId }),
+        body: JSON.stringify({ snapshot, url: targetUrl, goal }),
       });
-      return payload.analysis;
+      return {
+        ...payload.analysis,
+        mcp: { endpointConfigured: true, transport: 'page', availableTools: [...available].sort() },
+      };
+    } catch (error) {
+      await this.reset(workspaceId).catch(() => {});
+      const detail = error instanceof Error ? error.message : String(error);
+      if (/\b429\b|rate limit|request limit/i.test(detail)) {
+        throw new Error('Hosted browser capacity is unavailable. Retry after the service limit resets, or use source "agent_snapshot" with a snapshot from the calling agent’s browser.');
+      }
+      throw error;
     }
-
-    const targetUrl = normalizedTargetUrl(url);
-    const tools = await client.listTools();
-    const available = new Set(tools.map((tool) => tool.name));
-    for (const required of REQUIRED_TOOLS) {
-      if (!available.has(required)) throw new Error(`Connected MCP server does not expose required tool ${required}.`);
-    }
-    await client.callTool('browser_navigate', { url: targetUrl });
-    const snapshot = flattenMcpText(await client.callTool('browser_snapshot', {}));
-    const payload = await this.json('/api/mcp/analyze-snapshot', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ snapshot, url: targetUrl, goal }),
-    });
-    return {
-      ...payload.analysis,
-      mcp: { endpointConfigured: true, transport: 'page', availableTools: [...available].sort() },
-    };
   }
 
   async execute({ executor, input, workspaceId }) {
@@ -136,6 +145,7 @@ export class BrowserMcpSession {
   }
 
   async reset(workspaceId) {
+    if (!this.client && !this.configurationPromise) return { ok: true, closed: false };
     const configuration = await this.configuration();
     if (this.client) {
       const client = this.client;
@@ -148,8 +158,9 @@ export class BrowserMcpSession {
       } finally {
         await client.close().catch(() => {});
       }
-      return { ok: true };
+      return { ok: true, closed: true };
     }
+    if (configuration.browserMcpEndpoint) return { ok: true, closed: false };
     if (!configuration.browserMcpConfigured) return { ok: true };
     return this.json('/api/mcp/reset', {
       method: 'POST',

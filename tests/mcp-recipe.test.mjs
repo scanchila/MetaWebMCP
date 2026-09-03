@@ -1,13 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { runMcpRecipe } from '../public/js/mcp-recipe.js';
+import { prepareMcpRecipe, runMcpRecipe } from '../public/js/mcp-recipe.js';
 
 const availableTools = new Set([
   'browser_type',
   'browser_click',
   'browser_snapshot',
 ]);
+
+test('browser recipes can be rendered for execution by the calling agent', () => {
+  const steps = prepareMcpRecipe({
+    executor: {
+      type: 'mcp-recipe',
+      steps: [
+        { tool: 'browser_type', arguments: { element: 'Query', ref: 'e1', text: '{{query}}' } },
+        { tool: 'browser_click', arguments: { element: 'Search', ref: 'e2' } },
+        { tool: 'browser_snapshot', arguments: {} },
+      ],
+    },
+    input: { query: 'apartments in Bogotá' },
+  });
+
+  assert.deepEqual(steps, [
+    { tool: 'browser_type', arguments: { element: 'Query', ref: 'e1', text: 'apartments in Bogotá' } },
+    { tool: 'browser_click', arguments: { element: 'Search', ref: 'e2' } },
+    { tool: 'browser_snapshot', arguments: {} },
+  ]);
+});
 
 test('multi-step browser recipes refresh response-scoped refs by exact accessible name', async () => {
   const calls = [];

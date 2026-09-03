@@ -29,12 +29,12 @@
         <div class="section-heading target-heading">
           <span class="eyebrow">Build brief</span>
           <h2 id="target-title">Choose a surface.</h2>
-          <p>Start with a page you own, or observe a public site through an isolated browser session.</p>
+          <p>Start with a page you own, or bring an observation from the calling agent’s browser.</p>
         </div>
 
         <div class="mode-switch" role="group" aria-label="MetaWebMCP mode">
           <button id="owner-mode" class="mode-button" type="button" aria-pressed="true"><strong>Owned page</strong><small>Native export</small></button>
-          <button id="adapter-mode" class="mode-button" type="button" aria-pressed="false"><strong>Any public site</strong><small>Browser adapter</small></button>
+          <button id="adapter-mode" class="mode-button" type="button" aria-pressed="false"><strong>Any public site</strong><small>Caller browser</small></button>
         </div>
 
         <div id="owner-source-controls" class="source-controls">
@@ -46,6 +46,14 @@
           </select>
         </div>
 
+        <div id="adapter-source-controls" class="source-controls hidden">
+          <label class="field-label" for="adapter-source-kind">Browser responsibility</label>
+          <select id="adapter-source-kind">
+            <option value="agent_snapshot">Calling agent supplies snapshot</option>
+            <option value="browser_mcp">Hosted Browser MCP · opt-in</option>
+          </select>
+        </div>
+
         <div id="url-field" class="field hidden">
           <label class="field-label" for="target-url">Target URL</label>
           <input id="target-url" type="url" placeholder="https://example.com" autocomplete="url">
@@ -54,6 +62,12 @@
         <div id="html-field" class="field hidden">
           <label class="field-label" for="target-html">Target HTML</label>
           <textarea id="target-html" rows="7" spellcheck="false" placeholder="Paste the page HTML here…"></textarea>
+        </div>
+
+        <div id="snapshot-field" class="field hidden">
+          <label class="field-label" for="target-snapshot">Accessibility snapshot</label>
+          <textarea id="target-snapshot" rows="7" spellcheck="false" placeholder="Have the calling agent navigate to the target, capture its accessibility snapshot, and pass or paste it here…"></textarea>
+          <small class="field-help">The target stays in the caller’s browser. MetaWebMCP receives only this bounded observation.</small>
         </div>
 
         <div class="field">
@@ -79,7 +93,7 @@
           <pre id="snapshot-preview" class="snapshot-preview hidden" aria-label="Browser MCP snapshot"></pre>
           <div id="stage-placeholder" class="stage-placeholder hidden">
             <strong>Static integration analysis</strong>
-            <p>MetaWebMCP can inspect the HTML and export native code. Activate through Browser MCP to operate a third-party origin.</p>
+            <p>MetaWebMCP can inspect supplied evidence and export native code. Third-party actions stay with the calling agent unless a hosted browser is explicitly enabled.</p>
           </div>
         </div>
       </section>
@@ -88,7 +102,7 @@
         <div class="section-heading conversation-heading">
           <span class="eyebrow">Meta workspace / 01</span>
           <h1 id="build-title">Turn a website into an interface agents can use.</h1>
-          <p>Observe the real UI, shape narrow tools, run them now, then ship the same contracts as native code.</p>
+          <p>Observe the real UI, shape narrow tools, prepare or run them, then ship the same contracts as native code.</p>
         </div>
 
         <details id="client-guide" class="client-guide">

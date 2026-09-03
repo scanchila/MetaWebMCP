@@ -1,4 +1,4 @@
-import { analyzeControlledDemo, analyzeStaticSource, analyzeThroughBrowserMcp } from './demo-analyzer.js';
+import { analyzeAgentSnapshot, analyzeControlledDemo, analyzeStaticSource, analyzeThroughBrowserMcp } from './demo-analyzer.js';
 import { ToolRegistry, compactRegistryState, executeGeneratedSpec } from './webmcp-runtime.js';
 import { browserMcpSession } from './browser-mcp-session.js';
 
@@ -10,11 +10,15 @@ const elements = {
   ownerMode: $('#owner-mode'),
   adapterMode: $('#adapter-mode'),
   ownerSourceControls: $('#owner-source-controls'),
+  adapterSourceControls: $('#adapter-source-controls'),
+  adapterSourceKind: $('#adapter-source-kind'),
   sourceKind: $('#source-kind'),
   urlField: $('#url-field'),
   targetUrl: $('#target-url'),
   htmlField: $('#html-field'),
   targetHtml: $('#target-html'),
+  snapshotField: $('#snapshot-field'),
+  targetSnapshot: $('#target-snapshot'),
   goal: $('#goal'),
   analyzeButton: $('#analyze-button'),
   mcpNotice: $('#mcp-notice'),
@@ -184,19 +188,29 @@ function renderSourceControls() {
   elements.ownerMode.setAttribute('aria-pressed', String(!adapter));
   elements.adapterMode.setAttribute('aria-pressed', String(adapter));
   elements.ownerSourceControls.classList.toggle('hidden', adapter);
-  elements.mcpNotice.classList.toggle('hidden', !adapter);
+  elements.adapterSourceControls.classList.toggle('hidden', !adapter);
 
-  const source = adapter ? 'browser_mcp' : elements.sourceKind.value;
+  const source = adapter ? elements.adapterSourceKind.value : elements.sourceKind.value;
   state.sourceKind = source;
   elements.urlField.classList.toggle('hidden', !(adapter || source === 'url'));
   elements.htmlField.classList.toggle('hidden', source !== 'html');
+  elements.snapshotField.classList.toggle('hidden', source !== 'agent_snapshot');
+  elements.mcpNotice.classList.toggle('hidden', !adapter);
+  if (source === 'agent_snapshot') {
+    elements.mcpNotice.classList.remove('connected', 'error');
+    elements.mcpTitle.textContent = 'Caller-controlled browser';
+    elements.mcpCopy.textContent = 'Navigate and capture the target with the calling agent, then supply the accessibility snapshot. This uses no hosted browser quota.';
+  } else if (!state.browserMcp.checked) {
+    elements.mcpTitle.textContent = 'Hosted Browser MCP';
+    elements.mcpCopy.textContent = 'Checking the optional hosted browser runtime.';
+  }
   renderTargetStage();
 }
 
 function renderTargetStage() {
-  const source = state.mode === 'adapter' ? 'browser_mcp' : state.sourceKind;
+  const source = state.mode === 'adapter' ? elements.adapterSourceKind.value : state.sourceKind;
   const isDemo = source === 'demo';
-  const isBrowser = source === 'browser_mcp';
+  const isBrowser = ['agent_snapshot', 'browser_mcp'].includes(source);
   elements.targetFrame.classList.toggle('hidden', !isDemo);
   elements.snapshotPreview.classList.toggle('hidden', !isBrowser);
   elements.stagePlaceholder.classList.toggle('hidden', isDemo || isBrowser);
@@ -206,7 +220,9 @@ function renderTargetStage() {
     elements.stageState.textContent = state.activated ? `${state.contracts.length} tools via parent` : 'No WebMCP';
   } else if (isBrowser) {
     const latestSnapshot = typeof state.latestTargetState === 'string' ? state.latestTargetState : '';
-    elements.stageLabel.textContent = 'Isolated Browser MCP session';
+    elements.stageLabel.textContent = source === 'agent_snapshot'
+      ? 'Caller-supplied browser snapshot'
+      : 'Isolated hosted Browser MCP session';
     elements.stageState.textContent = latestSnapshot
       ? 'Latest tool result'
       : state.activated ? `${state.contracts.length} virtual tools` : 'External target unchanged';
@@ -446,30 +462,41 @@ function compactAnalysis(analysis) {
 
 function resolveAnalysisRequest(input) {
   const requested = input.source && input.source !== 'current' ? input.source : null;
-  const source = requested || (state.mode === 'adapter' ? 'browser_mcp' : elements.sourceKind.value);
+  const source = requested || (state.mode === 'adapter' ? elements.adapterSourceKind.value : elements.sourceKind.value);
   return {
     source,
     goal: String(input.goal ?? elements.goal.value).trim(),
     url: String(input.url ?? elements.targetUrl.value).trim(),
     html: String(input.html ?? elements.targetHtml.value),
+    snapshot: String(input.snapshot ?? elements.targetSnapshot.value),
   };
 }
 
 async function analyzeTarget(input = {}) {
   const request = resolveAnalysisRequest(input);
   if (!request.goal) throw new Error('Describe what agents should be able to accomplish.');
-  if (['url', 'browser_mcp'].includes(request.source) && !request.url) throw new Error('A target URL is required.');
+  if (['url', 'agent_snapshot', 'browser_mcp'].includes(request.source) && !request.url) throw new Error('A target URL is required.');
   if (request.source === 'html' && !request.html.trim()) throw new Error('Paste target HTML before analysis.');
+  if (request.source === 'agent_snapshot' && !request.snapshot.trim()) throw new Error('Supply an accessibility snapshot captured by the calling agent.');
+
+  const adapterSource = ['agent_snapshot', 'browser_mcp'].includes(request.source);
+  state.mode = adapterSource ? 'adapter' : 'owner';
+  if (adapterSource) elements.adapterSourceKind.value = request.source;
+  else if (['demo', 'url', 'html'].includes(request.source)) elements.sourceKind.value = request.source;
+  renderSourceControls();
 
   elements.goal.value = request.goal;
-  if (['url', 'browser_mcp'].includes(request.source)) elements.targetUrl.value = request.url;
+  if (['url', 'agent_snapshot', 'browser_mcp'].includes(request.source)) elements.targetUrl.value = request.url;
   if (request.source === 'html') elements.targetHtml.value = request.html;
+  if (request.source === 'agent_snapshot') elements.targetSnapshot.value = request.snapshot;
 
   clearBuildState({ keepTrace: true });
   addTrace('Observing target', `Source: ${request.source}. Goal: ${request.goal}`, 'warning');
   let analysis;
   if (request.source === 'demo') {
     analysis = await analyzeControlledDemo(elements.targetFrame, request.goal);
+  } else if (request.source === 'agent_snapshot') {
+    analysis = await analyzeAgentSnapshot({ url: request.url, goal: request.goal, snapshot: request.snapshot });
   } else if (request.source === 'browser_mcp') {
     analysis = await analyzeThroughBrowserMcp({ url: request.url, goal: request.goal, workspaceId });
   } else {
@@ -575,10 +602,18 @@ async function activateWebMcp() {
         ...context,
         getTargetDocument,
         allowConsequential: false,
+        browserExecution: state.analysis?.source?.kind === 'agent_snapshot' ? 'agent' : 'managed',
+        targetUrl: state.analysis?.source?.url || '',
         workspaceId,
       });
       state.latestTargetState = clone(result.state || result.result || result);
-      addTrace(`Executed ${spec.name}`, `Generated ${spec.risk} tool completed through ${spec.executor.type}.`);
+      addTrace(
+        result.completed === false ? `Prepared ${spec.name}` : `Executed ${spec.name}`,
+        result.completed === false
+          ? 'Returned a bounded recipe for the calling agent’s browser; no remote action was claimed.'
+          : `Generated ${spec.risk} tool completed through ${spec.executor.type}.`,
+        result.completed === false ? 'warning' : 'success',
+      );
       renderTargetStage();
       return result;
     }, { origin: GENERATED_ORIGIN });
@@ -643,6 +678,9 @@ async function testWebMcp(input = {}) {
     } else if (spec.risk === 'consequential') {
       status = 'skipped';
       reason = 'Consequential actions are deliberately not auto-executed.';
+    } else if (state.analysis?.source?.kind === 'agent_snapshot' && spec.executor.type === 'mcp-recipe') {
+      status = 'skipped';
+      reason = 'Live execution and visible-state verification belong to the calling agent’s browser in this mode.';
     } else if (spec.executor.type !== 'mcp-recipe' && !getTargetDocument()) {
       status = 'skipped';
       reason = 'Static DOM exports must be executed inside the owned target application.';
@@ -742,7 +780,7 @@ async function exportWebMcp(input = {}) {
       tools: state.contracts,
       target: state.analysis?.source || {},
       goal: state.analysis?.goal || elements.goal.value,
-      mode: state.analysis?.source?.kind === 'browser_mcp' ? 'browser_mcp' : 'native',
+      mode: ['agent_snapshot', 'browser_mcp'].includes(state.analysis?.source?.kind) ? 'browser_mcp' : 'native',
       ownerBundle,
     }),
   });
@@ -782,27 +820,30 @@ function getMetaState() {
 async function resetWorkspace() {
   registry.unregisterOrigin(GENERATED_ORIGIN);
   try { elements.targetFrame.contentWindow?.demoApp?.reset(); } catch { /* The demo may still be loading. */ }
-  if (state.analysis?.source?.kind === 'browser_mcp') {
-    browserMcpSession.reset(workspaceId).catch(() => {});
-  }
+  const browserReset = await browserMcpSession.reset(workspaceId).catch((error) => ({
+    ok: false,
+    error: error instanceof Error ? error.message : String(error),
+  }));
   clearBuildState({ keepTrace: false });
   addTrace('Workspace reset', 'The meta-tool control plane remains registered; generated tools and project state were removed.');
-  return { ok: true, remainingTools: registry.list().map((tool) => tool.name) };
+  if (browserReset.ok === false) addTrace('Browser cleanup incomplete', browserReset.error, 'warning');
+  return { ok: true, browserReset, remainingTools: registry.list().map((tool) => tool.name) };
 }
 
 const metaTools = [
   {
     spec: {
       name: 'meta_analyze_site',
-      description: 'Observe the selected website source and return evidence-backed candidate workflows that can become WebMCP tools. Call this first.',
+      description: 'Observe a website source and return evidence-backed candidate workflows. For a third-party site, prefer agent_snapshot: navigate with the calling agent’s browser and supply its accessibility snapshot. Call this first.',
       risk: 'read',
       inputSchema: {
         type: 'object',
         properties: {
-          source: { type: 'string', enum: ['current', 'demo', 'url', 'html', 'browser_mcp'], description: 'Use current to read the mode selected in the MetaWebMCP interface.' },
+          source: { type: 'string', enum: ['current', 'demo', 'url', 'html', 'agent_snapshot', 'browser_mcp'], description: 'Use agent_snapshot when the calling agent can navigate the target and supply its own accessibility snapshot. Use browser_mcp only for an explicitly configured hosted runtime.' },
           goal: { type: 'string', description: 'What agents should be able to accomplish on the target site.' },
-          url: { type: 'string', description: 'Required for URL or Browser MCP analysis.' },
+          url: { type: 'string', description: 'Required for URL, agent-snapshot, or Browser MCP analysis.' },
           html: { type: 'string', description: 'Required when source is html.' },
+          snapshot: { type: 'string', maxLength: 250000, description: 'Accessibility snapshot captured from the target by the calling agent. Required for agent_snapshot.' },
         },
         additionalProperties: false,
       },
@@ -917,7 +958,7 @@ async function checkBrowserMcp() {
     } else {
       elements.mcpNotice.classList.add('error');
       elements.mcpTitle.textContent = 'Browser MCP optional';
-      elements.mcpCopy.textContent = 'This deployment has no browser runtime configured. The controlled demo and native exports remain available.';
+      elements.mcpCopy.textContent = 'Hosted browsing is disabled. Select Calling agent supplies snapshot to analyze public sites without deployment browser quota.';
     }
   } catch (error) {
     state.browserMcp = { checked: true, configured: false, tools: [] };
@@ -927,20 +968,36 @@ async function checkBrowserMcp() {
   }
 }
 
-function switchMode(mode) {
+async function switchMode(mode) {
   if (!['owner', 'adapter'].includes(mode) || state.mode === mode) return;
+  await browserMcpSession.reset(workspaceId).catch((error) => {
+    addTrace('Browser cleanup incomplete', error instanceof Error ? error.message : String(error), 'warning');
+  });
   state.mode = mode;
   clearBuildState({ keepTrace: false });
   renderSourceControls();
   addTrace(mode === 'owner' ? 'Owner mode selected' : 'Any-site adapter mode selected', mode === 'owner'
     ? 'Analyze a controlled demo, public HTML, or pasted HTML and export native WebMCP code.'
-    : 'Use a standard browser MCP server as the low-level runtime behind generated semantic tools.');
-  if (mode === 'adapter') checkBrowserMcp();
+    : 'Supply a snapshot from the calling agent’s browser, or explicitly select the optional hosted adapter.');
+  if (mode === 'adapter' && elements.adapterSourceKind.value === 'browser_mcp') await checkBrowserMcp();
 }
 
 function bindEvents() {
-  elements.ownerMode.addEventListener('click', () => switchMode('owner'));
-  elements.adapterMode.addEventListener('click', () => switchMode('adapter'));
+  elements.ownerMode.addEventListener('click', () => switchMode('owner').catch((error) => addTrace('Mode change failed', error.message, 'error')));
+  elements.adapterMode.addEventListener('click', () => switchMode('adapter').catch((error) => addTrace('Mode change failed', error.message, 'error')));
+  elements.adapterSourceKind.addEventListener('change', async () => {
+    await browserMcpSession.reset(workspaceId).catch(() => {});
+    state.sourceKind = elements.adapterSourceKind.value;
+    clearBuildState({ keepTrace: false });
+    renderSourceControls();
+    addTrace(
+      state.sourceKind === 'agent_snapshot' ? 'Caller browser selected' : 'Hosted browser selected',
+      state.sourceKind === 'agent_snapshot'
+        ? 'The calling agent supplies the target accessibility snapshot and performs live actions.'
+        : 'The deployment will use its explicitly enabled Browser MCP runtime.',
+    );
+    if (state.sourceKind === 'browser_mcp') await checkBrowserMcp();
+  });
   elements.sourceKind.addEventListener('change', () => {
     state.sourceKind = elements.sourceKind.value;
     clearBuildState({ keepTrace: false });

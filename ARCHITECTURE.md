@@ -26,7 +26,7 @@ meta_activate_webmcp
   └─ emit registry change
 
 <generated tool>
-  └─ execute against controlled DOM or Browser MCP recipe
+  └─ execute against controlled DOM, hosted Browser MCP, or return a caller-browser recipe
 
 meta_test_webmcp
   └─ discovery + schema + execution + visible-state checks
@@ -35,7 +35,7 @@ meta_export_webmcp
   └─ standalone repository ZIP from the same ToolSpec[]
 ```
 
-The same tool contract drives immediate execution and native export. There is no separate hard-coded export model. Browser-derived recipes use MCP references while the session is open and accessible-name/item-context resolution after installation in an owned page. When target source is available, the export also bundles the target page and assets, installs the generated module into the top-level document, and retains a separate integration report for review. The browser suite exercises both virtual execution and standalone native exports.
+The same tool contract drives activation and native export. There is no separate hard-coded export model. Hosted browser recipes execute while their MCP session is open. Caller-browser recipes are returned as an explicit, incomplete handoff for the invoking agent to execute. After installation in an owned page, both forms use accessible-name/item-context resolution without MetaWebMCP. When target source is available, the export also bundles the target page and assets, installs the generated module into the top-level document, and retains a separate integration report for review.
 
 ## ToolSpec
 
@@ -77,33 +77,25 @@ Static URL and pasted-HTML modes are export-oriented. A DOM adapter can only exe
 ## Any-site mode
 
 ```text
-WebMCP agent
-    │ semantic tool call
+Calling agent's browser
+    │ navigate + accessibility snapshot
     ▼
-MetaWebMCP top-level generated tool
-    │ shared allowlisted recipe interpreter
+meta_analyze_site(source: agent_snapshot)
+    │ reviewed ToolSpecs
     ▼
-Page-scoped MCP client ── same-origin /mcp
-          or
-Node workspace bridge ── configured MCP endpoint
-    │ tools/call
+Generated semantic tool
+    │ bounded recipe, completed: false
     ▼
-Isolated Playwright MCP server
-    │ HTTP(S), no direct external route
-    ▼
-DNS-validating egress proxy
-    │ address-pinned public connection
-    ▼
-Third-party site
+Calling agent executes and verifies in its retained target session
 ```
 
-Initial analysis owns the `browser_navigate` and `browser_snapshot` calls. MetaWebMCP parses interactive roles and references into candidate semantic tools, whose recipes can use only snapshot, type, click, select, and wait operations. Caller-provided recipes cannot navigate or open URL-bearing tabs.
+Caller-browser mode is the public default. MetaWebMCP receives only a bounded accessibility snapshot and target URL; it does not allocate a browser or receive the caller's browser credentials. It parses interactive roles and references into candidate semantic tools. Active tools return only snapshot, type, click, select, and wait steps. They never claim completion until the calling agent performs and verifies the work. Recipes cannot navigate or open URL-bearing tabs.
 
-On the hosted path, one `BrowserMcpSession` instance lives in the top-level page. It retains the MCP session identifier across analysis and every generated semantic tool call, then closes that session on reset. This aligns browser lifetime with the ChatGPT-opened page and avoids depending on process-local state in a serverless deployment.
+The optional hosted path uses one `BrowserMcpSession` in the top-level page. It retains the MCP session identifier across analysis and every generated semantic tool call, automatically closes failed analyses, and is awaited on reset. Each Cloudflare Durable Object instance creates its own MCP protocol server so transports cannot share connection state.
 
 The Node deployment remains compatible with a separate Playwright MCP service. In that layout, each open page receives a random workspace identifier and a distinct server-side client/session. Resetting or expiring one workspace closes only that session. Both layouts use the same MCP client and recipe interpreter. The supplied Compose Playwright container has only an internal network, and Chromium is configured to send HTTP and HTTPS through a proxy that validates all DNS answers and pins the socket to the selected public address. An external browser endpoint must provide an equivalent boundary before the Node bridge can be enabled.
 
-The public deployment mounts Cloudflare's Playwright MCP agent as a Durable Object alongside the static application. Its Browser Run binding creates an isolated, non-persistent browser context. A long-lived SSE connection ties that context to the page; reset and page teardown issue `browser_close`. Same-origin checks and an edge rate-limit binding guard the transport route. The agent advertises only the eight operations used by the product and evidence capture. Transport validation checks explicit navigation targets, while browser-context routing blocks direct local, private, reserved, and common metadata destinations reached through redirects or page actions.
+The public deployment mounts Cloudflare's Playwright MCP agent as a Durable Object alongside the static application, but its routes are disabled unless `HOSTED_BROWSER_ENABLED=1`. When enabled, the Browser Run binding creates an isolated, non-persistent browser context. A long-lived SSE connection ties that context to the page; failed analysis, reset, and page teardown issue `browser_close`. Same-origin checks and an edge rate-limit binding guard the transport route. The agent advertises only the eight operations used by the product and evidence capture. Transport validation checks explicit navigation targets, while browser-context routing blocks direct local, private, reserved, and common metadata destinations reached through redirects or page actions.
 
 This is a virtual, session-scoped adapter. It does not modify the third-party origin or claim that the target itself is natively WebMCP-compatible.
 

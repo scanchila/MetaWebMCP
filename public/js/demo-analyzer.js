@@ -111,6 +111,16 @@ export async function analyzeStaticSource({ source, url, html, goal }) {
   return payload.analysis;
 }
 
+export async function analyzeAgentSnapshot({ url, goal, snapshot }) {
+  const payload = await postJson('/api/analyze', {
+    source: 'agent_snapshot',
+    url,
+    goal,
+    snapshot,
+  });
+  return payload.analysis;
+}
+
 export async function analyzeThroughBrowserMcp({ url, goal, workspaceId }) {
   return browserMcpSession.analyze({ url, goal, workspaceId });
 }
