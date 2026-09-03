@@ -164,10 +164,8 @@ function defaultProjectName() {
 
 function renderSourceControls() {
   const adapter = state.mode === 'adapter';
-  elements.ownerMode.classList.toggle('active', !adapter);
-  elements.adapterMode.classList.toggle('active', adapter);
-  elements.ownerMode.setAttribute('aria-selected', String(!adapter));
-  elements.adapterMode.setAttribute('aria-selected', String(adapter));
+  elements.ownerMode.setAttribute('aria-pressed', String(!adapter));
+  elements.adapterMode.setAttribute('aria-pressed', String(adapter));
   elements.ownerSourceControls.classList.toggle('hidden', adapter);
   elements.mcpNotice.classList.toggle('hidden', !adapter);
 

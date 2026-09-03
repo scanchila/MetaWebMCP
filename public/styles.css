@@ -207,12 +207,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 }
 .mode-button strong { font-size: 10px; font-weight: 750; }
 .mode-button small { font-size: 8px; }
-.mode-button.active {
+.mode-button[aria-pressed="true"] {
   background: var(--paper-strong);
   color: var(--ink);
   box-shadow: 0 1px 4px rgba(31, 36, 33, .12);
 }
-.mode-button.active small { color: var(--accent); }
+.mode-button[aria-pressed="true"] small { color: var(--accent); }
 
 .field, .source-controls { display: grid; gap: 7px; margin-bottom: 14px; }
 .field-label {
