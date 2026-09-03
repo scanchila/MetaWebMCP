@@ -15,16 +15,15 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 from playwright.sync_api import sync_playwright
+from evidence_provenance import configured_source_commit, verified_deployment_identity
 
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = Path(os.environ.get('META_WEBMCP_EVIDENCE_OUT', ROOT / 'evidence'))
 APP_URL = os.environ.get('META_WEBMCP_APP_URL', 'https://metawebmcp.neuryta.com')
-DEPLOYMENT_VERSION = os.environ.get('META_WEBMCP_DEPLOYMENT_VERSION', '').strip()
-SOURCE_COMMIT = os.environ.get('META_WEBMCP_SOURCE_COMMIT', '').strip() or subprocess.check_output(
-    ['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True
-).strip()
+EXPECTED_DEPLOYMENT_VERSION = os.environ.get('META_WEBMCP_DEPLOYMENT_VERSION', '').strip()
 BROWSER_ARGS = ['--no-sandbox', '--disable-dev-shm-usage', '--enable-blink-features=WebMCPTesting']
+PROVENANCE_HELPER = Path(__file__).with_name('evidence_provenance.py')
 
 
 def chrome_executable():
@@ -41,11 +40,9 @@ def chrome_executable():
     return str(executable)
 
 
-if not DEPLOYMENT_VERSION:
-    raise RuntimeError('Set META_WEBMCP_DEPLOYMENT_VERSION to the deployed Worker version.')
-
 CHROME = chrome_executable()
 CAPTURE_SCRIPT_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+PROVENANCE_HELPER_SHA256 = hashlib.sha256(PROVENANCE_HELPER.read_bytes()).hexdigest()
 
 
 def native_execute(page, name, arguments):
@@ -217,6 +214,11 @@ def validate_native_export(browser, source_page, exported):
 
 def main():
     OUT.mkdir(exist_ok=True)
+    identity = verified_deployment_identity(
+        APP_URL,
+        configured_source_commit(),
+        EXPECTED_DEPLOYMENT_VERSION,
+    )
     screenshot_path = OUT / 'native-webmcp-recursive-workspace.png'
     result_path = OUT / 'native-webmcp-result.json'
     console_errors = []
@@ -369,10 +371,14 @@ def main():
                 'generatedToolCount': page.locator('#generated-tool-count').inner_text().strip(),
                 'capturedAt': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 'deployment': APP_URL,
-                'deploymentVersion': DEPLOYMENT_VERSION,
-                'sourceCommit': SOURCE_COMMIT,
+                'deploymentVersion': identity['deploymentVersion'],
+                'sourceCommit': identity['sourceCommit'],
+                'deployedAt': identity['deployedAt'],
+                'deploymentTag': identity['deploymentTag'],
+                'identityVerifiedFromHealth': True,
                 'captureScript': Path(__file__).name,
                 'captureScriptSha256': CAPTURE_SCRIPT_SHA256,
+                'captureDependencies': {PROVENANCE_HELPER.name: PROVENANCE_HELPER_SHA256},
                 'browser': f'Google Chrome {browser.version} beta',
                 'browserLaunch': {
                     'executable': Path(CHROME).name,

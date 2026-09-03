@@ -6,7 +6,7 @@
   "scripts": {
     "postinstall": "node patch-dependencies.mjs",
     "check": "node verify-patches.mjs && wrangler deploy --dry-run --outdir .wrangler/dry-run",
-    "deploy": "wrangler deploy"
+    "deploy": "node deploy.mjs"
   },
   "dependencies": {
     "@cloudflare/playwright-mcp": "0.0.5"
