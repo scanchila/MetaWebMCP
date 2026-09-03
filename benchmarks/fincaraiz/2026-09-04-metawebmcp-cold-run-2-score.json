@@ -1,0 +1,555 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "fincaraiz-cheapest-with-laundry-v1",
+  "oracleCompleteTop50": true,
+  "candidateStatus": "completed",
+  "qualityGatePassed": true,
+  "counts": {
+    "expected": 50,
+    "returned": 50,
+    "uniqueReturned": 50,
+    "duplicates": 0,
+    "contractValid": 50,
+    "arithmeticValid": 50,
+    "matchedExpectedUrls": 50,
+    "exactFieldMatches": 50,
+    "exactRankMatches": 50
+  },
+  "rates": {
+    "urlPrecision": 1,
+    "urlRecall": 1,
+    "exactFieldAccuracyOnExpected": 1,
+    "exactRankAccuracyOnExpected": 1
+  },
+  "ordering": {
+    "sequentialRanks": true,
+    "requestedSort": true
+  },
+  "missingUrls": [],
+  "extraUrls": [],
+  "candidateEvidence": {
+    "capturedAt": "2026-09-04",
+    "pagesVisited": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ],
+    "limitations": [],
+    "results": [
+      {
+        "rank": 1,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/193937433",
+        "rentCop": 476893,
+        "administrationCop": 123107,
+        "totalMonthlyCop": 600000,
+        "bedrooms": 2,
+        "areaM2": 48,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 2,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194117864",
+        "rentCop": 527002,
+        "administrationCop": 122998,
+        "totalMonthlyCop": 650000,
+        "bedrooms": 2,
+        "areaM2": 47,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 3,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-juan-rey-bogota/193429444",
+        "rentCop": 650000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 650000,
+        "bedrooms": 3,
+        "areaM2": 52,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 4,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/193912941",
+        "rentCop": 576893,
+        "administrationCop": 123107,
+        "totalMonthlyCop": 700000,
+        "bedrooms": 3,
+        "areaM2": 48,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 5,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-santa-rita-sur-oriental-bogota/193814059",
+        "rentCop": 730000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 730000,
+        "bedrooms": 2,
+        "areaM2": 45,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 6,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194110641",
+        "rentCop": 626893,
+        "administrationCop": 123107,
+        "totalMonthlyCop": 750000,
+        "bedrooms": 2,
+        "areaM2": 47,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 7,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-usminia-bogota/193693623",
+        "rentCop": 626900,
+        "administrationCop": 123100,
+        "totalMonthlyCop": 750000,
+        "bedrooms": 2,
+        "areaM2": 47,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 8,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194038302",
+        "rentCop": 626978,
+        "administrationCop": 123022,
+        "totalMonthlyCop": 750000,
+        "bedrooms": 3,
+        "areaM2": 47,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 9,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-usme-centro-bogota/193697033",
+        "rentCop": 660976,
+        "administrationCop": 89024,
+        "totalMonthlyCop": 750000,
+        "bedrooms": 3,
+        "areaM2": 48,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 10,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-granada-sur-bogota/194066112",
+        "rentCop": 750000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 750000,
+        "bedrooms": 3,
+        "areaM2": 60,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 11,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-cortijo-bogota/194108340",
+        "rentCop": 800000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 800000,
+        "bedrooms": 2,
+        "areaM2": 45,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 12,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194075937",
+        "rentCop": 800000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 800000,
+        "bedrooms": 3,
+        "areaM2": 57,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 13,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-uval-rural-bogota/194092005",
+        "rentCop": 800000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 800000,
+        "bedrooms": 3,
+        "areaM2": 56,
+        "laundryEvidence": "zona de ropas"
+      },
+      {
+        "rank": 14,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-olarte-bogota/193729380",
+        "rentCop": 800000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 800000,
+        "bedrooms": 2,
+        "areaM2": 48,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 15,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-villa-israel-bogota/194135338",
+        "rentCop": 800000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 800000,
+        "bedrooms": 2,
+        "areaM2": 45,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 16,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194047116",
+        "rentCop": 720167,
+        "administrationCop": 129833,
+        "totalMonthlyCop": 850000,
+        "bedrooms": 3,
+        "areaM2": 57,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 17,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bosa-bogota/194181981",
+        "rentCop": 770500,
+        "administrationCop": 79500,
+        "totalMonthlyCop": 850000,
+        "bedrooms": 3,
+        "areaM2": 48,
+        "laundryEvidence": "zona de ropas"
+      },
+      {
+        "rank": 18,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/193754866",
+        "rentCop": 850000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 850000,
+        "bedrooms": 3,
+        "areaM2": 50,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 19,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-san-carlos-bogota/193363667",
+        "rentCop": 850000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 850000,
+        "bedrooms": 2,
+        "areaM2": 48,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 20,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-villa-gladys-bogota/194187239",
+        "rentCop": 850000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 850000,
+        "bedrooms": 2,
+        "areaM2": 45,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 21,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-santa-rita-sur-oriental-bogota/193814184",
+        "rentCop": 880000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 880000,
+        "bedrooms": 2,
+        "areaM2": 52,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 22,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/193775700",
+        "rentCop": 772854,
+        "administrationCop": 127146,
+        "totalMonthlyCop": 900000,
+        "bedrooms": 2,
+        "areaM2": 50,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 23,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bosa-bogota/194042193",
+        "rentCop": 818600,
+        "administrationCop": 81400,
+        "totalMonthlyCop": 900000,
+        "bedrooms": 3,
+        "areaM2": 47,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 24,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bosa-bogota/193317551",
+        "rentCop": 900000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 900000,
+        "bedrooms": 2,
+        "areaM2": 84,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 25,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bosa-bogota/193759108",
+        "rentCop": 900000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 900000,
+        "bedrooms": 3,
+        "areaM2": 48,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 26,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-cortijo-bogota/194192032",
+        "rentCop": 900000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 900000,
+        "bedrooms": 2,
+        "areaM2": 45,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 27,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194102408",
+        "rentCop": 900000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 900000,
+        "bedrooms": 3,
+        "areaM2": 54,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 28,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194174055",
+        "rentCop": 900000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 900000,
+        "bedrooms": 3,
+        "areaM2": 57,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 29,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194190386",
+        "rentCop": 900000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 900000,
+        "bedrooms": 3,
+        "areaM2": 45,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 30,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-uval-bogota/194128632",
+        "rentCop": 900000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 900000,
+        "bedrooms": 3,
+        "areaM2": 47,
+        "laundryEvidence": "zona de ropas"
+      },
+      {
+        "rank": 31,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-virrey-bogota/194054830",
+        "rentCop": 900000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 900000,
+        "bedrooms": 2,
+        "areaM2": 72,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 32,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-patio-bonito-et-iii-bogota/194163874",
+        "rentCop": 900000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 900000,
+        "bedrooms": 2,
+        "areaM2": 55,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 33,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-zona-sur-bogota/194167930",
+        "rentCop": 900000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 900000,
+        "bedrooms": 2,
+        "areaM2": 60,
+        "laundryEvidence": "zona de ropas"
+      },
+      {
+        "rank": 34,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bogota/194191621",
+        "rentCop": 950000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 950000,
+        "bedrooms": 3,
+        "areaM2": 75,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 35,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194079676",
+        "rentCop": 950000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 950000,
+        "bedrooms": 3,
+        "areaM2": 47,
+        "laundryEvidence": "zona de ropas"
+      },
+      {
+        "rank": 36,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-la-aurora-bogota/194103946",
+        "rentCop": 950000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 950000,
+        "bedrooms": 3,
+        "areaM2": 50,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 37,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bogota/193956886",
+        "rentCop": 850000,
+        "administrationCop": 150000,
+        "totalMonthlyCop": 1000000,
+        "bedrooms": 2,
+        "areaM2": 45,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 38,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-alameda-bogota/194080085",
+        "rentCop": 1000000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 1000000,
+        "bedrooms": 3,
+        "areaM2": 52,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 39,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bosa-chicala-bogota/194133423",
+        "rentCop": 1000000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 1000000,
+        "bedrooms": 3,
+        "areaM2": 47,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 40,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-floresta-sur-bogota/194131111",
+        "rentCop": 1000000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 1000000,
+        "bedrooms": 2,
+        "areaM2": 96,
+        "laundryEvidence": "zona de ropas"
+      },
+      {
+        "rank": 41,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-la-estrada-bogota/193751512",
+        "rentCop": 1000000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 1000000,
+        "bedrooms": 2,
+        "areaM2": 50,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 42,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-provivienda-occidental-bogota/194110012",
+        "rentCop": 1000000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 1000000,
+        "bedrooms": 2,
+        "areaM2": 55,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 43,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-san-bernardo-bogota/194079524",
+        "rentCop": 1000000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 1000000,
+        "bedrooms": 2,
+        "areaM2": 70,
+        "laundryEvidence": "zona de ropas"
+      },
+      {
+        "rank": 44,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-casalinda-bogota/194169714",
+        "rentCop": 1009000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 1009000,
+        "bedrooms": 2,
+        "areaM2": 52,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 45,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-danubio-azul-bogota/193967830",
+        "rentCop": 893686,
+        "administrationCop": 156314,
+        "totalMonthlyCop": 1050000,
+        "bedrooms": 2,
+        "areaM2": 52,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 46,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bosa-bogota/193958346",
+        "rentCop": 909400,
+        "administrationCop": 140600,
+        "totalMonthlyCop": 1050000,
+        "bedrooms": 3,
+        "areaM2": 47,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 47,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-carmen-del-sol-bogota/194019222",
+        "rentCop": 920000,
+        "administrationCop": 130000,
+        "totalMonthlyCop": 1050000,
+        "bedrooms": 3,
+        "areaM2": 45,
+        "laundryEvidence": "zona de ropas"
+      },
+      {
+        "rank": 48,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-uval-bogota/194119150",
+        "rentCop": 1050000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 1050000,
+        "bedrooms": 3,
+        "areaM2": 57,
+        "laundryEvidence": "zona de lavado"
+      },
+      {
+        "rank": 49,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-fontibon-bogota/192977097",
+        "rentCop": 1050000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 1050000,
+        "bedrooms": 2,
+        "areaM2": 46,
+        "laundryEvidence": "zona de lavanderia"
+      },
+      {
+        "rank": 50,
+        "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-kennedy-central-bogota/194191866",
+        "rentCop": 1050000,
+        "administrationCop": 0,
+        "totalMonthlyCop": 1050000,
+        "bedrooms": 2,
+        "areaM2": 52,
+        "laundryEvidence": "zona de lavanderia"
+      }
+    ]
+  },
+  "inputSha256": {
+    "oracle": "4fe68311bae2fff3bba9ff3928c6993ddd0ea230182f1723e11a17e8c983b228",
+    "candidate": "65ed0901bc3e25184792bf299bbd5ad55cf4aa9c737fe0a125d941ede1f3baf6"
+  }
+}

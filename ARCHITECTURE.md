@@ -20,7 +20,8 @@ meta_analyze_site
   └─ capability candidates + schemas + evidence + risk + executor
 
 meta_create_webmcp
-  └─ reviewed ToolSpec[]
+  ├─ reviewed inferred ToolSpec[]
+  └─ or managing-agent-authored ToolSpec[] grounded in observed capability IDs
 
 meta_activate_webmcp
   ├─ register generated tool A
@@ -37,7 +38,7 @@ meta_export_webmcp
   └─ standalone repository ZIP from the same ToolSpec[]
 ```
 
-The same tool contract drives activation and native export. There is no separate hard-coded export model. Hosted browser recipes execute while their MCP session is open. Caller-browser recipes are returned as an explicit, incomplete handoff for the invoking agent to execute. After installation in an owned page, both forms use accessible-name/item-context resolution without MetaWebMCP. When target source is available, the export also bundles the target page and assets, installs the generated module into the top-level document, and retains a separate integration report for review.
+The same tool contract drives activation and native export. There is no separate hard-coded export model. Hosted browser recipes and collections execute while their MCP session is open. Caller-browser plans are returned as an explicit, incomplete handoff for the invoking agent to execute. After installation in an owned page, actions use accessible-name/item-context resolution and single-page collections use normal links without MetaWebMCP. Paginated owned-page collections require an explicit source-owner adapter or browser bridge. When target source is available, the export also bundles the target page and assets, installs the generated module into the top-level document, and retains a separate integration report for review.
 
 ## ToolSpec
 
@@ -59,8 +60,18 @@ Supported executor types:
 - `dom-button`
 - `dom-read`
 - `mcp-recipe`
+- `mcp-collection`
 
-The Browser MCP recipe language is not arbitrary JavaScript. Each step names an allowlisted MCP tool and validated JSON arguments; string templates can interpolate only declared input keys.
+The managing agent may author any domain ToolSpec expressible by the two
+constrained browser executors. It must cite one or more observed capability
+IDs, cannot lower their inferred risk, and must provide a closed input schema.
+`mcp-recipe` contains at most twelve steps selected from snapshot, type, click,
+select, and wait. String templates can interpolate only declared input keys.
+`mcp-collection` describes observed repeated links, typed fields, common
+parsers, filters, computed sums, stable sorting, a result limit, and optional
+pagination. The runtime injects the analyzed origin/path scope, requires the
+item matcher to cover observed evidence, and bounds the plan, pages, records,
+and output. Neither executor accepts JavaScript or unrestricted MCP calls.
 
 ## Owner mode
 
@@ -86,24 +97,24 @@ Isolated hosted browser session
     │ rendered screenshot + accessibility model
     ▼
 Generated semantic tool
-    │ bounded recipe
+    │ bounded recipe or collection plan
     ▼
 Visible target state refreshes in the workspace
 ```
 
-The hosted path is the public workspace default. One `BrowserMcpSession` in the top-level page retains the MCP session across analysis and every generated semantic tool call. Analysis navigates once, derives ToolSpecs from the accessibility model, and captures an inline screenshot. Generated actions use only snapshot, type, click, select, and wait steps; after execution the workspace refreshes both the visual page and accessibility result. Recipes cannot navigate or open URL-bearing tabs.
+The hosted path is the public workspace default. One `BrowserMcpSession` in the top-level page retains the MCP session across analysis and every generated semantic tool call. Analysis navigates once, derives capability candidates and repeated-link collection scaffolds from the accessibility model, and captures an inline screenshot. The managing agent can submit complete ToolSpecs through `meta_create_webmcp.authored_tools`; those contracts pass through the same registry, activation, evaluation, persistence, and export flow as inferred tools. Generated actions use only snapshot, type, click, select, and wait steps. Collection navigation is computed from a reviewed template within the analyzed origin/path and is capped at twenty pages. After execution the workspace refreshes both the visual page and accessibility result.
 
-Caller-browser observation remains an agent-only alternative. A calling agent that already controls an authorized target session can pass a bounded accessibility snapshot and target URL directly to `meta_analyze_site(source: agent_snapshot)`. Active tools return `completed: false` recipes for that agent to execute and verify. The human workspace does not expose raw snapshot entry.
+Caller-browser observation remains an agent-only alternative. A calling agent that already controls an authorized target session can pass a bounded accessibility snapshot and target URL directly to `meta_analyze_site(source: agent_snapshot)`. Active tools return `completed: false` recipes or collection plans for that agent to execute and verify. They never claim that a handed-off collection was completed. The human workspace does not expose raw snapshot entry.
 
 The Node deployment remains compatible with a separate Playwright MCP service. In that layout, each open page receives a random workspace identifier and a distinct server-side client/session. Resetting or expiring one workspace closes only that session. Both layouts use the same MCP client and recipe interpreter. The supplied Compose Playwright container has only an internal network, and Chromium is configured to send HTTP and HTTPS through a proxy that validates all DNS answers and pins the socket to the selected public address. An external browser endpoint must provide an equivalent boundary before the Node bridge can be enabled.
 
-The public deployment mounts Cloudflare's Playwright MCP agent as a Durable Object alongside the static application and sets `HOSTED_BROWSER_ENABLED=1`. The showcase selects Cloudflare's sessionless, agent-focused Kitesurf engine; operators can omit `HOSTED_BROWSER_ENGINE=kitesurf` to use Chromium. The Browser Run binding creates an isolated, non-persistent browser context. A long-lived SSE connection ties that context to the page; failed analysis, reset, and page teardown issue `browser_close`. Same-origin checks and an edge rate-limit binding guard the transport route. The agent advertises only the eight operations used by the product, including inline viewport capture. Transport validation checks explicit navigation targets, while browser-context routing blocks direct local, private, reserved, and common metadata destinations reached through redirects or page actions. Operators can set the enabled flag to `0` to disable this resource-intensive path without affecting the controlled sample or tool-only observation inputs.
+The public deployment mounts Cloudflare's Playwright MCP agent as a Durable Object alongside the static application and sets `HOSTED_BROWSER_ENABLED=1`. The showcase selects Chromium; Kitesurf remains an opt-in beta engine for deployments that have verified target compatibility. The Browser Run binding creates an isolated, non-persistent browser context. A long-lived SSE connection ties that context to the page; failed analysis, reset, and page teardown issue `browser_close`. Same-origin checks and an edge rate-limit binding guard the transport route. The agent advertises only the eight operations used by the product, including inline viewport capture. Transport validation checks explicit navigation targets, while browser-context routing blocks direct local, private, reserved, and common metadata destinations reached through redirects or page actions. Operators can set the enabled flag to `0` to disable this resource-intensive path without affecting the controlled sample or tool-only observation inputs.
 
 This is a virtual, session-scoped adapter. It does not modify the third-party origin or claim that the target itself is natively WebMCP-compatible.
 
 Caller-browser contracts can be restored after a MetaWebMCP reload because execution remains with the caller and stale references must already be resolved by accessible name. A hosted Browser MCP session is intentionally not restorable: its contracts remain saved for review, while activation, evaluations, and target state are cleared until a fresh analysis establishes a new isolated browser session.
 
-Export is a separate, source-owner path: the generated module interprets the reviewed recipe against the owned page's normal controls. It does not include MetaWebMCP and does not need a browser MCP service. Item-scoped actions resolve within the matching visible item's container and fail closed if that item is no longer present.
+Export is a separate, source-owner path: the generated module interprets the reviewed recipe against the owned page's normal controls and can extract a reviewed collection from the current page. It does not include MetaWebMCP. Item-scoped actions resolve within the matching visible item's container and fail closed if that item is no longer present. Cross-page collection traversal is intentionally explicit: the owner supplies `window.MetaWebMCPCollectionAdapter` or `window.MetaWebMCPBrowserBridge`, rather than granting generated code a general navigation primitive.
 
 ## Generated repository
 
@@ -116,6 +127,7 @@ Export is a separate, source-owner path: the generated module interprets the rev
 - Sets read-only and untrusted-content annotations.
 - Implements the same deterministic executor types.
 - Executes browser-derived form and item recipes through constrained owned-page DOM lookups, with an optional explicit browser bridge.
+- Executes single-page collection contracts through the same serialized parsers and filters, and fails transparently when pagination needs an owner adapter.
 - Documents where source owners should replace selectors with application functions.
 
 The dependency-free ZIP implementation uses stored entries, UTF-8 filenames, CRC32, central directory records, and safe relative paths.

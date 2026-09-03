@@ -22,11 +22,11 @@ The supplied Node path therefore does not perform a second hostname resolution b
 - The public workspace opens third-party targets in a fresh, isolated hosted browser. It does not receive or reuse the person's normal browser profile, cookies, or credentials.
 - The rendered viewport is returned as a bounded inline JPEG or PNG for display beside the accessibility model; it is not persisted in the browser-local workspace record.
 - Caller-browser observation remains a tool-only alternative. The service receives a bounded accessibility snapshot but never receives the caller's browser session, cookies, or credentials, and the human UI does not expose snapshot entry.
-- Caller-browser generated tools return bounded action data with `completed: false`; they cannot invoke the caller's other tools or claim that an external action occurred.
+- Caller-browser generated tools return bounded action or collection plans with `completed: false`; they cannot invoke the caller's other tools or claim that external execution occurred.
 - The MCP endpoint is deployment configuration, not a user-provided URL.
 - A same-origin deployment gives each open page its own MCP transport session and closes it on reset. The Node fallback keys distinct server-side sessions by unguessable workspace identifiers and expires inactive clients.
 - Browser target validation rejects non-HTTP schemes and credentials, then applies a shared policy for local names, private/reserved IPs, IPv4-mapped and translation-prefix forms, common metadata names, and known wildcard-DNS aliases.
-- The Node bridge performs DNS and private-network validation before analysis navigation and validates a reported final navigation URL. Navigation is not available to caller-supplied generated recipes.
+- The Node bridge performs DNS and private-network validation before analysis navigation and validates a reported final navigation URL. Navigation is not available to action recipes. Collection pagination can only substitute an integer into one reviewed URL template under the analyzed origin and path.
 - Node Browser MCP remains disabled unless `BROWSER_MCP_EGRESS_ISOLATED=1` declares an enforced runtime boundary. The declaration is a fail-closed configuration guard, not the boundary itself.
 - The supplied Compose Playwright container has only an internal Docker network. Chromium's HTTP/HTTPS route is a forward proxy that validates every connection's full DNS answer set, permits only ports 80 and 443, and connects to one already-validated address. Chromium's implicit loopback and link-local proxy bypass is removed.
 - Cloudflare Browser Run routes are disabled unless `HOSTED_BROWSER_ENABLED=1`. When enabled, the transport applies the shared direct-target policy, then fulfills every Browser Rendering HTTP request through the Worker's public-Internet `fetch()` path. Redirects are manual so Chromium's next request crosses the same boundary; response and request sizes and request duration are capped.
@@ -39,17 +39,18 @@ The supplied Node path therefore does not perform a second hostname resolution b
   - `browser_click`
   - `browser_select_option`
   - `browser_wait_for`
+- Collection executors can call only `browser_snapshot` and, when pagination is present, `browser_navigate`. Plans are capped at 20 pages, 500 unique items, 24 parsed fields, 20 filters, four sort keys, 100 returned records, and 500,000 serialized result characters.
 - The Cloudflare Browser MCP transport advertises only navigation, snapshot, type, click, select, wait, close, and inline screenshot operations; calls outside that set are rejected before they reach the browser service.
 - Arbitrary browser evaluation is deliberately excluded.
 - The supplied Compose service runs sandboxed Chromium as the non-root `node` user under Playwright's user-namespace seccomp profile. Its root filesystem is read-only, capabilities are dropped except for the sandbox's `SYS_CHROOT` requirement, writable state is limited to bounded temporary filesystems, and image responses are omitted.
 
 Playwright MCP origin filters and application-layer hostname checks are not complete network boundaries. The supplied Cloudflare and Compose paths add lower network controls covering redirects and subresources. Other Browser MCP endpoints must independently enforce equivalent private-network egress before `BROWSER_MCP_EGRESS_ISOLATED=1` is set. Keep browser runtimes isolated, without host filesystem mounts or persistent authenticated profiles.
 
-A public same-origin MCP route is a powerful resource even when the product UI exposes only semantic generated tools. It remains guarded by the explicit `HOSTED_BROWSER_ENABLED` deployment setting; the showcase enables it for the in-site viewer and selects the sessionless Kitesurf beta engine. The deployment rejects cross-origin browser transport requests, limits them to 60 requests per source IP per minute, isolates each Durable Object's protocol server, and closes browser contexts after failed analysis, reset, or page teardown. Chromium deployments also consume account browser-hour and concurrency quota. Production operators should monitor abuse, beta availability, and account-level consumption.
+A public same-origin MCP route is a powerful resource even when the product UI exposes only semantic generated tools. It remains guarded by the explicit `HOSTED_BROWSER_ENABLED` deployment setting; the showcase enables it for the in-site viewer and selects Chromium. The deployment rejects cross-origin browser transport requests, limits them to 60 requests per source IP per minute, isolates each Durable Object's protocol server, and closes browser contexts after failed analysis, reset, or page teardown. Chromium consumes account browser-hour and concurrency quota. Production operators should monitor abuse and account-level consumption; Kitesurf remains an opt-in beta compatibility mode.
 
 ### Generated tool execution
 
-- Tool names, descriptions, input schemas, and executor types are validated.
+- Tool names, descriptions, input schemas, and executor types are validated. Managing-agent definitions must cite observed capability IDs; collection matchers must cover at least two observed item URLs, and the runtime supplies rather than trusts their origin/path scope.
 - Runtime inputs are checked against their JSON schemas, including required fields, primitive types, enumerations, arrays, and unknown properties.
 - Consequential tools are never auto-executed in the public studio.
 - Browser MCP write recipes are skipped by automated tests pending explicit review.
@@ -60,6 +61,7 @@ A public same-origin MCP route is a powerful resource even when the product UI e
 - Bundled owner files cannot replace generated repository policy, manifest, runtime, report, or evaluation paths.
 - Risk inference is visible and explicitly documented as requiring review.
 - Reviewed risk overrides can only preserve or increase the inferred severity; callers cannot downgrade write or consequential actions.
+- Neither authored executor accepts JavaScript, arbitrary code, arbitrary selectors, or unrestricted Browser MCP calls.
 - Dynamic generated tools can be removed independently via `AbortController`.
 
 ### Browser application

@@ -183,3 +183,38 @@ test('DOM form tools do not fall back to controls outside the resolved form', as
   );
   assert.equal(outsideEffects, 0);
 });
+
+test('caller-browser collection tools return an explicit incomplete execution plan', async () => {
+  const registry = new ToolRegistry(null);
+  const spec = {
+    name: 'find_ranked_rentals',
+    description: 'Find and rank observed rental listing records.',
+    risk: 'read',
+    inputSchema: {
+      type: 'object',
+      properties: { limit: { type: 'integer', minimum: 1, maximum: 10 } },
+      additionalProperties: false,
+    },
+    executor: {
+      type: 'mcp-collection',
+      scope: { origin: 'https://homes.example', pathPrefix: '/rentals' },
+      item: { urlContains: '/listing/' },
+      fields: [{ name: 'url', source: 'url', parser: { type: 'identity' }, required: true }],
+      limit: { input: 'limit', default: 10, maximum: 10 },
+    },
+  };
+  await registry.register(spec, (input, context) => executeGeneratedSpec(spec, input, {
+    ...context,
+    browserExecution: 'agent',
+    targetUrl: 'https://homes.example/rentals',
+  }));
+
+  const result = await registry.execute(spec.name, { limit: 5 });
+
+  assert.equal(result.execution, 'agent_browser_required');
+  assert.equal(result.completed, false);
+  assert.equal(result.targetUrl, 'https://homes.example/rentals');
+  assert.deepEqual(result.collectionPlan, spec.executor);
+  assert.deepEqual(result.input, { limit: 5 });
+  assert.equal(Object.hasOwn(result, 'results'), false);
+});

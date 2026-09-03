@@ -1,4 +1,5 @@
 import { browserMcpSession } from './browser-mcp-session.js';
+import { validateCollectionExecutor } from './mcp-collection.js';
 import { prepareMcpRecipe } from './mcp-recipe.js';
 
 const TOOL_NAME = /^[a-z][a-z0-9_]{0,63}$/;
@@ -59,6 +60,7 @@ function validateSpec(spec) {
   if (!TOOL_NAME.test(spec.name || '')) throw new Error(`Invalid WebMCP tool name: ${spec.name || '(missing)'}.`);
   if (typeof spec.description !== 'string' || spec.description.trim().length < 8) throw new Error(`Tool ${spec.name} needs a useful description.`);
   if (!spec.inputSchema || spec.inputSchema.type !== 'object') throw new Error(`Tool ${spec.name} needs an object input schema.`);
+  if (spec.executor?.type === 'mcp-collection') validateCollectionExecutor(spec.executor, { inputSchema: spec.inputSchema });
 }
 
 function changeEvent(detail) {
@@ -287,24 +289,34 @@ async function executeDomSpec(spec, input, context) {
 
 async function executeMcpSpec(spec, input, context) {
   if (context.browserExecution === 'agent') {
+    const collection = spec.executor.type === 'mcp-collection';
     return {
       execution: 'agent_browser_required',
       completed: false,
       tool: spec.name,
       risk: spec.risk,
       targetUrl: context.targetUrl,
-      steps: prepareMcpRecipe({ executor: spec.executor, input }),
-      instruction: 'Execute these bounded steps in the same caller-controlled browser session, then inspect the visible result. Re-resolve stale references by exact accessible name.',
+      ...(collection
+        ? { collectionPlan: clone(spec.executor), input: clone(input) }
+        : { steps: prepareMcpRecipe({ executor: spec.executor, input }) }),
+      instruction: collection
+        ? 'Run this bounded collection plan in the same caller-controlled browser session and return its compact records.'
+        : 'Execute these bounded steps in the same caller-controlled browser session, then inspect the visible result. Re-resolve stale references by exact accessible name.',
     };
   }
-  return browserMcpSession.execute({ executor: spec.executor, input, workspaceId: context.workspaceId });
+  return browserMcpSession.execute({
+    executor: spec.executor,
+    input,
+    inputSchema: spec.inputSchema,
+    workspaceId: context.workspaceId,
+  });
 }
 
 export async function executeGeneratedSpec(spec, input, context = {}) {
   if (spec.risk === 'consequential' && context.allowConsequential !== true) {
     throw new Error('Consequential generated tools are disabled in this public compatibility studio. Review and install the export in the owned site.');
   }
-  if (spec.executor?.type === 'mcp-recipe') return executeMcpSpec(spec, input, context);
+  if (['mcp-recipe', 'mcp-collection'].includes(spec.executor?.type)) return executeMcpSpec(spec, input, context);
   return executeDomSpec(spec, input, context);
 }
 

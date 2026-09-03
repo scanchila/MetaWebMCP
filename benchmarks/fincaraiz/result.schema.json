@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "captured_at", "pages_visited", "results", "limitations"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["completed", "partial", "failed"]
+    },
+    "captured_at": {
+      "type": "string"
+    },
+    "pages_visited": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 }
+    },
+    "results": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rank", "url", "rent_cop", "administration_cop", "total_monthly_cop", "bedrooms", "area_m2", "laundry_evidence"],
+        "properties": {
+          "rank": { "type": "integer", "minimum": 1, "maximum": 50 },
+          "url": { "type": "string", "minLength": 1 },
+          "rent_cop": { "type": "integer", "minimum": 0 },
+          "administration_cop": { "type": "integer", "minimum": 0 },
+          "total_monthly_cop": { "type": "integer", "minimum": 0 },
+          "bedrooms": { "type": "number", "minimum": 2 },
+          "area_m2": { "type": "number", "minimum": 45, "maximum": 100 },
+          "laundry_evidence": { "type": "string", "minLength": 1, "maxLength": 120 }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

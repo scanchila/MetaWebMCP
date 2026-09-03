@@ -1,6 +1,8 @@
 import { analyzeAgentSnapshot, analyzeControlledDemo, analyzeStaticSource, analyzeThroughBrowserMcp } from './demo-analyzer.js';
 import { ToolRegistry, compactRegistryState, executeGeneratedSpec } from './webmcp-runtime.js';
 import { browserMcpSession } from './browser-mcp-session.js';
+import { COLLECTION_AUTHORING_GUIDE } from './mcp-collection.js';
+import { buildAuthoredToolSpecs } from './tool-authoring.js';
 import { createWorkspaceStore } from './workspace-store.js';
 
 const $ = (selector) => document.querySelector(selector);
@@ -66,6 +68,11 @@ const WORKSPACE_RECORD_VERSION = 1;
 const DEFAULT_GOAL = 'Find the primary actions on this website and turn the useful ones into simple tools.';
 const RISK_SEVERITY = Object.freeze({ read: 0, write: 1, consequential: 2 });
 const META_TOOL_NAMES = new Set();
+const BROWSER_EXECUTOR_TYPES = new Set(['mcp-recipe', 'mcp-collection']);
+const HOSTED_BROWSER_GUIDE_CODES = new Set([
+  'HOSTED_BROWSER_RATE_LIMITED',
+  'HOSTED_BROWSER_RESOURCE_LIMIT',
+]);
 const PERSISTED_META_MUTATIONS = new Set([
   'meta_analyze_site',
   'meta_create_webmcp',
@@ -353,6 +360,7 @@ async function invoke(name, input = {}) {
   try {
     return await registry.execute(name, input);
   } catch (error) {
+    if (HOSTED_BROWSER_GUIDE_CODES.has(error?.code)) elements.clientGuide.open = true;
     addTrace('Operation failed', error instanceof Error ? error.message : String(error), 'error');
     throw error;
   } finally {
@@ -810,6 +818,13 @@ function compactAnalysis(analysis) {
     summary: clone(analysis.summary),
     warnings: clone(analysis.warnings || []),
     capabilities: clone(analysis.capabilities || []),
+    authoring: {
+      createField: 'authored_tools',
+      executorTypes: ['mcp-recipe', 'mcp-collection'],
+      recipeTools: ['browser_snapshot', 'browser_type', 'browser_click', 'browser_select_option', 'browser_wait_for'],
+      collection: clone(COLLECTION_AUTHORING_GUIDE),
+      guidance: 'Cite observed capability IDs, provide a closed input schema, and compose an allowlisted recipe or collection plan. Omit collection scope and startUrl because the runtime fixes them to the analyzed target.',
+    },
     ...(analysis.snapshot ? { snapshotExcerpt: analysis.snapshot.slice(0, 5000) } : {}),
   };
 }
@@ -906,33 +921,46 @@ function validateOverride(override, capabilitiesById) {
 async function createWebMcp(input = {}) {
   if (!state.analysis) throw new Error('Analyze a target before creating WebMCP contracts.');
   const capabilitiesById = new Map(state.analysis.capabilities.map((capability) => [capability.id, capability]));
-  const knownIds = new Set(capabilitiesById.keys());
-  const requestedIds = input.capability_ids?.length ? input.capability_ids : selectedIdsFromUi();
-  const ids = requestedIds.length ? requestedIds : [...state.selectedCapabilityIds];
-  if (!ids.length) throw new Error('Select at least one capability.');
-  const unknown = ids.find((id) => !knownIds.has(id));
-  if (unknown) throw new Error(`Unknown capability: ${unknown}.`);
-
-  const overrides = input.overrides || [];
-  overrides.forEach((override) => validateOverride(override, capabilitiesById));
-  const byCapability = new Map(overrides.map((override) => [override.capability_id, override]));
-  if (state.analysis.source?.kind !== 'demo') {
-    const missingReview = ids.find((id) => {
-      const override = byCapability.get(id);
-      return !override?.name?.trim() || !override?.description?.trim();
+  let tools;
+  if (Object.hasOwn(input, 'authored_tools')) {
+    if (Object.hasOwn(input, 'capability_ids') || Object.hasOwn(input, 'overrides')) {
+      throw new Error('Use either authored_tools or selected capability overrides, not both.');
+    }
+    tools = buildAuthoredToolSpecs({
+      definitions: input.authored_tools,
+      capabilities: state.analysis.capabilities,
+      targetUrl: state.analysis.source?.url,
+      reservedNames: META_TOOL_NAMES,
     });
-    if (missingReview) throw new Error(`Review the tool name and description before creating external-target contract ${missingReview}.`);
+  } else {
+    const knownIds = new Set(capabilitiesById.keys());
+    const requestedIds = input.capability_ids?.length ? input.capability_ids : selectedIdsFromUi();
+    const ids = requestedIds.length ? requestedIds : [...state.selectedCapabilityIds];
+    if (!ids.length) throw new Error('Select at least one capability.');
+    const unknown = ids.find((id) => !knownIds.has(id));
+    if (unknown) throw new Error(`Unknown capability: ${unknown}.`);
+
+    const overrides = input.overrides || [];
+    overrides.forEach((override) => validateOverride(override, capabilitiesById));
+    const byCapability = new Map(overrides.map((override) => [override.capability_id, override]));
+    if (state.analysis.source?.kind !== 'demo') {
+      const missingReview = ids.find((id) => {
+        const override = byCapability.get(id);
+        return !override?.name?.trim() || !override?.description?.trim();
+      });
+      if (missingReview) throw new Error(`Review the tool name and description before creating external-target contract ${missingReview}.`);
+    }
+    tools = ids.map((id) => {
+      const capability = capabilitiesById.get(id);
+      const override = byCapability.get(id) || {};
+      return {
+        ...clone(capability),
+        ...(override.name ? { name: override.name } : {}),
+        ...(override.description ? { description: override.description } : {}),
+        ...(override.risk ? { risk: override.risk } : {}),
+      };
+    });
   }
-  const tools = ids.map((id) => {
-    const capability = capabilitiesById.get(id);
-    const override = byCapability.get(id) || {};
-    return {
-      ...clone(capability),
-      ...(override.name ? { name: override.name } : {}),
-      ...(override.description ? { description: override.description } : {}),
-      ...(override.risk ? { risk: override.risk } : {}),
-    };
-  });
 
   const seen = new Set();
   for (const tool of tools) {
@@ -985,7 +1013,7 @@ async function registerGeneratedContracts() {
         });
         state.latestTargetState = clone(result.state || result.result || result);
         if (state.analysis?.source?.kind === 'browser_mcp'
-          && spec.executor.type === 'mcp-recipe'
+          && BROWSER_EXECUTOR_TYPES.has(spec.executor.type)
           && result.completed !== false) {
           try {
             await captureCurrentWebsiteView();
@@ -994,12 +1022,19 @@ async function registerGeneratedContracts() {
             addTrace('Page view refresh failed', error instanceof Error ? error.message : String(error), 'warning');
           }
         }
+        const executionIncomplete = result.completed === false || result.complete === false;
+        const traceTitle = result.completed === false
+          ? `Prepared ${spec.name}`
+          : result.complete === false ? `Incomplete ${spec.name}` : `Executed ${spec.name}`;
+        const traceDetail = result.completed === false
+          ? 'Returned a bounded execution plan for the calling agent’s browser; no remote action was claimed.'
+          : result.complete === false
+            ? `Generated ${spec.risk} tool returned partial results through ${spec.executor.type}.`
+            : `Generated ${spec.risk} tool completed through ${spec.executor.type}.`;
         addTrace(
-          result.completed === false ? `Prepared ${spec.name}` : `Executed ${spec.name}`,
-          result.completed === false
-            ? 'Returned a bounded recipe for the calling agent’s browser; no remote action was claimed.'
-            : `Generated ${spec.risk} tool completed through ${spec.executor.type}.`,
-          result.completed === false ? 'warning' : 'success',
+          traceTitle,
+          traceDetail,
+          executionIncomplete ? 'warning' : 'success',
         );
         renderTargetStage();
         persistence.paused = false;
@@ -1076,20 +1111,23 @@ async function testWebMcp(input = {}) {
     } else if (spec.risk === 'consequential') {
       status = 'skipped';
       reason = 'Consequential actions are deliberately not auto-executed.';
-    } else if (state.analysis?.source?.kind === 'agent_snapshot' && spec.executor.type === 'mcp-recipe') {
+    } else if (state.analysis?.source?.kind === 'agent_snapshot' && BROWSER_EXECUTOR_TYPES.has(spec.executor.type)) {
       status = 'skipped';
       reason = 'Live execution and visible-state verification belong to the calling agent’s browser in this mode.';
-    } else if (spec.executor.type !== 'mcp-recipe' && !getTargetDocument()) {
+    } else if (!BROWSER_EXECUTOR_TYPES.has(spec.executor.type) && !getTargetDocument()) {
       status = 'skipped';
       reason = 'Static DOM exports must be executed inside the owned target application.';
-    } else if (spec.executor.type === 'mcp-recipe' && spec.risk !== 'read') {
+    } else if (BROWSER_EXECUTOR_TYPES.has(spec.executor.type) && spec.risk !== 'read') {
       status = 'skipped';
-      reason = 'Browser MCP write recipes require explicit human review.';
+      reason = 'Browser MCP write tools require explicit human review.';
     } else {
       try {
         result = await registry.execute(spec.name, spec.sampleArgs || {});
         if (state.analysis?.source?.kind === 'demo') checks.push(...verifyDemoPostcondition(spec, result));
-        else checks.push({ name: 'execution completed', passed: result?.ok !== false });
+        else checks.push({
+          name: spec.executor.type === 'mcp-collection' ? 'collection traversal completed' : 'execution completed',
+          passed: result?.ok !== false && result?.complete !== false,
+        });
         if (checks.some((check) => !check.passed)) status = 'failed';
       } catch (error) {
         status = 'failed';
@@ -1258,7 +1296,7 @@ const metaTools = [
   {
     spec: {
       name: 'meta_create_webmcp',
-      description: 'Turn selected capability candidates into narrow WebMCP tool contracts after reviewing their untrusted page evidence. External targets require an explicit reviewed name and description for every selected capability.',
+      description: 'Create reviewed WebMCP contracts from selected candidates, or submit agent-authored tools that cite observed capability IDs and use the constrained recipe or collection runtime.',
       risk: 'write',
       inputSchema: {
         type: 'object',
@@ -1277,6 +1315,26 @@ const metaTools = [
                 risk: { type: 'string', enum: ['read', 'write', 'consequential'] },
               },
               required: ['capability_id'],
+              additionalProperties: false,
+            },
+          },
+          authored_tools: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 12,
+            description: 'Optional complete tool definitions authored by the managing agent. Use instead of capability_ids and overrides. Executors may be mcp-recipe or mcp-collection; arbitrary JavaScript is rejected.',
+            items: {
+              type: 'object',
+              properties: {
+                capability_ids: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 12, description: 'Observed capabilities that ground this tool.' },
+                name: { type: 'string', description: 'Lowercase WebMCP tool name.' },
+                description: { type: 'string', minLength: 8, maxLength: 600 },
+                risk: { type: 'string', enum: ['read', 'write', 'consequential'] },
+                input_schema: { type: 'object', description: 'Narrow JSON object schema with additionalProperties false.' },
+                sample_args: { type: 'object', description: 'Representative arguments used by deterministic evaluation.' },
+                executor: { type: 'object', description: 'Constrained mcp-recipe or mcp-collection plan. Collection scaffolds returned by analysis show the supported shape.' },
+              },
+              required: ['capability_ids', 'name', 'description', 'risk', 'input_schema', 'executor'],
               additionalProperties: false,
             },
           },

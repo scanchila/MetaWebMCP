@@ -1,0 +1,784 @@
+{
+  "schemaVersion": 2,
+  "benchmark": "fincaraiz-cheapest-with-laundry-v1",
+  "arm": "metawebmcp-authored-collection",
+  "startedAt": "2026-09-03T18:46:10.392Z",
+  "completedAt": "2026-09-03T18:46:29.960Z",
+  "status": "completed",
+  "captured_at": "2026-09-03",
+  "pages_visited": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13
+  ],
+  "results": [
+    {
+      "rank": 1,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/193937433",
+      "rent_cop": 476893,
+      "administration_cop": 123107,
+      "bedrooms": 2,
+      "area_m2": 48,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 600000
+    },
+    {
+      "rank": 2,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194117864",
+      "rent_cop": 527002,
+      "administration_cop": 122998,
+      "bedrooms": 2,
+      "area_m2": 47,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 650000
+    },
+    {
+      "rank": 3,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-juan-rey-bogota/193429444",
+      "rent_cop": 650000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 52,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 650000
+    },
+    {
+      "rank": 4,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/193912941",
+      "rent_cop": 576893,
+      "administration_cop": 123107,
+      "bedrooms": 3,
+      "area_m2": 48,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 700000
+    },
+    {
+      "rank": 5,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-santa-rita-sur-oriental-bogota/193814059",
+      "rent_cop": 730000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 45,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 730000
+    },
+    {
+      "rank": 6,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194110641",
+      "rent_cop": 626893,
+      "administration_cop": 123107,
+      "bedrooms": 2,
+      "area_m2": 47,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 750000
+    },
+    {
+      "rank": 7,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-usminia-bogota/193693623",
+      "rent_cop": 626900,
+      "administration_cop": 123100,
+      "bedrooms": 2,
+      "area_m2": 47,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 750000
+    },
+    {
+      "rank": 8,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194038302",
+      "rent_cop": 626978,
+      "administration_cop": 123022,
+      "bedrooms": 3,
+      "area_m2": 47,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 750000
+    },
+    {
+      "rank": 9,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-usme-centro-bogota/193697033",
+      "rent_cop": 660976,
+      "administration_cop": 89024,
+      "bedrooms": 3,
+      "area_m2": 48,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 750000
+    },
+    {
+      "rank": 10,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-granada-sur-bogota/194066112",
+      "rent_cop": 750000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 60,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 750000
+    },
+    {
+      "rank": 11,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-cortijo-bogota/194108340",
+      "rent_cop": 800000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 45,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 800000
+    },
+    {
+      "rank": 12,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194075937",
+      "rent_cop": 800000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 57,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 800000
+    },
+    {
+      "rank": 13,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-uval-rural-bogota/194092005",
+      "rent_cop": 800000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 56,
+      "laundry_evidence": "zona de ropas",
+      "total_monthly_cop": 800000
+    },
+    {
+      "rank": 14,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-olarte-bogota/193729380",
+      "rent_cop": 800000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 48,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 800000
+    },
+    {
+      "rank": 15,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-villa-israel-bogota/194135338",
+      "rent_cop": 800000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 45,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 800000
+    },
+    {
+      "rank": 16,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194047116",
+      "rent_cop": 720167,
+      "administration_cop": 129833,
+      "bedrooms": 3,
+      "area_m2": 57,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 850000
+    },
+    {
+      "rank": 17,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bosa-bogota/194181981",
+      "rent_cop": 770500,
+      "administration_cop": 79500,
+      "bedrooms": 3,
+      "area_m2": 48,
+      "laundry_evidence": "zona de ropas",
+      "total_monthly_cop": 850000
+    },
+    {
+      "rank": 18,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/193754866",
+      "rent_cop": 850000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 50,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 850000
+    },
+    {
+      "rank": 19,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-san-carlos-bogota/193363667",
+      "rent_cop": 850000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 48,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 850000
+    },
+    {
+      "rank": 20,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-villa-gladys-bogota/194187239",
+      "rent_cop": 850000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 45,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 850000
+    },
+    {
+      "rank": 21,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-santa-rita-sur-oriental-bogota/193814184",
+      "rent_cop": 880000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 52,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 880000
+    },
+    {
+      "rank": 22,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/193775700",
+      "rent_cop": 772854,
+      "administration_cop": 127146,
+      "bedrooms": 2,
+      "area_m2": 50,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 900000
+    },
+    {
+      "rank": 23,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bosa-bogota/194042193",
+      "rent_cop": 818600,
+      "administration_cop": 81400,
+      "bedrooms": 3,
+      "area_m2": 47,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 900000
+    },
+    {
+      "rank": 24,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bosa-bogota/193317551",
+      "rent_cop": 900000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 84,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 900000
+    },
+    {
+      "rank": 25,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bosa-bogota/193759108",
+      "rent_cop": 900000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 48,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 900000
+    },
+    {
+      "rank": 26,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-cortijo-bogota/194192032",
+      "rent_cop": 900000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 45,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 900000
+    },
+    {
+      "rank": 27,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194102408",
+      "rent_cop": 900000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 54,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 900000
+    },
+    {
+      "rank": 28,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194174055",
+      "rent_cop": 900000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 57,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 900000
+    },
+    {
+      "rank": 29,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194190386",
+      "rent_cop": 900000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 45,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 900000
+    },
+    {
+      "rank": 30,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-uval-bogota/194128632",
+      "rent_cop": 900000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 47,
+      "laundry_evidence": "zona de ropas",
+      "total_monthly_cop": 900000
+    },
+    {
+      "rank": 31,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-virrey-bogota/194054830",
+      "rent_cop": 900000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 72,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 900000
+    },
+    {
+      "rank": 32,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-patio-bonito-et-iii-bogota/194163874",
+      "rent_cop": 900000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 55,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 900000
+    },
+    {
+      "rank": 33,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-zona-sur-bogota/194167930",
+      "rent_cop": 900000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 60,
+      "laundry_evidence": "zona de ropas",
+      "total_monthly_cop": 900000
+    },
+    {
+      "rank": 34,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bogota/194191621",
+      "rent_cop": 950000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 75,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 950000
+    },
+    {
+      "rank": 35,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-tuno-bogota/194079676",
+      "rent_cop": 950000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 47,
+      "laundry_evidence": "zona de ropas",
+      "total_monthly_cop": 950000
+    },
+    {
+      "rank": 36,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-la-aurora-bogota/194103946",
+      "rent_cop": 950000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 50,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 950000
+    },
+    {
+      "rank": 37,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bogota/193956886",
+      "rent_cop": 850000,
+      "administration_cop": 150000,
+      "bedrooms": 2,
+      "area_m2": 45,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 1000000
+    },
+    {
+      "rank": 38,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-alameda-bogota/194080085",
+      "rent_cop": 1000000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 52,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 1000000
+    },
+    {
+      "rank": 39,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bosa-chicala-bogota/194133423",
+      "rent_cop": 1000000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 47,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 1000000
+    },
+    {
+      "rank": 40,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-floresta-sur-bogota/194131111",
+      "rent_cop": 1000000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 96,
+      "laundry_evidence": "zona de ropas",
+      "total_monthly_cop": 1000000
+    },
+    {
+      "rank": 41,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-la-estrada-bogota/193751512",
+      "rent_cop": 1000000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 50,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 1000000
+    },
+    {
+      "rank": 42,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-provivienda-occidental-bogota/194110012",
+      "rent_cop": 1000000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 55,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 1000000
+    },
+    {
+      "rank": 43,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-san-bernardo-bogota/194079524",
+      "rent_cop": 1000000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 70,
+      "laundry_evidence": "zona de ropas",
+      "total_monthly_cop": 1000000
+    },
+    {
+      "rank": 44,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-casalinda-bogota/194169714",
+      "rent_cop": 1009000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 52,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 1009000
+    },
+    {
+      "rank": 45,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-danubio-azul-bogota/193967830",
+      "rent_cop": 893686,
+      "administration_cop": 156314,
+      "bedrooms": 2,
+      "area_m2": 52,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 1050000
+    },
+    {
+      "rank": 46,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-bosa-bogota/193958346",
+      "rent_cop": 909400,
+      "administration_cop": 140600,
+      "bedrooms": 3,
+      "area_m2": 47,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 1050000
+    },
+    {
+      "rank": 47,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-carmen-del-sol-bogota/194019222",
+      "rent_cop": 920000,
+      "administration_cop": 130000,
+      "bedrooms": 3,
+      "area_m2": 45,
+      "laundry_evidence": "zona de ropas",
+      "total_monthly_cop": 1050000
+    },
+    {
+      "rank": 48,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-el-uval-bogota/194119150",
+      "rent_cop": 1050000,
+      "administration_cop": 0,
+      "bedrooms": 3,
+      "area_m2": 57,
+      "laundry_evidence": "zona de lavado",
+      "total_monthly_cop": 1050000
+    },
+    {
+      "rank": 49,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-fontibon-bogota/192977097",
+      "rent_cop": 1050000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 46,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 1050000
+    },
+    {
+      "rank": 50,
+      "url": "https://www.fincaraiz.com.co/apartamento-en-arriendo-en-kennedy-central-bogota/194191866",
+      "rent_cop": 1050000,
+      "administration_cop": 0,
+      "bedrooms": 2,
+      "area_m2": 52,
+      "laundry_evidence": "zona de lavandería",
+      "total_monthly_cop": 1050000
+    }
+  ],
+  "limitations": [
+    "This is a warm-tool execution measurement. The deterministic harness supplies the reviewed agent-authored ToolSpec, so no model authoring tokens are fabricated.",
+    "Native Site Tools discovery was unavailable in the non-interactive CLI; this invokes the same validated executor used by the registered generated tool."
+  ],
+  "input": {
+    "url": "https://www.fincaraiz.com.co/arriendo/apartamentos/bogota/bogota-dc/baratos",
+    "goal": "Find the 50 cheapest unique apartments with at least 2 bedrooms, 45–100 m², and an explicit laundry-area phrase; rank by rent plus administration.",
+    "snapshotCharacters": 78687,
+    "snapshotBytes": 79124,
+    "snapshotSha256": "2c76e3214f8a46ff00d33101b6cad8c3a74477aadd8d5fc40cf06afa5ad9471e"
+  },
+  "timing": {
+    "browserNavigationMs": 3009,
+    "localAnalysisMs": 10.525,
+    "localAuthoringValidationMs": 1.072,
+    "collectionExecutionMs": 16544,
+    "totalMs": 19568
+  },
+  "browserCalls": {
+    "total": 14,
+    "navigate": 14,
+    "snapshot": 0
+  },
+  "analysis": {
+    "summary": {
+      "controls": 271,
+      "buttons": 137,
+      "inputs": 0,
+      "links": 134,
+      "collections": 3,
+      "candidates": 11,
+      "discoveredCandidates": 11,
+      "omittedCandidates": 0
+    },
+    "warnings": [
+      "63 buttons had no accessible name and could not become reliable tools."
+    ],
+    "capabilities": [
+      {
+        "id": "mcp_collection_1_list_arriendo",
+        "kind": "collection",
+        "name": "list_arriendo",
+        "title": "List arriendo items",
+        "risk": "read",
+        "inputProperties": [
+          "limit"
+        ],
+        "executorType": "mcp-collection",
+        "outputFields": [
+          "url",
+          "text"
+        ],
+        "paginated": true,
+        "recipeSteps": []
+      },
+      {
+        "id": "mcp_collection_2_list_apartamento_en_arriendo",
+        "kind": "collection",
+        "name": "list_apartamento_en_arriendo",
+        "title": "List apartamento en arriendo items",
+        "risk": "read",
+        "inputProperties": [
+          "limit"
+        ],
+        "executorType": "mcp-collection",
+        "outputFields": [
+          "url",
+          "text"
+        ],
+        "paginated": true,
+        "recipeSteps": []
+      },
+      {
+        "id": "mcp_collection_3_list_inmobiliarias",
+        "kind": "collection",
+        "name": "list_inmobiliarias",
+        "title": "List inmobiliarias items",
+        "risk": "read",
+        "inputProperties": [
+          "limit"
+        ],
+        "executorType": "mcp-collection",
+        "outputFields": [
+          "url",
+          "text"
+        ],
+        "paginated": true,
+        "recipeSteps": []
+      },
+      {
+        "id": "mcp_group_4_contactar",
+        "kind": "action-group",
+        "name": "contactar",
+        "title": "Contactar",
+        "risk": "write",
+        "inputProperties": [
+          "item"
+        ],
+        "executorType": "mcp-recipe",
+        "outputFields": [],
+        "paginated": false,
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      },
+      {
+        "id": "mcp_group_5_phone_llamar",
+        "kind": "action-group",
+        "name": "phone_llamar",
+        "title": "phone Llamar",
+        "risk": "write",
+        "inputProperties": [
+          "item"
+        ],
+        "executorType": "mcp-recipe",
+        "outputFields": [],
+        "paginated": false,
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      },
+      {
+        "id": "mcp_group_6_whats_app_whatsapp",
+        "kind": "action-group",
+        "name": "whats_app_whatsapp",
+        "title": "whats-app Whatsapp",
+        "risk": "write",
+        "inputProperties": [
+          "item"
+        ],
+        "executorType": "mcp-recipe",
+        "outputFields": [],
+        "paginated": false,
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      },
+      {
+        "id": "mcp_group_7_mas",
+        "kind": "action-group",
+        "name": "mas",
+        "title": "Más",
+        "risk": "write",
+        "inputProperties": [
+          "item"
+        ],
+        "executorType": "mcp-recipe",
+        "outputFields": [],
+        "paginated": false,
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      },
+      {
+        "id": "mcp_button_8_tool_",
+        "kind": "action",
+        "name": "tool_",
+        "title": "☰",
+        "risk": "write",
+        "inputProperties": [],
+        "executorType": "mcp-recipe",
+        "outputFields": [],
+        "paginated": false,
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      },
+      {
+        "id": "mcp_button_9_abrir_menu_proyectos_de_vivienda",
+        "kind": "action",
+        "name": "abrir_menu_proyectos_de_vivienda",
+        "title": "Abrir menu Proyectos de vivienda",
+        "risk": "write",
+        "inputProperties": [],
+        "executorType": "mcp-recipe",
+        "outputFields": [],
+        "paginated": false,
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      },
+      {
+        "id": "mcp_button_10_abrir_menu_venta",
+        "kind": "action",
+        "name": "abrir_menu_venta",
+        "title": "Abrir menu Venta",
+        "risk": "write",
+        "inputProperties": [],
+        "executorType": "mcp-recipe",
+        "outputFields": [],
+        "paginated": false,
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      },
+      {
+        "id": "mcp_button_11_abrir_menu_arriendo",
+        "kind": "action",
+        "name": "abrir_menu_arriendo",
+        "title": "Abrir menu Arriendo",
+        "risk": "write",
+        "inputProperties": [],
+        "executorType": "mcp-recipe",
+        "outputFields": [],
+        "paginated": false,
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      }
+    ]
+  },
+  "authoredTool": {
+    "id": "authored_1_find_matching_apartments",
+    "kind": "agent-authored",
+    "name": "find_matching_apartments",
+    "title": "find matching apartments",
+    "risk": "read",
+    "inputProperties": [
+      "minimum_bedrooms",
+      "minimum_area_m2",
+      "maximum_area_m2",
+      "laundry_phrases",
+      "limit"
+    ],
+    "executorType": "mcp-collection",
+    "outputFields": [
+      "url",
+      "rent_cop",
+      "administration_cop",
+      "bedrooms",
+      "area_m2",
+      "laundry_evidence"
+    ],
+    "paginated": true,
+    "recipeSteps": []
+  },
+  "taskCoverage": {
+    "listingExtractionContract": true,
+    "benchmarkFilterInputs": true,
+    "paginationContract": true,
+    "canCompleteTask": true,
+    "reason": "The generated surface contains the structural contracts required to attempt the task; result quality still needs scoring."
+  },
+  "execution": {
+    "pagesScanned": 13,
+    "recordsScanned": 269,
+    "matchedRecords": 73,
+    "complete": true,
+    "terminationReason": "page minimum rent_cop exceeded ranked total_monthly_cop at rank 50"
+  }
+}

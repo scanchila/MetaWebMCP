@@ -82,9 +82,15 @@ def build_browser_sources() -> tuple[str, str, str, str]:
 
     mcp_client_url = browser_module_url((ROOT / "public/js/mcp-http-client.js").read_text())
     recipe_url = browser_module_url((ROOT / "public/js/mcp-recipe.js").read_text())
+    collection_url = browser_module_url((ROOT / "public/js/mcp-collection.js").read_text())
+    authoring_source = (ROOT / "public/js/tool-authoring.js").read_text()
+    authoring_source = authoring_source.replace("'./mcp-collection.js'", json.dumps(collection_url))
+    authoring_source = authoring_source.replace("'./mcp-recipe.js'", json.dumps(recipe_url))
+    authoring_url = browser_module_url(authoring_source)
     network_policy_url = browser_module_url((ROOT / "public/js/network-policy.js").read_text())
     browser_session_source = (ROOT / "public/js/browser-mcp-session.js").read_text()
     browser_session_source = browser_session_source.replace("'./mcp-http-client.js'", json.dumps(mcp_client_url))
+    browser_session_source = browser_session_source.replace("'./mcp-collection.js'", json.dumps(collection_url))
     browser_session_source = browser_session_source.replace("'./mcp-recipe.js'", json.dumps(recipe_url))
     browser_session_source = browser_session_source.replace("'./network-policy.js'", json.dumps(network_policy_url))
     browser_session_source += "\nglobalThis.__browserMcpSessionForTest = browserMcpSession;\n"
@@ -92,6 +98,7 @@ def build_browser_sources() -> tuple[str, str, str, str]:
 
     runtime_source = (ROOT / "public/js/webmcp-runtime.js").read_text()
     runtime_source = runtime_source.replace("'./browser-mcp-session.js'", json.dumps(browser_session_url))
+    runtime_source = runtime_source.replace("'./mcp-collection.js'", json.dumps(collection_url))
     runtime_source = runtime_source.replace("'./mcp-recipe.js'", json.dumps(recipe_url))
     analyzer_source = (ROOT / "public/js/demo-analyzer.js").read_text().replace(
         "new URL('/demo/', location.href)",
@@ -105,6 +112,8 @@ def build_browser_sources() -> tuple[str, str, str, str]:
     app_source = app_source.replace("'./demo-analyzer.js'", json.dumps(analyzer_url))
     app_source = app_source.replace("'./webmcp-runtime.js'", json.dumps(runtime_url))
     app_source = app_source.replace("'./browser-mcp-session.js'", json.dumps(browser_session_url))
+    app_source = app_source.replace("'./mcp-collection.js'", json.dumps(collection_url))
+    app_source = app_source.replace("'./tool-authoring.js'", json.dumps(authoring_url))
     app_source = app_source.replace("'./workspace-store.js'", json.dumps(workspace_store_url))
     return index_html, (ROOT / "public/styles.css").read_text(), demo_html, app_source
 
@@ -311,6 +320,8 @@ def main() -> int:
                     "restart Chrome",
                     "WebMCP active",
                     "seven meta-tools",
+                    "Agent-controlled browser",
+                    'source: "agent_snapshot"',
                 ]:
                     assert expected in guide_text, expected
                 critical_font_sizes = preview_page.evaluate(
@@ -608,7 +619,15 @@ def main() -> int:
   - combobox "Property type" [ref=e2]:
     - option "All property types" [selected]
     - option "Apartamento"
-  - button "Search properties" [ref=e3]"""
+  - button "Search properties" [ref=e3]
+  - link "$ 800.000 Apartment A 2 Habs. 48 m² Zona de lavado" [ref=e4]:
+    - /url: /listing/a
+  - link "$ 900.000 Apartment B 3 Habs. 55 m² Zona de lavado" [ref=e5]:
+    - /url: /listing/b
+  - link "$ 950.000 Apartment C 2 Habs. 60 m² Área de ropas" [ref=e6]:
+    - /url: /listing/c
+  - link "Page 2" [ref=e7]:
+    - /url: /rentals/page2"""
                 agent_analysis = page.evaluate(
                     """async ({ snapshot }) => window.__callNative('meta_analyze_site', {
                       source: 'agent_snapshot',
@@ -619,6 +638,10 @@ def main() -> int:
                     {"snapshot": agent_snapshot},
                 )
                 assert agent_analysis["source"]["kind"] == "agent_snapshot"
+                assert agent_analysis["authoring"]["createField"] == "authored_tools"
+                assert {
+                    parser["type"] for parser in agent_analysis["authoring"]["collection"]["parsers"]
+                } >= {"identity", "currency", "number-before", "matched-input"}
                 search_capability = next(
                     capability for capability in agent_analysis["capabilities"]
                     if capability["name"] == "search_properties"
@@ -653,8 +676,67 @@ def main() -> int:
                 assert agent_evaluation["complete"] is False
                 assert agent_evaluation["coverage"]["skipped"] == 1
                 assert "calling agent" in agent_evaluation["results"][0]["reason"].lower()
+                collection_capability = next(
+                    capability for capability in agent_analysis["capabilities"]
+                    if capability["kind"] == "collection"
+                )
+                page.evaluate(
+                    """async ({ capabilityId, pagination }) => {
+                      await window.__callNative('meta_create_webmcp', {
+                        authored_tools: [{
+                          capability_ids: [capabilityId],
+                          name: 'find_matching_listings',
+                          description: 'Return matching observed listings as normalized records.',
+                          risk: 'read',
+                          input_schema: {
+                            type: 'object',
+                            properties: {
+                              minimum_bedrooms: { type: 'number', minimum: 0 },
+                              limit: { type: 'integer', minimum: 1, maximum: 10 }
+                            },
+                            required: ['minimum_bedrooms'],
+                            additionalProperties: false
+                          },
+                          sample_args: { minimum_bedrooms: 2, limit: 10 },
+                          executor: {
+                            type: 'mcp-collection',
+                            item: { urlContains: '/listing/', minTextLength: 20 },
+                            fields: [
+                              { name: 'url', source: 'url', parser: { type: 'identity' }, required: true },
+                              { name: 'bedrooms', source: 'text', parser: { type: 'number-before', marker: 'Habs.' }, required: true }
+                            ],
+                            filters: [{ field: 'bedrooms', operator: 'gte', value: { input: 'minimum_bedrooms' } }],
+                            computed: [],
+                            sort: [{ field: 'bedrooms', direction: 'desc' }],
+                            limit: { input: 'limit', default: 10, maximum: 10 },
+                            maxItems: 100,
+                            pagination
+                          }
+                        }]
+                      });
+                      await window.__callNative('meta_activate_webmcp', {});
+                    }""",
+                    {
+                        "capabilityId": collection_capability["id"],
+                        "pagination": collection_capability["executor"]["pagination"],
+                    },
+                )
+                delegated_collection = page.evaluate(
+                    "async () => window.__callNative('find_matching_listings', { minimum_bedrooms: 2, limit: 5 })"
+                )
+                assert delegated_collection["execution"] == "agent_browser_required"
+                assert delegated_collection["completed"] is False
+                assert delegated_collection["collectionPlan"]["scope"] == {
+                    "origin": "https://example.com",
+                    "pathPrefix": "/",
+                }
+                assert delegated_collection["collectionPlan"]["startUrl"] == "https://example.com/"
+                assert delegated_collection["collectionPlan"]["pagination"]["maxPages"] == 10
+                assert delegated_collection["input"] == {"minimum_bedrooms": 2, "limit": 5}
                 page.evaluate("async () => window.__callNative('meta_reset_workspace', {})")
-                result["checks"].append("calling-agent snapshot analysis and delegated browser recipe")
+                result["checks"].append(
+                    "calling-agent snapshot analysis plus delegated recipe and managing-agent-authored collection"
+                )
 
                 assert page.locator('#target-url').is_visible()
                 assert page.locator('#target-snapshot, #target-html').count() == 0
@@ -667,6 +749,33 @@ def main() -> int:
                 assert page.locator('#use-demo-button').get_attribute('aria-pressed') == "false"
                 assert page.locator('#target-frame').is_hidden()
                 result["checks"].append("URL-first workspace removes human snapshot and source-mode inputs while retaining a visible sample")
+
+                assert page.locator("#client-guide").evaluate("element => element.open") is False
+                page.evaluate(
+                    """() => {
+                      const session = window.__browserMcpSessionForTest;
+                      window.__browserAnalyzeBeforeRateLimit = session.analyze.bind(session);
+                      session.analyze = async () => {
+                        const error = new Error('The Cloudflare-hosted browser is rate-limited. Please run the browser from your agent instead and call meta_analyze_site with source: "agent_snapshot". See the Run path guide for instructions.');
+                        error.code = 'HOSTED_BROWSER_RATE_LIMITED';
+                        throw error;
+                      };
+                    }"""
+                )
+                page.locator("#analyze-button").click()
+                page.wait_for_function("document.body.getAttribute('aria-busy') === 'false'")
+                rate_limit_trace = page.locator("#trace .trace-entry.error").last
+                expect(rate_limit_trace).to_contain_text("Cloudflare-hosted browser is rate-limited")
+                expect(rate_limit_trace).to_contain_text("run the browser from your agent")
+                assert page.locator("#client-guide").evaluate("element => element.open") is True
+                page.evaluate(
+                    """() => {
+                      const session = window.__browserMcpSessionForTest;
+                      session.analyze = window.__browserAnalyzeBeforeRateLimit;
+                      document.querySelector('#client-guide').open = false;
+                    }"""
+                )
+                result["checks"].append("hosted-browser rate limits expose agent-browser guidance and open the Run path guide")
 
                 page.evaluate(
                     """() => {
