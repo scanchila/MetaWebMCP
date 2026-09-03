@@ -1,13 +1,9 @@
 export const ALLOWED_MCP_TOOLS = Object.freeze([
-  'browser_navigate',
   'browser_snapshot',
-  'browser_find',
   'browser_type',
-  'browser_fill_form',
   'browser_click',
   'browser_select_option',
   'browser_wait_for',
-  'browser_tabs',
 ]);
 
 const ALLOWED_MCP_TOOL_SET = new Set(ALLOWED_MCP_TOOLS);
