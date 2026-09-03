@@ -35,7 +35,7 @@ The project does not need a separate model API. The WebMCP client is the reasoni
 - The live page exposed seven permanent tools through a real `document.modelContext`, dynamically expanded to eleven, and passed all four generated-tool checks.
 - Its 13-file export registered four native tools on an independently served page and completed search, itinerary mutation, and state inspection without MetaWebMCP as the runtime.
 - Through the same native entrypoint, the hosted, page-scoped Browser MCP path generated and executed semantic adapters for Wikipedia search, a two-stage SauceDemo sign-in and cart workflow, and a visible state change on The Internet test site.
-- The production page and independently served native export each scored 100 for Lighthouse performance, accessibility, best practices, SEO, and agentic browsing, with zero layout shift and no console errors.
+- Three production Lighthouse samples scored 99–100 performance (median 100), with 100 for accessibility, best practices, SEO, and agentic browsing in every run. The independently served native export scored 100 in all five categories. Every run recorded zero console errors; production CLS remained below 0.000106 and export CLS was zero.
 
 The retained screenshots and redacted machine results are in `evidence/` in the public repository.
 

@@ -197,7 +197,7 @@
   },
   "exportedNativeValidation": {
     "archive": "relay-sessions-webmcp.zip",
-    "archiveSha256": "9b53891d18fb6f87462849c6d961404df616698750f4763fe0e8231492f33669",
+    "archiveSha256": "b8f1c1f0eb126816d92a6bc336e92dafd706c79bf08d1a5d8a23f3d9a5680e7a",
     "fileCount": 13,
     "unixFileMode": "0644",
     "directRegisterTool": true,
@@ -292,12 +292,18 @@
   ],
   "uiStatus": "WebMCP active",
   "generatedToolCount": "4",
-  "capturedAt": "2026-09-03T03:39:58.545415Z",
+  "capturedAt": "2026-09-03T05:16:19.096298Z",
   "deployment": "https://metawebmcp.neuryta.com",
-  "deploymentVersion": "97b3a727-85d8-4a55-93f2-38afcc759428",
-  "sourceCommit": "9744d48c04a400f1879308a50e9f95eb656cd316",
+  "deploymentVersion": "c5ac5494-8d79-413e-9a9c-8db3dcd3339c",
+  "sourceCommit": "178f2ff8dd63dc6f1c29558f5ed36cf4798b23e8",
+  "deployedAt": "2026-09-03T05:14:13.265192Z",
+  "deploymentTag": "source-178f2ff8dd63",
+  "identityVerifiedFromHealth": true,
   "captureScript": "capture-native-evidence.py",
-  "captureScriptSha256": "2f0a855237f668f3a262062088526ac0183a61a270e2895f612060f685755d64",
+  "captureScriptSha256": "c0d6acb7a1cf6a7f7be252d52732a81f40a82e28dede78e683fc75c4ef6144b1",
+  "captureDependencies": {
+    "evidence_provenance.py": "c60223290a69ad1fc312e41b4e95bcb9358fe3ab2a26f0eca60b7b7cd039b9a9"
+  },
   "browser": "Google Chrome 154.0.8037.0 beta",
   "browserLaunch": {
     "executable": "google-chrome-beta",
@@ -317,11 +323,12 @@
   "assetSha256": {
     "/": "1e348ff6df3a0f3f6a1d45c399608ebe9d3af6678ef570aebdc63eab6cd3620d",
     "/styles.css": "c471d41c8d45f09475f4d03301cffc1a69c3a5e434783fa140c504395608e40a",
-    "/js/app.js": "e97e196b136a91d8fb83293ac8e5a24eb74f7ab84c4acc92993def7bd5ada577",
-    "/js/browser-mcp-session.js": "69e76f51afc917f235da3f890aec15cb2c3070d71c4920e428833327dd3d69c3",
+    "/js/app.js": "9b7d09fdcd0853331c3c5b4d996e1e25905ce8e4861b29e24350fbdceff7f924",
+    "/js/browser-mcp-session.js": "1628df164fe3d5f47c1c0a95b51e0732f1e09b77320b5f2f450c1b382aad2395",
     "/js/demo-analyzer.js": "8c6da0b627d0d7c99596702964c9c3af282e7b71bc2f9f88618e6aad93dbc378",
     "/js/mcp-http-client.js": "7e5e5c882e2b40b859cb04f63f023116013d8e5da9573e7662a5e67770286659",
     "/js/mcp-recipe.js": "4625018c329f768dbc9c6d0592d018e73cf04307342dd2f820e37fbea484e8de",
+    "/js/network-policy.js": "b31cbd26dc759bbd41f8998e69a3681272c11a454167148bbbdb5cb8f21f9706",
     "/js/webmcp-runtime.js": "f16585da4e34a565dcd3a62bdebf681f9fd1b736bd2784948d954b4695deaf5b",
     "/demo/index.html": "5fc4f5641674dbc0dd1bc814ff347f32f08484cccdbc2b365593c63f9c05b4e3",
     "/demo/demo.css": "372e05371ba2cb2a68e65b27820f504b2f964521ae845b71e52528137e779d45",
@@ -329,5 +336,5 @@
   },
   "consoleErrors": [],
   "screenshot": "native-webmcp-recursive-workspace.png",
-  "screenshotSha256": "cd6a2cbdf25c3e5af8ddfc567baabf8291418f468ce56e883ebbcc05ed523b78"
+  "screenshotSha256": "621ef192d05675187ab3932e12a768ef9d2d9495eecbf1c471f7997ec8cc7c8c"
 }

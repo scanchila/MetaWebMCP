@@ -1,10 +1,16 @@
 {
-  "capturedAt": "2026-09-03T03:50:30.374911Z",
+  "capturedAt": "2026-09-03T05:17:35.727913Z",
   "deployment": "https://metawebmcp.neuryta.com",
-  "deploymentVersion": "97b3a727-85d8-4a55-93f2-38afcc759428",
-  "sourceCommit": "9744d48c04a400f1879308a50e9f95eb656cd316",
+  "deploymentVersion": "c5ac5494-8d79-413e-9a9c-8db3dcd3339c",
+  "sourceCommit": "178f2ff8dd63dc6f1c29558f5ed36cf4798b23e8",
+  "deployedAt": "2026-09-03T05:14:13.265192Z",
+  "deploymentTag": "source-178f2ff8dd63",
+  "identityVerifiedFromHealth": true,
   "captureScript": "capture-public-evidence.py",
-  "captureScriptSha256": "1fd975d9afc7dcdd99541c1e651ac7f0b4bd887cca7f2c4648a92c48d8069b2f",
+  "captureScriptSha256": "19cbb42904f9a11af4edc1be1d437285c2977466d9184cdbd75a476b9921b561",
+  "captureDependencies": {
+    "evidence_provenance.py": "c60223290a69ad1fc312e41b4e95bcb9358fe3ab2a26f0eca60b7b7cd039b9a9"
+  },
   "runtime": "Cloudflare Browser Run with Playwright MCP",
   "entrypoint": "native document.modelContext",
   "feature": "WebMCPTesting",
@@ -180,7 +186,7 @@
           }
         }
       ],
-      "capturedAt": "2026-09-03T03:51:00.257663Z",
+      "capturedAt": "2026-09-03T05:17:50.847776Z",
       "postconditions": {
         "search:WebMCP": true
       },
@@ -190,7 +196,7 @@
         "stageCount": 1
       },
       "workspaceScreenshot": "wikipedia-search-workspace.png",
-      "workspaceScreenshotSha256": "43b2fdcb5f193956cf1cf01156971acef0f42cd4753920ebe80291047e76a78c",
+      "workspaceScreenshotSha256": "f57c32aaceb6c581209cc747079df7a75f16754dfb68f3a5a7c84d06737572e6",
       "targetScreenshot": "wikipedia-search-target.png",
       "targetScreenshotSha256": "25580a0a4cbe227dac5aa372d70e2844a7c86a115de082e4b7b2cdf3f88be995",
       "consoleErrors": []
@@ -462,7 +468,7 @@
             "fileName": "saucedemo-cart-webmcp.zip",
             "fileCount": 11,
             "bytes": 35074,
-            "archiveSha256": "50bb96e6ba75f1a522b54a822b40c04ae1af8858550ac81c22c53f4fd1bafa76",
+            "archiveSha256": "b22ba1ab5b7a6623fd554c908058e9ef581f90cd3fb23d558af243829ebb2963",
             "directRegisterTool": true,
             "unixFileMode": "0644",
             "toolNames": [
@@ -475,7 +481,7 @@
           }
         }
       ],
-      "capturedAt": "2026-09-03T03:51:35.753846Z",
+      "capturedAt": "2026-09-03T05:19:44.307110Z",
       "postconditions": {
         "login:Products": true,
         "add_to_cart:Sauce Labs Backpack": true,
@@ -487,7 +493,7 @@
         "stageCount": 2
       },
       "workspaceScreenshot": "saucedemo-cart-workspace.png",
-      "workspaceScreenshotSha256": "50f4c8570e908bb95beb13279499bc12306709d6aed0dc1eae7683473c6ec7de",
+      "workspaceScreenshotSha256": "17c538ffe2490770082a3338a2588b89cd4f9c69d8eb27ef565084d677fc79d4",
       "targetScreenshot": "saucedemo-cart-target.png",
       "targetScreenshotSha256": "c77d3a18d159252141a2fc37c039f6ea522aee8fbcfa8a4b452539e272c1e11a",
       "consoleErrors": []
@@ -584,7 +590,7 @@
           }
         }
       ],
-      "capturedAt": "2026-09-03T03:52:35.805007Z",
+      "capturedAt": "2026-09-03T05:21:17.674582Z",
       "postconditions": {
         "add_element:Delete": true
       },
@@ -594,7 +600,7 @@
         "stageCount": 1
       },
       "workspaceScreenshot": "the-internet-add-element-workspace.png",
-      "workspaceScreenshotSha256": "be1d13c1cc9f41cb42a574d15381327e6c15a4f04ba15f9f4d39df69c9872355",
+      "workspaceScreenshotSha256": "b3c6166b96bb0891057826bc400531ce6c2233cedae6c86cda62cb45f67c817b",
       "targetScreenshot": "the-internet-add-element-target.png",
       "targetScreenshotSha256": "f38d6e45f3bec0e541978360b436aa9875b77801d41b326452ee4267190e5837",
       "consoleErrors": []
@@ -618,11 +624,12 @@
   "assetSha256": {
     "/": "1e348ff6df3a0f3f6a1d45c399608ebe9d3af6678ef570aebdc63eab6cd3620d",
     "/styles.css": "c471d41c8d45f09475f4d03301cffc1a69c3a5e434783fa140c504395608e40a",
-    "/js/app.js": "e97e196b136a91d8fb83293ac8e5a24eb74f7ab84c4acc92993def7bd5ada577",
-    "/js/browser-mcp-session.js": "69e76f51afc917f235da3f890aec15cb2c3070d71c4920e428833327dd3d69c3",
+    "/js/app.js": "9b7d09fdcd0853331c3c5b4d996e1e25905ce8e4861b29e24350fbdceff7f924",
+    "/js/browser-mcp-session.js": "1628df164fe3d5f47c1c0a95b51e0732f1e09b77320b5f2f450c1b382aad2395",
     "/js/demo-analyzer.js": "8c6da0b627d0d7c99596702964c9c3af282e7b71bc2f9f88618e6aad93dbc378",
     "/js/mcp-http-client.js": "7e5e5c882e2b40b859cb04f63f023116013d8e5da9573e7662a5e67770286659",
     "/js/mcp-recipe.js": "4625018c329f768dbc9c6d0592d018e73cf04307342dd2f820e37fbea484e8de",
+    "/js/network-policy.js": "b31cbd26dc759bbd41f8998e69a3681272c11a454167148bbbdb5cb8f21f9706",
     "/js/webmcp-runtime.js": "f16585da4e34a565dcd3a62bdebf681f9fd1b736bd2784948d954b4695deaf5b",
     "/demo/index.html": "5fc4f5641674dbc0dd1bc814ff347f32f08484cccdbc2b365593c63f9c05b4e3",
     "/demo/demo.css": "372e05371ba2cb2a68e65b27820f504b2f964521ae845b71e52528137e779d45",
