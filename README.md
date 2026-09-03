@@ -157,6 +157,8 @@ Browser operations also require a short-lived, signed, HttpOnly page capability,
 | `BROWSER_MCP_EGRESS_ISOLATED` | `0` | Required declaration that the configured browser runtime has enforced connection-level private-network egress controls |
 | `MCP_CAPABILITY_SECRET` | random per process | Secret of at least 32 bytes used to sign page-issued Browser MCP capabilities; set explicitly when running multiple instances |
 | `MCP_SESSION_TTL_MS` | `1200000` | Inactivity timeout for each page-scoped Browser MCP client |
+| `ANALYSIS_RATE_LIMIT_PER_MINUTE` | `30` | Process-wide Node analysis request limit |
+| `MAX_CONCURRENT_ANALYSES` | `4` | Maximum simultaneous Node analysis requests |
 | `MAX_PENDING_EXPORTS` | `8` | Maximum ZIP archives retained for pending Node downloads |
 | `MAX_PENDING_EXPORT_BYTES` | `16000000` | Maximum total bytes retained across pending Node downloads |
 | `MAX_EXPORT_ARCHIVE_BYTES` | `3000000` | Maximum generated ZIP size accepted by the Node runtime |

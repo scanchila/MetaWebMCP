@@ -1,7 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import http from 'node:http';
+import { EventEmitter, once } from 'node:events';
+import { Readable } from 'node:stream';
 
-import { isPrivateOrReservedIp, parseAllowedOrigins, validateBrowserTarget, validateTargetUrl } from '../lib/security.mjs';
+import {
+  fetchTargetHtml,
+  isPrivateOrReservedIp,
+  parseAllowedOrigins,
+  validateBrowserTarget,
+  validateTargetUrl,
+} from '../lib/security.mjs';
 
 test('private, loopback, link-local, documentation, and multicast IPs are blocked', () => {
   for (const address of [
@@ -57,4 +66,74 @@ test('browser origin allowlist compares origins rather than paths', async () => 
   );
   const result = await validateBrowserTarget('https://allowed.example/target', { allowPrivate: true, allowedOrigins: origins });
   assert.equal(result.pathname, '/target');
+});
+
+test('URL fetch connects to the public address that passed DNS validation', async (t) => {
+  const upstream = http.createServer((request, response) => {
+    assert.equal(request.headers.host, 'public.example');
+    assert.equal(request.url, '/catalog?view=compact');
+    response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    response.end('<main>Pinned response</main>');
+  });
+  upstream.listen(0, '127.0.0.1');
+  await once(upstream, 'listening');
+  t.after(() => new Promise((resolve) => upstream.close(resolve)));
+
+  const seenConnections = [];
+  const result = await fetchTargetHtml('http://public.example/catalog?view=compact', {
+    lookup: async () => [{ address: '93.184.216.34', family: 4 }],
+    httpRequest: (options, callback) => {
+      seenConnections.push({
+        hostname: options.hostname,
+        family: options.family,
+        hostHeader: options.headers.host,
+      });
+      return http.request({
+        ...options,
+        hostname: '127.0.0.1',
+        family: 4,
+        port: upstream.address().port,
+      }, callback);
+    },
+  });
+
+  assert.equal(result.html, '<main>Pinned response</main>');
+  assert.deepEqual(seenConnections, [{
+    hostname: '93.184.216.34',
+    family: 4,
+    hostHeader: 'public.example',
+  }]);
+});
+
+test('URL fetch deadline includes DNS resolution', async () => {
+  await assert.rejects(
+    fetchTargetHtml('https://slow.example/', {
+      lookup: () => new Promise(() => {}),
+      timeoutMs: 20,
+    }),
+    /Target request timed out/,
+  );
+});
+
+test('HTTPS address pinning preserves the validated hostname for TLS and HTTP', async () => {
+  let requestOptions;
+  const result = await fetchTargetHtml('https://secure.example/account', {
+    lookup: async () => [{ address: '93.184.216.34', family: 4 }],
+    httpsRequest: (options, callback) => {
+      requestOptions = options;
+      const request = new EventEmitter();
+      request.end = () => {
+        const response = Readable.from(['<main>Secure response</main>']);
+        response.statusCode = 200;
+        response.headers = { 'content-type': 'text/html' };
+        callback(response);
+      };
+      return request;
+    },
+  });
+
+  assert.equal(result.html, '<main>Secure response</main>');
+  assert.equal(requestOptions.hostname, '93.184.216.34');
+  assert.equal(requestOptions.servername, 'secure.example');
+  assert.equal(requestOptions.headers.host, 'secure.example');
 });

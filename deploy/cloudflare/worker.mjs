@@ -19,6 +19,7 @@ const BODY_LIMIT = 2_000_000;
 const HTML_LIMIT = 1_500_000;
 const DOWNLOAD_TTL_SECONDS = 20 * 60;
 const MAX_EXPORT_ARCHIVE_BYTES = 3_000_000;
+const ANALYSIS_TIMEOUT_MS = 12_000;
 const SOURCE_COMMIT_PATTERN = /^[0-9a-f]{40,64}$/;
 
 export const PlaywrightMCP = createMcpAgent(runtimeEnv.BROWSER, {
@@ -108,26 +109,46 @@ async function limitedText(response) {
 }
 
 async function fetchTargetHtml(rawUrl) {
-  let target = validatePublicTarget(rawUrl);
-  for (let redirect = 0; redirect <= 4; redirect += 1) {
-    const response = await fetch(target, {
-      redirect: 'manual',
-      headers: { accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.1' },
-    });
-    if ([301, 302, 303, 307, 308].includes(response.status)) {
-      const location = response.headers.get('location');
-      if (!location) throw new Error('Target returned a redirect without a Location header.');
-      target = validatePublicTarget(new URL(location, target).href);
-      continue;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ANALYSIS_TIMEOUT_MS);
+  try {
+    let target = validatePublicTarget(rawUrl);
+    for (let redirect = 0; redirect <= 4; redirect += 1) {
+      const response = await fetch(target, {
+        redirect: 'manual',
+        signal: controller.signal,
+        headers: {
+          accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.1',
+          'accept-encoding': 'identity',
+        },
+      });
+      if ([301, 302, 303, 307, 308].includes(response.status)) {
+        const location = response.headers.get('location');
+        await response.body?.cancel();
+        if (!location) throw new Error('Target returned a redirect without a Location header.');
+        target = validatePublicTarget(new URL(location, target).href);
+        continue;
+      }
+      if (!response.ok) {
+        await response.body?.cancel();
+        throw new Error(`Target returned HTTP ${response.status}.`);
+      }
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('text/html') && !contentType.includes('application/xhtml+xml')) {
+        await response.body?.cancel();
+        throw new Error(`Target did not return HTML (${contentType || 'unknown content type'}).`);
+      }
+      return { html: await limitedText(response), finalUrl: target.href };
     }
-    if (!response.ok) throw new Error(`Target returned HTTP ${response.status}.`);
-    const contentType = response.headers.get('content-type') || '';
-    if (!contentType.includes('text/html') && !contentType.includes('application/xhtml+xml')) {
-      throw new Error(`Target did not return HTML (${contentType || 'unknown content type'}).`);
+    throw new Error('Target redirected more than 4 times.');
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error('Target request timed out.');
     }
-    return { html: await limitedText(response), finalUrl: target.href };
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-  throw new Error('Target redirected more than 4 times.');
 }
 
 function sameOrigin(request) {
@@ -145,6 +166,12 @@ async function browserRequestWithinLimit(request, bindings) {
 async function exportRequestWithinLimit(request, bindings) {
   const key = request.headers.get('cf-connecting-ip') || 'local';
   const result = await bindings.EXPORT_RATE_LIMITER.limit({ key });
+  return result.success;
+}
+
+async function analysisRequestWithinLimit(request, bindings) {
+  const key = request.headers.get('cf-connecting-ip') || 'local';
+  const result = await bindings.ANALYSIS_RATE_LIMITER.limit({ key });
   return result.success;
 }
 
@@ -222,6 +249,9 @@ async function handleApi(request, bindings, pathname, browserCapability) {
   }
 
   if (pathname === '/api/analyze' && request.method === 'POST') {
+    if (!await analysisRequestWithinLimit(request, bindings)) {
+      return json({ ok: false, error: 'Analysis request limit reached. Try again in a minute.' }, { status: 429 });
+    }
     const body = await readJson(request);
     if (body.source === 'html') {
       const analysis = analyzeHtml({ html: String(body.html || ''), url: String(body.url || ''), goal: String(body.goal || '') });

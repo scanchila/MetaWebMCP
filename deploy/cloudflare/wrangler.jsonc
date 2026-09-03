@@ -10,7 +10,7 @@
     }
   ],
   "compatibility_date": "2026-08-20",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "alias": {
     "@cloudflare/playwright/fs": "./fs-shim.mjs"
   },
@@ -34,6 +34,14 @@
       "namespace_id": "1002",
       "simple": {
         "limit": 12,
+        "period": 60
+      }
+    },
+    {
+      "name": "ANALYSIS_RATE_LIMITER",
+      "namespace_id": "1003",
+      "simple": {
+        "limit": 30,
         "period": 60
       }
     }

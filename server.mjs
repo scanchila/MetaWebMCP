@@ -44,6 +44,8 @@ const MAX_PENDING_EXPORTS = positiveIntegerSetting('MAX_PENDING_EXPORTS', 8);
 const MAX_PENDING_EXPORT_BYTES = positiveIntegerSetting('MAX_PENDING_EXPORT_BYTES', 16_000_000);
 const MAX_EXPORT_ARCHIVE_BYTES = positiveIntegerSetting('MAX_EXPORT_ARCHIVE_BYTES', 3_000_000);
 const EXPORT_RATE_LIMIT_PER_MINUTE = positiveIntegerSetting('EXPORT_RATE_LIMIT_PER_MINUTE', 12);
+const ANALYSIS_RATE_LIMIT_PER_MINUTE = positiveIntegerSetting('ANALYSIS_RATE_LIMIT_PER_MINUTE', 30);
+const MAX_CONCURRENT_ANALYSES = positiveIntegerSetting('MAX_CONCURRENT_ANALYSES', 4);
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -63,6 +65,9 @@ const mcpClients = new Map();
 let pendingDownloadBytes = 0;
 let exportRateWindowStartedAt = Date.now();
 let exportsInCurrentWindow = 0;
+let analysisRateWindowStartedAt = Date.now();
+let analysesInCurrentWindow = 0;
+let activeAnalyses = 0;
 
 function securityHeaders(contentType = '') {
   const headers = {
@@ -259,6 +264,27 @@ function claimExportRateSlot() {
   exportsInCurrentWindow += 1;
 }
 
+function claimAnalysisSlot() {
+  if (activeAnalyses >= MAX_CONCURRENT_ANALYSES) {
+    const error = new Error('Analysis capacity reached. Try again shortly.');
+    error.statusCode = 429;
+    throw error;
+  }
+  const now = Date.now();
+  if (now - analysisRateWindowStartedAt >= 60_000) {
+    analysisRateWindowStartedAt = now;
+    analysesInCurrentWindow = 0;
+  }
+  if (analysesInCurrentWindow >= ANALYSIS_RATE_LIMIT_PER_MINUTE) {
+    const error = new Error('Analysis request limit reached. Try again in a minute.');
+    error.statusCode = 429;
+    throw error;
+  }
+  analysesInCurrentWindow += 1;
+  activeAnalyses += 1;
+  return () => { activeAnalyses -= 1; };
+}
+
 function assertDownloadCapacity(additionalBytes = 0) {
   pruneDownloads();
   if (downloads.size >= MAX_PENDING_EXPORTS
@@ -323,19 +349,24 @@ async function handleApi(req, res, pathname, searchParams) {
   }
 
   if (pathname === '/api/analyze' && req.method === 'POST') {
-    const body = await readJson(req);
-    if (body.source === 'html') {
-      const result = analyzeHtml({ html: String(body.html || ''), url: String(body.url || ''), goal: String(body.goal || '') });
-      return sendJson(res, 200, { ok: true, analysis: result });
+    const releaseAnalysisSlot = claimAnalysisSlot();
+    try {
+      const body = await readJson(req);
+      if (body.source === 'html') {
+        const result = analyzeHtml({ html: String(body.html || ''), url: String(body.url || ''), goal: String(body.goal || '') });
+        return sendJson(res, 200, { ok: true, analysis: result });
+      }
+      if (body.source === 'url') {
+        const fetched = await fetchTargetHtml(body.url);
+        const result = analyzeHtml({ html: fetched.html, url: fetched.finalUrl, goal: String(body.goal || '') });
+        result.source.kind = 'url';
+        result.source.url = fetched.finalUrl;
+        return sendJson(res, 200, { ok: true, analysis: result });
+      }
+      throw new Error('source must be “url” or “html”.');
+    } finally {
+      releaseAnalysisSlot();
     }
-    if (body.source === 'url') {
-      const fetched = await fetchTargetHtml(body.url);
-      const result = analyzeHtml({ html: fetched.html, url: fetched.finalUrl, goal: String(body.goal || '') });
-      result.source.kind = 'url';
-      result.source.url = fetched.finalUrl;
-      return sendJson(res, 200, { ok: true, analysis: result });
-    }
-    throw new Error('source must be “url” or “html”.');
   }
 
   if (pathname === '/api/mcp/status' && req.method === 'GET') {
@@ -484,6 +515,10 @@ const server = http.createServer(async (req, res) => {
     }
   }
 });
+server.maxConnections = 128;
+server.headersTimeout = 10_000;
+server.requestTimeout = 20_000;
+server.keepAliveTimeout = 5_000;
 
 server.listen(PORT, HOST, () => {
   console.log(`MetaWebMCP listening on http://${HOST}:${PORT}`);

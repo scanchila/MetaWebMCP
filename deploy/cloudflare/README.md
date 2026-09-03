@@ -28,6 +28,7 @@ Set `MCP_CAPABILITY_SECRET` to a randomly generated value of at least 32 bytes. 
 - `PlaywrightMCP` is a Durable Object backed by the Browser Run binding.
 - The page uses the package's SSE endpoint so one control connection remains open for the life of the browser session.
 - Browser transport requests require a same-origin, short-lived signed capability stored in an HttpOnly SameSite cookie and are limited to 60 requests per source IP per minute.
+- Anonymous HTML and URL analysis is limited to 30 requests per source IP per minute. URL fetches share one 12-second deadline across redirects, and Worker fetches use public Internet routing rather than zone-origin routing.
 - Export creation and download require that same page capability. Creation has a separate limit of twelve requests per source IP per minute, and archive bytes are stored in the Cache API rather than Worker process memory and deleted after retrieval.
 - Generated recipes still pass through MetaWebMCP's narrow tool allowlist; the raw browser tool surface is not registered with WebMCP.
 

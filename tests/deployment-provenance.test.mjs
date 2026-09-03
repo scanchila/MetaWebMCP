@@ -14,11 +14,18 @@ const rootPath = fileURLToPath(root);
 test('Cloudflare deployment declares immutable version metadata and source identity', async () => {
   const config = JSON.parse(await readFile(new URL('../deploy/cloudflare/wrangler.jsonc', import.meta.url), 'utf8'));
   assert.deepEqual(config.version_metadata, { binding: 'CF_VERSION_METADATA' });
+  assert.ok(config.compatibility_flags.includes('global_fetch_strictly_public'));
+  assert.deepEqual(
+    config.ratelimits.find((binding) => binding.name === 'ANALYSIS_RATE_LIMITER')?.simple,
+    { limit: 30, period: 60 },
+  );
 
   const worker = await readFile(new URL('../deploy/cloudflare/worker.mjs', import.meta.url), 'utf8');
   assert.match(worker, /bindings\.CF_VERSION_METADATA\?\.id/);
   assert.match(worker, /bindings\.META_WEBMCP_SOURCE_COMMIT/);
   assert.match(worker, /'cache-control': 'no-store'/);
+  assert.match(worker, /bindings\.ANALYSIS_RATE_LIMITER\.limit/);
+  assert.match(worker, /signal: controller\.signal/);
 });
 
 test('deployment wrapper rejects missing and mismatched source commits before upload', () => {
