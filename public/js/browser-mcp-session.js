@@ -185,10 +185,7 @@ export class BrowserMcpSession {
       const client = this.client;
       this.client = null;
       try {
-        const available = new Set((await client.listTools()).map((tool) => tool.name));
-        if (available.has('browser_close')) await client.callTool('browser_close', {});
-      } catch {
-        // A browser session may already have expired.
+        client.sendToolCallKeepalive?.('browser_close', {});
       } finally {
         await client.close().catch(() => {});
       }

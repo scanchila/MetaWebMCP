@@ -162,6 +162,31 @@ test('page-scoped Browser MCP session returns an inline visual for the current t
   assert.deepEqual(calls, [{ name: 'browser_take_screenshot', args: {} }]);
 });
 
+test('hosted Browser MCP reset does not wait for a browser_close response', async () => {
+  const keepaliveCalls = [];
+  let transportClosed = false;
+  const session = new BrowserMcpSession({ fetch: async () => { throw new Error('Unexpected fetch'); } });
+  session.configurationPromise = Promise.resolve({ browserMcpEndpoint: '/sse', browserMcpTransport: 'sse' });
+  session.client = {
+    listTools: () => new Promise(() => {}),
+    callTool: () => new Promise(() => {}),
+    sendToolCallKeepalive: (name, args) => {
+      keepaliveCalls.push({ name, args });
+      return true;
+    },
+    close: async () => { transportClosed = true; },
+  };
+
+  const result = await Promise.race([
+    session.reset('workspace_reset_123456'),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Reset waited for browser_close.')), 100)),
+  ]);
+
+  assert.deepEqual(result, { ok: true, closed: true });
+  assert.deepEqual(keepaliveCalls, [{ name: 'browser_close', args: {} }]);
+  assert.equal(transportClosed, true);
+});
+
 test('page-scoped Browser MCP session blocks local targets before navigation', async () => {
   const toolCalls = [];
   const fetchMock = async (input, options = {}) => {
