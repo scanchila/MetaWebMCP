@@ -7,6 +7,26 @@ const { default: screenshotTools } = await import(
   './node_modules/@cloudflare/playwright-mcp/lib/esm/src/tools/screenshot.js'
 );
 
+const agentsPackage = JSON.parse(await readFile(
+ './node_modules/@cloudflare/playwright-mcp/node_modules/agents/package.json',
+  'utf8',
+));
+assert.equal(
+  agentsPackage.version,
+  '0.22.0',
+  'the Cloudflare agent runtime should stay on the reviewed compatibility pin',
+);
+
+const mcpSdkPackage = JSON.parse(await readFile(
+ './node_modules/@modelcontextprotocol/sdk/package.json',
+  'utf8',
+));
+assert.equal(
+  mcpSdkPackage.version,
+  '1.30.0',
+  'the MCP SDK should stay on the reviewed compatibility pin',
+);
+
 let snapshotOptions;
 const snapshot = await PageSnapshot.create({
   _wrapApiCall: (callback) => callback(),
