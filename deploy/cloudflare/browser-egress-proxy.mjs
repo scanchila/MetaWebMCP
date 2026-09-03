@@ -36,6 +36,14 @@ function filteredHeaders(source, { request = false } = {}) {
   return headers;
 }
 
+function fulfilledResponseHeaders(source) {
+  const headers = filteredHeaders(source);
+  const result = Object.fromEntries(headers);
+  const cookies = typeof headers.getSetCookie === 'function' ? headers.getSetCookie() : [];
+  if (cookies.length) result['set-cookie'] = cookies.join('\n');
+  return result;
+}
+
 async function limitedResponseBody(response, maxBytes) {
   const declared = Number(response.headers.get('content-length') || 0);
   if (Number.isFinite(declared) && declared > maxBytes) {
@@ -110,7 +118,7 @@ export async function proxyBrowserRequest(route, options = {}) {
         : await limitedResponseBody(response, maxResponseBytes);
       await route.fulfill({
         status: response.status,
-        headers: Object.fromEntries(filteredHeaders(response.headers)),
+        headers: fulfilledResponseHeaders(response.headers),
         body,
       });
     } finally {

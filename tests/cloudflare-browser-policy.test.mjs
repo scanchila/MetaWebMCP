@@ -144,6 +144,24 @@ test('Browser Rendering requests cross the Worker public-fetch boundary', async 
   assert.equal(actions[0].options.body.toString(), '<main>Public response</main>');
 });
 
+test('Browser Rendering preserves multiple response cookies', async () => {
+  const responseHeaders = new Headers({ 'content-type': 'text/html' });
+  responseHeaders.append('set-cookie', 'session=abc; Path=/; HttpOnly');
+  responseHeaders.append('set-cookie', 'csrf=def; Expires=Wed, 21 Oct 2037 07:28:00 GMT; Path=/');
+  const { route, actions } = routedRequest();
+
+  await proxyBrowserRequest(route, {
+    fetchImpl: async () => new Response('<main>Signed in</main>', { headers: responseHeaders }),
+  });
+
+  assert.equal(actions.length, 1);
+  assert.equal(actions[0].type, 'fulfill');
+  assert.equal(
+    actions[0].options.headers['set-cookie'],
+    'session=abc; Path=/; HttpOnly\ncsrf=def; Expires=Wed, 21 Oct 2037 07:28:00 GMT; Path=/',
+  );
+});
+
 test('Browser Rendering proxy blocks private redirects, service workers, and oversized bodies', async () => {
   let fetches = 0;
   const fetchImpl = async () => {
