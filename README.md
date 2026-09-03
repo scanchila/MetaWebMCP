@@ -33,6 +33,36 @@ No model API key is required. The browser agent supplies the reasoning and calls
 
 ![MetaWebMCP running the recursive flow through native WebMCP](evidence/native-webmcp-recursive-workspace.png)
 
+## Why not just generate a reusable script?
+
+That is a valid alternative. An agent can save, parameterize, test, share,
+and rerun a Playwright script, browser extension, or agent skill. MetaWebMCP
+does not claim to make automation reusable for the first time, and direct
+automation may be the better choice for a one-off task.
+
+The distinction is the resulting interface. A script is a reusable
+implementation, usually coupled to its execution environment. MetaWebMCP
+turns an observed workflow into a website-facing contract with a stable
+semantic name, closed input schema, supporting interface evidence, risk
+classification, sample arguments, and a bounded deterministic executor. It
+registers that contract through WebMCP so compatible clients can discover it,
+then uses the same reviewed ToolSpec for immediate activation, testing, and a
+standalone native export. A site owner can adopt that export and replace its
+compatibility DOM lookups with application functions and existing permission
+checks.
+
+A sufficiently mature script platform could add schemas, discovery,
+sandboxing, lifecycle management, tests, and owner-installable packaging. At
+that point it provides much of the same tool-platform layer. MetaWebMCP's
+specific contribution is a constrained, WebMCP-native path from observed
+automation to a published website capability.
+
+The retained benchmarks compare MetaWebMCP with agents that repeatedly inspect
+browser snapshots, not with agents that generate and reuse optimized scripts.
+They demonstrate context compression and a crossover when enough repeated
+page interpretation is removed; they do not establish a universal performance
+advantage over reusable scripting.
+
 ## Production proof
 
 The deployed build has been exercised through a real browser `document.modelContext`: seven permanent tools became eleven after activation, all four generated-tool checks passed, and the downloaded 13-file repository registered and ran the same four tools independently. Through that same native entrypoint, the session-scoped hosted adapter completed semantic search, a two-stage sign-in and cart workflow, and a visible page-state mutation across three public targets.
