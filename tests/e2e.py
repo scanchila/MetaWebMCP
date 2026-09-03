@@ -255,6 +255,19 @@ def main() -> int:
                 page.add_script_tag(content=app_source, type="module")
                 page.wait_for_function("window.MetaWebMCP && Object.keys(window.__nativeTools || {}).length === 7")
 
+                assert page.locator('[role="tablist"], [role="tab"], [aria-selected]').count() == 0
+                assert page.locator('#owner-mode[aria-pressed="true"]').count() == 1
+                assert page.locator('#adapter-mode[aria-pressed="false"]').count() == 1
+                page.locator('#adapter-mode').focus()
+                page.keyboard.press('Enter')
+                assert page.locator('#owner-mode[aria-pressed="false"]').count() == 1
+                assert page.locator('#adapter-mode[aria-pressed="true"]').count() == 1
+                page.locator('#owner-mode').focus()
+                page.keyboard.press('Space')
+                assert page.locator('#owner-mode[aria-pressed="true"]').count() == 1
+                assert page.locator('#adapter-mode[aria-pressed="false"]').count() == 1
+                result["checks"].append("mode controls expose pressed-button semantics and native keyboard activation")
+
                 progress("meta-tools registered")
                 native_names = page.evaluate("async () => (await document.modelContext.getTools()).map(tool => tool.name)")
                 expected_meta = [
