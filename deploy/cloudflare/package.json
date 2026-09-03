@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "postinstall": "node patch-dependencies.mjs",
-    "check": "wrangler deploy --dry-run --outdir .wrangler/dry-run",
+    "check": "node verify-patches.mjs && wrangler deploy --dry-run --outdir .wrangler/dry-run",
     "deploy": "wrangler deploy"
   },
   "dependencies": {
