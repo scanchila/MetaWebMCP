@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 import sys
 import unittest
@@ -7,10 +8,32 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 
+from evidence_append_provenance import (  # noqa: E402
+    apply_browser_capture_provenance,
+    apply_static_capture_provenance,
+)
 from evidence_provenance import configured_source_commit, verified_deployment_identity  # noqa: E402
 
 
 SOURCE_COMMIT = 'a' * 40
+STATIC_PROVENANCE = {
+    'captureScript': 'capture-public-evidence.py',
+    'captureScriptSha256': 'a' * 64,
+    'captureDependencies': {
+        'evidence_provenance.py': 'b' * 64,
+        'evidence_append_provenance.py': 'c' * 64,
+    },
+}
+BROWSER_PROVENANCE = {
+    'browser': 'Google Chrome 154.0.8037.0 beta',
+    'browserLaunch': {
+        'executable': 'google-chrome-beta',
+        'headless': True,
+        'args': ['--no-sandbox', '--enable-blink-features=WebMCPTesting'],
+        'viewport': {'width': 1840, 'height': 1120},
+        'deviceScaleFactor': 1,
+    },
+}
 
 
 class Response:
@@ -80,6 +103,52 @@ class EvidenceProvenanceTest(unittest.TestCase):
                 SOURCE_COMMIT,
                 opener=opener({'ok': True, 'runtime': 'cloudflare'}, []),
             )
+
+    def test_seed_then_append_rejects_changed_static_capture_provenance(self):
+        seeded_report = {}
+        apply_static_capture_provenance(seeded_report, STATIC_PROVENANCE, append=False)
+
+        matching_append = deepcopy(seeded_report)
+        apply_static_capture_provenance(matching_append, STATIC_PROVENANCE, append=True)
+        self.assertEqual(matching_append, seeded_report)
+
+        mismatches = {
+            'captureScriptSha256': {**STATIC_PROVENANCE, 'captureScriptSha256': 'd' * 64},
+            'captureDependencies': {
+                **STATIC_PROVENANCE,
+                'captureDependencies': {
+                    **STATIC_PROVENANCE['captureDependencies'],
+                    'evidence_append_provenance.py': 'e' * 64,
+                },
+            },
+        }
+        for field, current_provenance in mismatches.items():
+            with self.subTest(field=field):
+                append_report = deepcopy(seeded_report)
+                with self.assertRaisesRegex(RuntimeError, field):
+                    apply_static_capture_provenance(append_report, current_provenance, append=True)
+                self.assertEqual(append_report, seeded_report)
+
+    def test_seed_then_append_rejects_changed_browser_provenance(self):
+        seeded_report = {}
+        apply_browser_capture_provenance(seeded_report, BROWSER_PROVENANCE, append=False)
+
+        matching_append = deepcopy(seeded_report)
+        apply_browser_capture_provenance(matching_append, BROWSER_PROVENANCE, append=True)
+        self.assertEqual(matching_append, seeded_report)
+
+        changed_launch = deepcopy(BROWSER_PROVENANCE)
+        changed_launch['browserLaunch']['args'].append('--disable-dev-shm-usage')
+        mismatches = {
+            'browser': {**BROWSER_PROVENANCE, 'browser': 'Google Chrome 155.0.8100.0 beta'},
+            'browserLaunch': changed_launch,
+        }
+        for field, current_provenance in mismatches.items():
+            with self.subTest(field=field):
+                append_report = deepcopy(seeded_report)
+                with self.assertRaisesRegex(RuntimeError, field):
+                    apply_browser_capture_provenance(append_report, current_provenance, append=True)
+                self.assertEqual(append_report, seeded_report)
 
 
 if __name__ == '__main__':

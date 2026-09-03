@@ -86,6 +86,7 @@ The raw reports, their SHA-256 digests, the three-run aggregate, and compact sum
 ```bash
 npm run check
 npm run test:unit
+npm run test:evidence
 PATH=/path/to/playwright-venv/bin:$PATH npm run test:e2e
 (cd deploy/cloudflare && npm run check)
 ```
