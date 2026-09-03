@@ -32,6 +32,43 @@ async function waitForHealth(url, child) {
   throw lastError || new Error('MetaWebMCP did not become healthy.');
 }
 
+async function startMcpApp(t, mockMcp, settings = {}) {
+  const mcpPort = await listen(mockMcp);
+  const appProbe = http.createServer();
+  const appPort = await listen(appProbe);
+  await new Promise((resolve) => appProbe.close(resolve));
+  const child = spawn(process.execPath, ['server.mjs'], {
+    cwd: new URL('..', import.meta.url),
+    env: {
+      ...process.env,
+      NODE_ENV: 'test',
+      HOST: '127.0.0.1',
+      PORT: String(appPort),
+      BROWSER_MCP_URL: `http://127.0.0.1:${mcpPort}/mcp`,
+      BROWSER_MCP_EGRESS_ISOLATED: '1',
+      ...settings,
+    },
+    stdio: 'ignore',
+  });
+  t.after(async () => {
+    if (child.exitCode === null) child.kill('SIGTERM');
+    if (child.exitCode === null) {
+      await Promise.race([once(child, 'exit'), new Promise((resolve) => setTimeout(resolve, 2_000))]);
+    }
+    mockMcp.closeAllConnections?.();
+    await new Promise((resolve) => mockMcp.close(resolve));
+  });
+  const base = `http://127.0.0.1:${appPort}`;
+  await waitForHealth(`${base}/health`, child);
+  return base;
+}
+
+async function readMcpMessage(req) {
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+}
+
 async function pageCapabilityCookie(base) {
   const response = await fetch(`${base}/api/browser-session`, {
     method: 'POST',
@@ -251,6 +288,165 @@ test('Browser MCP transport sessions are isolated by MetaWebMCP workspace', { ti
     callsBeforeRejectedRecipe,
     'rejected recipes must not reach the Browser MCP transport',
   );
+});
+
+test('Browser MCP request deadlines abort stalled clients and release capacity', { timeout: 10_000 }, async (t) => {
+  let initializeAttempts = 0;
+  let markClosed;
+  const stalledResponseClosed = new Promise((resolve) => { markClosed = resolve; });
+  const mockMcp = http.createServer(async (req, res) => {
+    if (req.method === 'DELETE') return res.writeHead(204).end();
+    const message = await readMcpMessage(req);
+    if (message.method === 'initialize') {
+      initializeAttempts += 1;
+      if (initializeAttempts === 1) {
+        res.once('close', markClosed);
+        return;
+      }
+      return json(res, 200, {
+        jsonrpc: '2.0',
+        id: message.id,
+        result: { protocolVersion: '2025-06-18', capabilities: {} },
+      }, { 'mcp-session-id': 'recovered-session' });
+    }
+    if (message.method === 'notifications/initialized') return res.writeHead(202).end();
+    if (message.method === 'tools/list') {
+      return json(res, 200, { jsonrpc: '2.0', id: message.id, result: { tools: [] } });
+    }
+    return json(res, 400, { error: { message: `Unexpected method ${message.method}` } });
+  });
+  const base = await startMcpApp(t, mockMcp, {
+    MAX_MCP_CLIENTS: '1',
+    MAX_MCP_CLIENTS_PER_CAPABILITY: '1',
+    MAX_CONCURRENT_MCP_REQUESTS: '1',
+    MCP_REQUEST_TIMEOUT_MS: '100',
+  });
+  const cookie = await pageCapabilityCookie(base);
+
+  const started = Date.now();
+  const timedOut = await fetch(`${base}/api/mcp/status?workspace_id=workspace_stalled_123456`, {
+    headers: { cookie },
+  });
+  assert.equal(timedOut.status, 504);
+  assert.match((await timedOut.json()).error, /timed out after 100 ms/i);
+  assert.ok(Date.now() - started < 2_000);
+  await stalledResponseClosed;
+
+  const recovered = await fetch(`${base}/api/mcp/status?workspace_id=workspace_recovered_1234`, {
+    headers: { cookie },
+  });
+  assert.equal(recovered.status, 200);
+  assert.equal(initializeAttempts, 2);
+});
+
+test('failed first-use MCP initialization releases its session reservation', { timeout: 10_000 }, async (t) => {
+  let initializeAttempts = 0;
+  const mockMcp = http.createServer(async (req, res) => {
+    if (req.method === 'DELETE') return res.writeHead(204).end();
+    const message = await readMcpMessage(req);
+    if (message.method === 'initialize') {
+      initializeAttempts += 1;
+      if (initializeAttempts === 1) {
+        return json(res, 500, { error: { message: 'temporary initialization failure' } });
+      }
+      return json(res, 200, {
+        jsonrpc: '2.0',
+        id: message.id,
+        result: { protocolVersion: '2025-06-18', capabilities: {} },
+      }, { 'mcp-session-id': 'healthy-session' });
+    }
+    if (message.method === 'notifications/initialized') return res.writeHead(202).end();
+    if (message.method === 'tools/list') {
+      return json(res, 200, { jsonrpc: '2.0', id: message.id, result: { tools: [] } });
+    }
+    return json(res, 400, { error: { message: `Unexpected method ${message.method}` } });
+  });
+  const base = await startMcpApp(t, mockMcp, {
+    MAX_MCP_CLIENTS: '1',
+    MAX_MCP_CLIENTS_PER_CAPABILITY: '1',
+  });
+  const cookie = await pageCapabilityCookie(base);
+
+  const failed = await fetch(`${base}/api/mcp/status?workspace_id=workspace_failed_1234567`, {
+    headers: { cookie },
+  });
+  assert.equal(failed.status, 500);
+  assert.match((await failed.json()).error, /temporary initialization failure/i);
+
+  const recovered = await fetch(`${base}/api/mcp/status?workspace_id=workspace_healthy_123456`, {
+    headers: { cookie },
+  });
+  assert.equal(recovered.status, 200);
+  assert.equal(initializeAttempts, 2);
+});
+
+test('retiring MCP clients remain reserved until teardown completes', { timeout: 10_000 }, async (t) => {
+  let nextSession = 1;
+  const initializedSessions = [];
+  let markBrowserClose;
+  let releaseBrowserClose;
+  const browserCloseArrived = new Promise((resolve) => { markBrowserClose = resolve; });
+  const browserCloseReleased = new Promise((resolve) => { releaseBrowserClose = resolve; });
+  t.after(() => releaseBrowserClose());
+
+  const mockMcp = http.createServer(async (req, res) => {
+    if (req.method === 'DELETE') return res.writeHead(204).end();
+    const message = await readMcpMessage(req);
+    if (message.method === 'initialize') {
+      const session = `retirement-session-${nextSession++}`;
+      initializedSessions.push(session);
+      return json(res, 200, {
+        jsonrpc: '2.0',
+        id: message.id,
+        result: { protocolVersion: '2025-06-18', capabilities: {} },
+      }, { 'mcp-session-id': session });
+    }
+    if (message.method === 'notifications/initialized') return res.writeHead(202).end();
+    if (message.method === 'tools/list') {
+      return json(res, 200, {
+        jsonrpc: '2.0',
+        id: message.id,
+        result: { tools: [{ name: 'browser_close', inputSchema: { type: 'object' } }] },
+      });
+    }
+    if (message.method === 'tools/call' && message.params.name === 'browser_close') {
+      markBrowserClose();
+      await browserCloseReleased;
+      return json(res, 200, { jsonrpc: '2.0', id: message.id, result: { content: [] } });
+    }
+    return json(res, 400, { error: { message: `Unexpected method ${message.method}` } });
+  });
+  const base = await startMcpApp(t, mockMcp, {
+    MAX_MCP_CLIENTS: '1',
+    MAX_MCP_CLIENTS_PER_CAPABILITY: '1',
+    MAX_CONCURRENT_MCP_REQUESTS: '2',
+    MCP_REQUEST_TIMEOUT_MS: '2000',
+  });
+  const cookie = await pageCapabilityCookie(base);
+  const firstWorkspace = 'workspace_retiring_123456';
+  const secondWorkspace = 'workspace_waiting_1234567';
+  assert.equal((await fetch(`${base}/api/mcp/status?workspace_id=${firstWorkspace}`, { headers: { cookie } })).status, 200);
+
+  const reset = fetch(`${base}/api/mcp/reset`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ workspaceId: firstWorkspace }),
+  });
+  await browserCloseArrived;
+  const whileClosing = await fetch(`${base}/api/mcp/status?workspace_id=${secondWorkspace}`, {
+    headers: { cookie },
+  });
+  assert.equal(whileClosing.status, 429);
+  assert.match((await whileClosing.json()).error, /session capacity reached/i);
+  assert.deepEqual(initializedSessions, ['retirement-session-1']);
+
+  releaseBrowserClose();
+  assert.equal((await reset).status, 200);
+  const afterClose = await fetch(`${base}/api/mcp/status?workspace_id=${secondWorkspace}`, {
+    headers: { cookie },
+  });
+  assert.equal(afterClose.status, 200);
+  assert.deepEqual(initializedSessions, ['retirement-session-1', 'retirement-session-2']);
 });
 
 test('generated browser recipes satisfy the Playwright MCP tool contracts', { timeout: 20_000 }, async (t) => {

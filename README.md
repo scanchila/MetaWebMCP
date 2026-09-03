@@ -161,6 +161,7 @@ Browser operations also require a short-lived, signed, HttpOnly page capability,
 | `MAX_MCP_CLIENTS_PER_CAPABILITY` | `4` | Maximum active Browser MCP workspaces owned by one page capability |
 | `MCP_REQUEST_RATE_LIMIT_PER_MINUTE` | `120` | Process-wide Browser MCP API request limit |
 | `MAX_CONCURRENT_MCP_REQUESTS` | `8` | Maximum concurrent Browser MCP API requests |
+| `MCP_REQUEST_TIMEOUT_MS` | `20000` | Deadline for Browser MCP API work and client teardown |
 | `ANALYSIS_RATE_LIMIT_PER_MINUTE` | `30` | Process-wide Node analysis request limit |
 | `MAX_CONCURRENT_ANALYSES` | `4` | Maximum simultaneous Node analysis requests |
 | `MAX_PENDING_EXPORTS` | `8` | Maximum ZIP archives retained for pending Node downloads |

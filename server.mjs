@@ -51,6 +51,7 @@ const MAX_MCP_CLIENTS = positiveIntegerSetting('MAX_MCP_CLIENTS', 16);
 const MAX_MCP_CLIENTS_PER_CAPABILITY = positiveIntegerSetting('MAX_MCP_CLIENTS_PER_CAPABILITY', 4);
 const MCP_REQUEST_RATE_LIMIT_PER_MINUTE = positiveIntegerSetting('MCP_REQUEST_RATE_LIMIT_PER_MINUTE', 120);
 const MAX_CONCURRENT_MCP_REQUESTS = positiveIntegerSetting('MAX_CONCURRENT_MCP_REQUESTS', 8);
+const MCP_REQUEST_TIMEOUT_MS = positiveIntegerSetting('MCP_REQUEST_TIMEOUT_MS', 20_000);
 if (MAX_MCP_CLIENTS_PER_CAPABILITY > MAX_MCP_CLIENTS) {
   throw new Error('MAX_MCP_CLIENTS_PER_CAPABILITY cannot exceed MAX_MCP_CLIENTS.');
 }
@@ -176,21 +177,58 @@ function workspaceKey(value, capabilityId) {
   return `${capabilityId}:${key}`;
 }
 
+function mcpTimeoutError() {
+  const error = new Error(`Browser MCP request timed out after ${MCP_REQUEST_TIMEOUT_MS} ms.`);
+  error.statusCode = 504;
+  return error;
+}
+
+async function retireMcpClient(key, entry, { closeBrowser = false } = {}) {
+  if (entry.retirement) return entry.retirement;
+  entry.retirement = (async () => {
+    const controller = new AbortController();
+    let timeout;
+    const deadline = new Promise((resolve) => {
+      timeout = setTimeout(() => {
+        controller.abort(mcpTimeoutError());
+        resolve();
+      }, MCP_REQUEST_TIMEOUT_MS);
+    });
+    const cleanup = (async () => {
+      if (closeBrowser && entry.client.initialized) {
+        await entry.client.callTool('browser_close', {}, { signal: controller.signal }).catch(() => {});
+      }
+      await entry.client.close({ signal: controller.signal }).catch(() => {});
+    })();
+    try {
+      await Promise.race([cleanup, deadline]);
+    } finally {
+      clearTimeout(timeout);
+      if (mcpClients.get(key) === entry) mcpClients.delete(key);
+    }
+  })();
+  return entry.retirement;
+}
+
 function pruneMcpClients() {
   const now = Date.now();
   const cutoff = now - MCP_SESSION_TTL_MS;
   for (const [key, entry] of mcpClients) {
     if (entry.lastUsed > cutoff && entry.capabilityExpiresAt > now) continue;
-    mcpClients.delete(key);
-    entry.client.close().catch(() => {});
+    void retireMcpClient(key, entry);
   }
 }
 
-function getMcpClient(workspaceId, capability) {
+function getMcpClient(workspaceId, capability, requestContext) {
   if (!BROWSER_MCP_URL) throw new Error('BROWSER_MCP_URL is not configured. Start the Playwright MCP service or use the built-in demo.');
   const key = workspaceKey(workspaceId, capability.id);
   pruneMcpClients();
   let entry = mcpClients.get(key);
+  if (entry?.retirement) {
+    const error = new Error('Browser MCP workspace is closing. Try again shortly.');
+    error.statusCode = 429;
+    throw error;
+  }
   if (!entry) {
     if (mcpClients.size >= MAX_MCP_CLIENTS) {
       const error = new Error('Browser MCP session capacity reached. Try again after closing another workspace.');
@@ -209,39 +247,50 @@ function getMcpClient(workspaceId, capability) {
       capabilityId: capability.id,
       capabilityExpiresAt: capability.expiresAt * 1000,
       lastUsed: Date.now(),
+      ready: false,
+      retirement: null,
     };
     mcpClients.set(key, entry);
   }
   entry.lastUsed = Date.now();
-  return entry.client;
+  requestContext?.clients.set(key, entry);
+  return { key, entry };
 }
 
-async function closeMcpClient(workspaceId, capabilityId) {
+async function readyMcpClient(workspaceId, capability, requestContext) {
+  const handle = getMcpClient(workspaceId, capability, requestContext);
+  try {
+    const tools = await handle.entry.client.listTools({ signal: requestContext.signal });
+    handle.entry.ready = true;
+    return { ...handle, tools };
+  } catch (error) {
+    if (!handle.entry.ready) await retireMcpClient(handle.key, handle.entry);
+    throw error;
+  }
+}
+
+async function closeMcpClient(workspaceId, capabilityId, requestContext) {
   const key = workspaceKey(workspaceId, capabilityId);
   const entry = mcpClients.get(key);
   if (!entry) return;
-  mcpClients.delete(key);
-  try {
-    await entry.client.callTool('browser_close', {});
-  } catch {
-    // Closing an already closed browser is harmless.
-  }
-  await entry.client.close().catch(() => {});
+  requestContext.clients.set(key, entry);
+  await retireMcpClient(key, entry, { closeBrowser: true });
 }
 
 const mcpPruneTimer = setInterval(pruneMcpClients, Math.min(MCP_SESSION_TTL_MS, 60_000));
 mcpPruneTimer.unref?.();
 
-async function analyzeWithBrowserMcp(body, capability) {
+async function analyzeWithBrowserMcp(body, capability, requestContext) {
   const parsed = await validateBrowserTarget(body.url, { allowPrivate: false });
-  const client = getMcpClient(body.workspaceId, capability);
-  const tools = await client.listTools();
+  const { entry, tools } = await readyMcpClient(body.workspaceId, capability, requestContext);
+  const { client } = entry;
   const names = new Set(tools.map((tool) => tool.name));
   for (const required of ['browser_navigate', 'browser_snapshot']) {
     if (!names.has(required)) throw new Error(`Connected MCP server does not expose required tool ${required}.`);
   }
   const navigationResult = await client.callTool('browser_navigate', { url: parsed.href }, {
     maxResponseBytes: MCP_SNAPSHOT_RESPONSE_LIMIT_BYTES,
+    signal: requestContext.signal,
   });
   const navigationText = flattenMcpText(navigationResult);
   const finalUrlMatch = navigationText.match(/^- Page URL:\s*(\S+)\s*$/m);
@@ -256,20 +305,21 @@ async function analyzeWithBrowserMcp(body, capability) {
   }
   const snapshotResult = await client.callTool('browser_snapshot', {}, {
     maxResponseBytes: MCP_SNAPSHOT_RESPONSE_LIMIT_BYTES,
+    signal: requestContext.signal,
   });
   const snapshot = flattenMcpText(snapshotResult);
   const analysis = analyzeAccessibilitySnapshot({ snapshot, url: finalTarget.href, goal: String(body.goal || '') });
   return { ...analysis, mcp: { endpointConfigured: true, availableTools: [...names].sort() } };
 }
 
-async function executeMcpRecipe(body, capability) {
-  const client = getMcpClient(body.workspaceId, capability);
-  const tools = await client.listTools();
+async function executeMcpRecipe(body, capability, requestContext) {
+  const { entry, tools } = await readyMcpClient(body.workspaceId, capability, requestContext);
+  const { client } = entry;
   return runMcpRecipe({
     executor: body.executor,
     input: body.input ?? {},
     availableTools: tools,
-    callTool: (name, args) => client.callTool(name, args),
+    callTool: (name, args) => client.callTool(name, args, { signal: requestContext.signal }),
     resultText: flattenMcpText,
   });
 }
@@ -341,9 +391,20 @@ function claimMcpRequestSlot() {
 
 async function withMcpRequestSlot(operation) {
   const release = claimMcpRequestSlot();
+  const controller = new AbortController();
+  const clients = new Map();
+  let rejectDeadline;
+  const deadline = new Promise((_, reject) => { rejectDeadline = reject; });
+  const timeout = setTimeout(() => {
+    const error = mcpTimeoutError();
+    controller.abort(error);
+    for (const [key, entry] of clients) void retireMcpClient(key, entry);
+    rejectDeadline(error);
+  }, MCP_REQUEST_TIMEOUT_MS);
   try {
-    return await operation();
+    return await Promise.race([operation({ signal: controller.signal, clients }), deadline]);
   } finally {
+    clearTimeout(timeout);
     release();
   }
 }
@@ -433,19 +494,19 @@ async function handleApi(req, res, pathname, searchParams) {
   }
 
   if (pathname === '/api/mcp/status' && req.method === 'GET') {
-    return withMcpRequestSlot(async () => {
+    return withMcpRequestSlot(async (requestContext) => {
       if (!BROWSER_MCP_URL) return sendJson(res, 200, { ok: true, configured: false, tools: [] });
-      const tools = await getMcpClient(searchParams.get('workspace_id'), browserCapability).listTools();
+      const { tools } = await readyMcpClient(searchParams.get('workspace_id'), browserCapability, requestContext);
       return sendJson(res, 200, { ok: true, configured: true, tools: tools.map((tool) => tool.name).sort() });
     });
   }
 
   if (pathname === '/api/mcp/analyze' && req.method === 'POST') {
-    return withMcpRequestSlot(async () => {
+    return withMcpRequestSlot(async (requestContext) => {
       const releaseAnalysisSlot = claimAnalysisSlot();
       try {
         const body = await readJson(req);
-        const analysis = await analyzeWithBrowserMcp(body, browserCapability);
+        const analysis = await analyzeWithBrowserMcp(body, browserCapability, requestContext);
         return sendJson(res, 200, { ok: true, analysis });
       } finally {
         releaseAnalysisSlot();
@@ -472,16 +533,16 @@ async function handleApi(req, res, pathname, searchParams) {
   }
 
   if (pathname === '/api/mcp/execute' && req.method === 'POST') {
-    return withMcpRequestSlot(async () => {
+    return withMcpRequestSlot(async (requestContext) => {
       const body = await readJson(req);
-      return sendJson(res, 200, await executeMcpRecipe(body, browserCapability));
+      return sendJson(res, 200, await executeMcpRecipe(body, browserCapability, requestContext));
     });
   }
 
   if (pathname === '/api/mcp/reset' && req.method === 'POST') {
-    return withMcpRequestSlot(async () => {
+    return withMcpRequestSlot(async (requestContext) => {
       const body = await readJson(req);
-      await closeMcpClient(body.workspaceId, browserCapability.id);
+      await closeMcpClient(body.workspaceId, browserCapability.id, requestContext);
       return sendJson(res, 200, { ok: true });
     });
   }
@@ -612,9 +673,7 @@ async function shutdown() {
   server.close();
   clearInterval(mcpPruneTimer);
   clearInterval(downloadPruneTimer);
-  const clients = [...mcpClients.values()].map((entry) => entry.client);
-  mcpClients.clear();
-  await Promise.allSettled(clients.map((client) => client.close()));
+  await Promise.allSettled([...mcpClients].map(([key, entry]) => retireMcpClient(key, entry)));
 }
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
