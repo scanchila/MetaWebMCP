@@ -13,6 +13,8 @@ import {
   browserDirectNetworkInitScript,
   proxyBrowserRequest,
 } from './browser-egress-proxy.mjs';
+import { ExportStore } from './export-store.mjs';
+import { MAX_EXPORT_ARCHIVE_BYTES } from './export-store-core.mjs';
 import {
   BROWSER_MCP_TOOL_NAMES,
   validateBrowserTransportMessage,
@@ -22,9 +24,11 @@ import {
 const BODY_LIMIT = 2_000_000;
 const HTML_LIMIT = 1_500_000;
 const DOWNLOAD_TTL_SECONDS = 20 * 60;
-const MAX_EXPORT_ARCHIVE_BYTES = 3_000_000;
 const ANALYSIS_TIMEOUT_MS = 12_000;
 const SOURCE_COMMIT_PATTERN = /^[0-9a-f]{40,64}$/;
+const EXPORT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+export { ExportStore };
 
 export const PlaywrightMCP = createMcpAgent(runtimeEnv.BROWSER, {
   capabilities: ['core', 'wait'],
@@ -193,6 +197,26 @@ function browserCapabilitySecret(bindings) {
   return bindings.MCP_CAPABILITY_SECRET;
 }
 
+function base64Url(bytes) {
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+async function exportSourceKey(request, bindings) {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(browserCapabilitySecret(bindings)),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const source = request.headers.get('cf-connecting-ip') || 'local';
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(`export-source:${source}`));
+  return base64Url(new Uint8Array(signature));
+}
+
 async function requireBrowserCapability(request, bindings) {
   const capability = await verifyBrowserCapabilityCookie(
     request.headers.get('cookie'),
@@ -303,14 +327,22 @@ async function handleApi(request, bindings, pathname, browserCapability) {
       DOWNLOAD_TTL_SECONDS,
       browserCapability.expiresAt - Math.floor(Date.now() / 1000),
     ));
-    const headers = new Headers({
-      'content-type': 'application/zip',
-      'content-disposition': `attachment; filename="${archive.fileName}"`,
-      'cache-control': `public, max-age=${expiresInSeconds}`,
-      'x-content-type-options': 'nosniff',
-      'x-metawebmcp-capability-id': browserCapability.id,
+    const store = bindings.EXPORT_STORE.get(bindings.EXPORT_STORE.idFromName('exports-v1'));
+    const stored = await store.fetch(`https://export-store.internal/store/${id}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/zip',
+        'x-metawebmcp-capability-id': browserCapability.id,
+        'x-metawebmcp-source-key': await exportSourceKey(request, bindings),
+        'x-metawebmcp-content-disposition': `attachment; filename="${archive.fileName}"`,
+        'x-metawebmcp-expires-at': String(browserCapability.expiresAt * 1000),
+      },
+      body: archive.buffer,
     });
-    await caches.default.put(new Request(downloadUrl), new Response(archive.buffer, { headers }));
+    if (stored.status === 429) {
+      return json({ ok: false, error: 'Export storage is at capacity. Try again shortly.' }, { status: 429 });
+    }
+    if (!stored.ok) throw new Error('Generated export could not be retained for download.');
     return json({
       ok: true,
       fileName: archive.fileName,
@@ -322,15 +354,15 @@ async function handleApi(request, bindings, pathname, browserCapability) {
   }
 
   if (pathname.startsWith('/api/download/') && request.method === 'GET') {
-    const cached = await caches.default.match(new Request(request.url));
-    if (!cached || cached.headers.get('x-metawebmcp-capability-id') !== browserCapability.id) {
+    const id = pathname.slice('/api/download/'.length);
+    if (!EXPORT_ID_PATTERN.test(id)) {
       return json({ ok: false, error: 'Export not found or expired.' }, { status: 404 });
     }
-    await caches.default.delete(new Request(request.url));
-    const headers = new Headers(cached.headers);
-    headers.delete('x-metawebmcp-capability-id');
-    headers.set('cache-control', 'no-store');
-    return new Response(cached.body, { status: cached.status, statusText: cached.statusText, headers });
+    const store = bindings.EXPORT_STORE.get(bindings.EXPORT_STORE.idFromName('exports-v1'));
+    return store.fetch(`https://export-store.internal/consume/${id}`, {
+      method: 'POST',
+      headers: { 'x-metawebmcp-capability-id': browserCapability.id },
+    });
   }
 
   return null;

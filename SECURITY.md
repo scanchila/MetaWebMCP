@@ -65,7 +65,7 @@ A public same-origin MCP route is a powerful resource even when the product UI e
 - Static file paths are normalized and constrained to the public root.
 - Export creation and download require the page's signed capability. Download URLs are bound to their creating page; retained archive bytes are deleted following a successful retrieval.
 - The Node runtime retains at most eight pending archives and 16 MB of archive buffers, rejects archives over 3 MB, limits generation to twelve requests per minute, and expires pending downloads within twenty minutes.
-- The Cloudflare runtime applies a separate twelve-per-minute export limit and keeps generated archives in the Cache API rather than Worker process memory.
+- The Cloudflare runtime applies a separate twelve-per-minute-per-source-IP export limit. Its SQLite-backed Durable Object retains at most eight pending archives and 16 MB globally, with no more than two archives or 6 MB assigned to one keyed source. It rejects archives over 3 MB, expires them within twenty minutes, binds them to the creating page capability, and atomically deletes each archive after retrieval.
 - Bundled owner-source file names and total sizes are validated before they are written into an export archive.
 
 ## Known limitations

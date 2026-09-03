@@ -19,13 +19,32 @@ test('Cloudflare deployment declares immutable version metadata and source ident
     config.ratelimits.find((binding) => binding.name === 'ANALYSIS_RATE_LIMITER')?.simple,
     { limit: 30, period: 60 },
   );
+  assert.deepEqual(
+    config.durable_objects.bindings.find((binding) => binding.name === 'EXPORT_STORE'),
+    { name: 'EXPORT_STORE', class_name: 'ExportStore' },
+  );
+  assert.deepEqual(config.migrations.at(-1), { tag: 'v2', new_sqlite_classes: ['ExportStore'] });
 
   const worker = await readFile(new URL('../deploy/cloudflare/worker.mjs', import.meta.url), 'utf8');
   assert.match(worker, /bindings\.CF_VERSION_METADATA\?\.id/);
   assert.match(worker, /bindings\.META_WEBMCP_SOURCE_COMMIT/);
   assert.match(worker, /'cache-control': 'no-store'/);
   assert.match(worker, /bindings\.ANALYSIS_RATE_LIMITER\.limit/);
+  assert.match(worker, /bindings\.EXPORT_STORE\.idFromName/);
+  assert.match(worker, /request\.headers\.get\('cf-connecting-ip'\)/);
+  assert.match(worker, /'x-metawebmcp-source-key'/);
+  assert.doesNotMatch(worker, /caches\.default/);
   assert.match(worker, /signal: controller\.signal/);
+
+  const exportStore = await readFile(new URL('../deploy/cloudflare/export-store.mjs', import.meta.url), 'utf8');
+  const consumeStart = exportStore.indexOf("if (operation === 'consume')");
+  const consumeEnd = exportStore.indexOf("return json({ ok: false, error: 'Not found.'", consumeStart);
+  assert.ok(consumeStart >= 0 && consumeEnd > consumeStart);
+  assert.doesNotMatch(
+    exportStore.slice(consumeStart, consumeEnd),
+    /scheduleCleanup\(/,
+    'download delivery must not depend on fallible post-claim cleanup scheduling',
+  );
 });
 
 test('deployment wrapper rejects missing and mismatched source commits before upload', () => {
