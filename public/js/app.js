@@ -54,6 +54,7 @@ const elements = {
 
 const META_ORIGIN = 'meta';
 const GENERATED_ORIGIN = 'generated';
+const RISK_SEVERITY = Object.freeze({ read: 0, write: 1, consequential: 2 });
 const META_TOOL_NAMES = new Set();
 const registry = new ToolRegistry();
 const workspaceId = (() => {
@@ -490,17 +491,22 @@ async function analyzeTarget(input = {}) {
   return compactAnalysis(analysis);
 }
 
-function validateOverride(override, capabilityIds) {
+function validateOverride(override, capabilitiesById) {
   if (!override || typeof override !== 'object') throw new Error('Each tool override must be an object.');
-  if (!capabilityIds.has(override.capability_id)) throw new Error(`Unknown capability override: ${override.capability_id}.`);
+  const capability = capabilitiesById.get(override.capability_id);
+  if (!capability) throw new Error(`Unknown capability override: ${override.capability_id}.`);
   if (override.name && !/^[a-z][a-z0-9_]{0,63}$/.test(override.name)) throw new Error(`Invalid tool override name: ${override.name}.`);
   if (override.description && (override.description.length < 8 || override.description.length > 600)) throw new Error('Override descriptions must contain 8–600 characters.');
   if (override.risk && !['read', 'write', 'consequential'].includes(override.risk)) throw new Error(`Invalid override risk: ${override.risk}.`);
+  if (override.risk && RISK_SEVERITY[override.risk] < RISK_SEVERITY[capability.risk]) {
+    throw new Error(`Risk override for ${override.capability_id} cannot downgrade inferred ${capability.risk} risk to ${override.risk}.`);
+  }
 }
 
 async function createWebMcp(input = {}) {
   if (!state.analysis) throw new Error('Analyze a target before creating WebMCP contracts.');
-  const knownIds = new Set(state.analysis.capabilities.map((capability) => capability.id));
+  const capabilitiesById = new Map(state.analysis.capabilities.map((capability) => [capability.id, capability]));
+  const knownIds = new Set(capabilitiesById.keys());
   const requestedIds = input.capability_ids?.length ? input.capability_ids : selectedIdsFromUi();
   const ids = requestedIds.length ? requestedIds : [...state.selectedCapabilityIds];
   if (!ids.length) throw new Error('Select at least one capability.');
@@ -508,7 +514,7 @@ async function createWebMcp(input = {}) {
   if (unknown) throw new Error(`Unknown capability: ${unknown}.`);
 
   const overrides = input.overrides || [];
-  overrides.forEach((override) => validateOverride(override, knownIds));
+  overrides.forEach((override) => validateOverride(override, capabilitiesById));
   const byCapability = new Map(overrides.map((override) => [override.capability_id, override]));
   if (state.analysis.source?.kind !== 'demo') {
     const missingReview = ids.find((id) => {
@@ -518,7 +524,7 @@ async function createWebMcp(input = {}) {
     if (missingReview) throw new Error(`Review the tool name and description before creating external-target contract ${missingReview}.`);
   }
   const tools = ids.map((id) => {
-    const capability = state.analysis.capabilities.find((candidate) => candidate.id === id);
+    const capability = capabilitiesById.get(id);
     const override = byCapability.get(id) || {};
     return {
       ...clone(capability),
