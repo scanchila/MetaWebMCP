@@ -114,4 +114,23 @@ assert.doesNotMatch(
   'the CommonJS screenshot tool should also avoid persistent filesystem output',
 );
 
+for (const build of ['esm', 'cjs']) {
+  const connectionSource = await readFile(
+    `./node_modules/@cloudflare/playwright-mcp/lib/${build}/src/connection.js`,
+    'utf8',
+  );
+  assert.match(
+    connectionSource,
+    /config\.allowedTools\.includes\(tool\.schema\.name\)/,
+    `${build} tool discovery should honor the deployment allowlist`,
+  );
+  const contextSource = await readFile(
+    `./node_modules/@cloudflare/playwright-mcp/lib/${build}/src/context.js`,
+    'utf8',
+  );
+  assert.match(contextSource, /this\.config\.network\?\.blockPrivate/);
+  assert.match(contextSource, /169 && b === 254/);
+  assert.match(contextSource, /hostname\.endsWith\("\.internal"\)/);
+}
+
 console.log('Cloudflare Playwright MCP compatibility checks passed.');

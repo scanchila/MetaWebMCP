@@ -137,7 +137,7 @@ npx @playwright/mcp@latest \
 BROWSER_MCP_URL=http://127.0.0.1:8931/mcp npm start
 ```
 
-The Node bridge validates initial URLs, blocks private/reserved networks by default, and can restrict initial browser targets with `BROWSER_ALLOWED_ORIGINS`. A same-origin browser endpoint also rejects obvious local and private targets before navigation. Playwright MCP itself is not a security boundary. Run it in an isolated runtime with outbound controls and do not give the public demo persistent authenticated profiles.
+The Node bridge validates initial URLs, blocks private/reserved networks by default, and can restrict initial browser targets with `BROWSER_ALLOWED_ORIGINS`. Generated recipes cannot issue new navigation calls. The hosted Browser MCP endpoint narrows its advertised operations, validates explicit navigation, and blocks direct local, private, reserved, and common metadata destinations inside the browser context. Application checks do not replace network egress policy or defend completely against DNS rebinding; keep the browser isolated and unauthenticated.
 
 ## Configuration
 

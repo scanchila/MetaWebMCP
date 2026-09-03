@@ -92,13 +92,13 @@ Isolated Playwright MCP server
 Third-party site
 ```
 
-Initial analysis uses `browser_navigate` and `browser_snapshot`. MetaWebMCP parses interactive roles and references into candidate semantic tools. Execution is constrained to an allowlist in `server.mjs`.
+Initial analysis owns the `browser_navigate` and `browser_snapshot` calls. MetaWebMCP parses interactive roles and references into candidate semantic tools, whose recipes can use only snapshot, type, click, select, and wait operations. Caller-provided recipes cannot navigate or open URL-bearing tabs.
 
 On the hosted path, one `BrowserMcpSession` instance lives in the top-level page. It retains the MCP session identifier across analysis and every generated semantic tool call, then closes that session on reset. This aligns browser lifetime with the ChatGPT-opened page and avoids depending on process-local state in a serverless deployment.
 
 The Node deployment remains compatible with a separate Playwright MCP service. In that layout, each open page receives a random workspace identifier and a distinct server-side client/session. Resetting or expiring one workspace closes only that session. Both layouts use the same MCP client and recipe interpreter.
 
-The public deployment mounts Cloudflare's Playwright MCP agent as a Durable Object alongside the static application. Its Browser Run binding creates an isolated, non-persistent browser context. A long-lived SSE connection ties that context to the page; reset and page teardown issue `browser_close`. Same-origin checks and an edge rate-limit binding guard the transport route.
+The public deployment mounts Cloudflare's Playwright MCP agent as a Durable Object alongside the static application. Its Browser Run binding creates an isolated, non-persistent browser context. A long-lived SSE connection ties that context to the page; reset and page teardown issue `browser_close`. Same-origin checks and an edge rate-limit binding guard the transport route. The agent advertises only the eight operations used by the product and evidence capture. Transport validation checks explicit navigation targets, while browser-context routing blocks direct local, private, reserved, and common metadata destinations reached through redirects or page actions.
 
 This is a virtual, session-scoped adapter. It does not modify the third-party origin or claim that the target itself is natively WebMCP-compatible.
 

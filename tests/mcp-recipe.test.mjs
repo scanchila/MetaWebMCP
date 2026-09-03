@@ -78,3 +78,22 @@ test('browser recipe ref refresh fails closed when accessible names are ambiguou
 
   assert.equal(calls[1].args.ref, 'e2');
 });
+
+test('browser recipes cannot navigate or open URL-bearing tabs', async () => {
+  for (const tool of ['browser_navigate', 'browser_tabs']) {
+    let called = false;
+    await assert.rejects(
+      runMcpRecipe({
+        executor: {
+          type: 'mcp-recipe',
+          steps: [{ tool, arguments: { url: 'http://169.254.169.254/latest/meta-data/' } }],
+        },
+        availableTools: new Set([tool]),
+        callTool: async () => { called = true; },
+        resultText: String,
+      }),
+      new RegExp(`${tool} is not allowed`),
+    );
+    assert.equal(called, false);
+  }
+});

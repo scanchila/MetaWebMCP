@@ -20,23 +20,21 @@ These controls reduce, but do not mathematically eliminate, DNS-rebinding and ne
 
 - The MCP endpoint is deployment configuration, not a user-provided URL.
 - A same-origin deployment gives each open page its own MCP transport session and closes it on reset. The Node fallback keys distinct server-side sessions by unguessable workspace identifiers and expires inactive clients.
-- The Node bridge performs DNS and private-network validation. The page-scoped bridge rejects non-HTTP schemes, credentials, local names, and direct private IPs before navigation.
+- The Node bridge performs DNS and private-network validation before analysis navigation. Navigation is not available to caller-supplied generated recipes.
+- The Cloudflare transport rejects non-HTTP schemes, credentials, local names, direct private/reserved IPs, and common metadata hostnames. Browser-context routing applies the same direct-target checks to requests caused by redirects and page actions.
 - `BROWSER_ALLOWED_ORIGINS` can constrain initial navigation.
 - Generated recipes contain at most twelve steps.
 - Only the following MCP tools can be called by recipes:
-  - `browser_navigate`
   - `browser_snapshot`
-  - `browser_find`
   - `browser_type`
-  - `browser_fill_form`
   - `browser_click`
   - `browser_select_option`
   - `browser_wait_for`
-  - `browser_tabs`
+- The Cloudflare Browser MCP transport advertises only navigation, snapshot, type, click, select, wait, close, and inline screenshot operations; calls outside that set are rejected before they reach the browser service.
 - Arbitrary browser evaluation is deliberately excluded.
 - The supplied Compose service uses an isolated, headless browser profile and omits image responses.
 
-Playwright MCP is not a security boundary. Its own origin controls do not cover every redirect case. Use an isolated runtime with restricted egress, no cloud metadata access, no host filesystem mounts, and no persistent authenticated browser profile.
+Playwright MCP and application-layer hostname checks are not complete network boundaries: DNS rebinding and environment-specific name resolution still require infrastructure controls. Use an isolated runtime with restricted egress, no cloud metadata access, no host filesystem mounts, and no persistent authenticated browser profile.
 
 A public same-origin MCP route is a powerful resource even when the product UI exposes only semantic generated tools. The Cloudflare deployment rejects cross-origin browser transport requests, limits them to 60 requests per source IP per minute, uses the account's browser quotas, and closes browser contexts on reset or page teardown. Production operators should also monitor abuse and account-level consumption.
 
@@ -67,7 +65,7 @@ A public same-origin MCP route is a powerful resource even when the product UI e
 - DOM selectors can drift and can target the wrong control after a redesign.
 - Accessible-name compatibility lookups in browser-derived exports can drift; install them only in owned source and replace them with stable application functions before production use.
 - The target may contain prompt injection intended to manipulate the calling agent.
-- A click or navigation can reach a different origin after initial validation.
+- Target interactions can reach other public origins; source owners must review each resulting workflow and deploy browser services with outbound controls.
 - Generated tools run with the page's signed-in authority; they must not bypass normal application permissions or confirmations.
 - The demo's internal WebMCP registry is for fallback execution and testing, not a replacement for the browser's native implementation.
 

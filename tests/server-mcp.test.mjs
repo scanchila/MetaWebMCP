@@ -150,6 +150,27 @@ test('Browser MCP transport sessions are isolated by MetaWebMCP workspace', { ti
   const restarted = await fetch(`${base}/api/mcp/status?workspace_id=${alpha}`);
   assert.equal(restarted.status, 200);
   assert.deepEqual(initializedSessions, ['mock-session-1', 'mock-session-2', 'mock-session-3']);
+
+  const callsBeforeRejectedRecipe = requestSessions.filter((item) => item.method === 'tools/call').length;
+  const rejectedRecipe = await fetch(`${base}/api/mcp/execute`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      workspaceId: alpha,
+      executor: {
+        type: 'mcp-recipe',
+        steps: [{ tool: 'browser_navigate', arguments: { url: 'http://169.254.169.254/latest/meta-data/' } }],
+      },
+      input: {},
+    }),
+  });
+  assert.equal(rejectedRecipe.status, 400);
+  assert.match((await rejectedRecipe.json()).error, /browser_navigate is not allowed/);
+  assert.equal(
+    requestSessions.filter((item) => item.method === 'tools/call').length,
+    callsBeforeRejectedRecipe,
+    'rejected recipes must not reach the Browser MCP transport',
+  );
 });
 
 test('generated browser recipes satisfy the Playwright MCP tool contracts', { timeout: 20_000 }, async (t) => {

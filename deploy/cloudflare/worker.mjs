@@ -3,6 +3,11 @@ import { createMcpAgent } from '@cloudflare/playwright-mcp';
 
 import { analyzeAccessibilitySnapshot, analyzeHtml } from '../../lib/analyzer.mjs';
 import { generateProjectZip } from '../../lib/generator.mjs';
+import {
+  BROWSER_MCP_TOOL_NAMES,
+  validateBrowserTransportMessage,
+  validatePublicTarget,
+} from './browser-transport-policy.mjs';
 
 const BODY_LIMIT = 2_000_000;
 const HTML_LIMIT = 1_500_000;
@@ -10,6 +15,8 @@ const DOWNLOAD_TTL_SECONDS = 20 * 60;
 
 export const PlaywrightMCP = createMcpAgent(runtimeEnv.BROWSER, {
   capabilities: ['core', 'wait'],
+  allowedTools: BROWSER_MCP_TOOL_NAMES,
+  network: { blockPrivate: true },
 });
 
 function securityHeaders(contentType = '') {
@@ -65,45 +72,6 @@ async function readJson(request) {
   } catch {
     throw new Error('Request body must be valid JSON.');
   }
-}
-
-function privateIpv4(hostname) {
-  const parts = hostname.split('.').map(Number);
-  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
-  const [a, b] = parts;
-  return a === 0
-    || a === 10
-    || a === 127
-    || (a === 100 && b >= 64 && b <= 127)
-    || (a === 169 && b === 254)
-    || (a === 172 && b >= 16 && b <= 31)
-    || (a === 192 && b === 168)
-    || a >= 224;
-}
-
-function validatePublicTarget(rawUrl) {
-  let parsed;
-  try {
-    parsed = new URL(String(rawUrl));
-  } catch {
-    throw new Error('Target must be a valid absolute URL.');
-  }
-  if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Only HTTP and HTTPS targets are supported.');
-  if (parsed.username || parsed.password) throw new Error('Target URLs may not contain credentials.');
-  const hostname = parsed.hostname.replace(/^\[|\]$/g, '').toLowerCase();
-  const privateIpv6 = hostname === '::'
-    || hostname === '::1'
-    || hostname.startsWith('::ffff:')
-    || /^(?:fc|fd|fe[89ab]|ff)/.test(hostname);
-  if (!hostname
-    || hostname === 'localhost'
-    || hostname.endsWith('.localhost')
-    || hostname.endsWith('.local')
-    || privateIpv4(hostname)
-    || privateIpv6) {
-    throw new Error('Private and local targets are blocked.');
-  }
-  return parsed;
 }
 
 async function limitedText(response) {
@@ -163,6 +131,21 @@ async function browserRequestWithinLimit(request, bindings) {
   const key = request.headers.get('cf-connecting-ip') || 'local';
   const result = await bindings.BROWSER_RATE_LIMITER.limit({ key });
   return result.success;
+}
+
+async function validateBrowserTransportRequest(request) {
+  if (request.method !== 'POST') return;
+  const declared = Number(request.headers.get('content-length') || 0);
+  if (declared > BODY_LIMIT) throw new Error(`Request body exceeds ${BODY_LIMIT} bytes.`);
+  const text = await request.clone().text();
+  if (new TextEncoder().encode(text).byteLength > BODY_LIMIT) throw new Error(`Request body exceeds ${BODY_LIMIT} bytes.`);
+  if (!text) return;
+  try {
+    validateBrowserTransportMessage(JSON.parse(text));
+  } catch (error) {
+    if (error instanceof SyntaxError) throw new Error('Request body must be valid JSON.');
+    throw error;
+  }
 }
 
 async function handleApi(request, bindings, pathname) {
@@ -250,11 +233,13 @@ export default {
       if (pathname === '/mcp') {
         if (!sameOrigin(request)) return json({ ok: false, error: 'Same-origin browser session required.' }, { status: 403 });
         if (!await browserRequestWithinLimit(request, bindings)) return json({ ok: false, error: 'Browser request limit reached.' }, { status: 429 });
+        await validateBrowserTransportRequest(request);
         return PlaywrightMCP.serve('/mcp').fetch(request, bindings, context);
       }
       if (pathname === '/sse' || pathname === '/sse/message') {
         if (!sameOrigin(request)) return json({ ok: false, error: 'Same-origin browser session required.' }, { status: 403 });
         if (!await browserRequestWithinLimit(request, bindings)) return json({ ok: false, error: 'Browser request limit reached.' }, { status: 429 });
+        await validateBrowserTransportRequest(request);
         return PlaywrightMCP.serveSSE('/sse').fetch(request, bindings, context);
       }
       const apiResponse = await handleApi(request, bindings, pathname);
