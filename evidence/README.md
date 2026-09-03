@@ -1,6 +1,6 @@
 # Production evidence
 
-These artifacts exercise deployed Worker version `97b3a727-85d8-4a55-93f2-38afcc759428` from source commit `9744d48c04a400f1879308a50e9f95eb656cd316` at <https://metawebmcp.neuryta.com> through native WebMCP and its hosted, session-scoped Browser MCP runtime. Machine-readable results retain the deployment version, source commit, capture-script digest, deployed asset digests, exact tool surfaces, postconditions, browser launch configuration, workspace console errors, archive validation, and screenshot SHA-256 digests.
+These artifacts exercise deployed Worker version `c5ac5494-8d79-413e-9a9c-8db3dcd3339c` from source commit `178f2ff8dd63dc6f1c29558f5ed36cf4798b23e8` at <https://metawebmcp.neuryta.com> through native WebMCP and its hosted, session-scoped Browser MCP runtime. Machine-readable results retain the deployment version, source commit, deployment timestamp and tag, capture-script digest, deployed asset digests, exact tool surfaces, postconditions, browser launch configuration, workspace console errors, archive validation, and screenshot SHA-256 digests.
 
 ## Results at a glance
 
@@ -11,7 +11,7 @@ These artifacts exercise deployed Worker version `97b3a727-85d8-4a55-93f2-38afcc
 | Wikipedia | Generated `search(search_wikipedia)`, submitted `WebMCP`, and observed the query in the resulting search page snapshot. |
 | SauceDemo | Generated `login(username, password)`, retained the same browser session, re-analyzed the authenticated catalog, generated `add_to_cart(item)`, changed the selected product control to “Remove,” and validated the exported one-tool native contract. The retained result redacts the password value. |
 | The Internet | Generated `add_element()`, executed it, and observed the new “Delete” control in the resulting page state. |
-| Production quality | Three Lighthouse 13.4.1 mobile samples scored 94–100 performance (median 100) and 100 for accessibility, best practices, SEO, and agentic browsing on production. The independent native export scored 100 in all five categories. Every run reported zero console errors; maximum production CLS was 0.000106 and export CLS was zero. |
+| Production quality | Three Lighthouse 13.4.1 mobile samples scored 99–100 performance (median 100) and 100 for accessibility, best practices, SEO, and agentic browsing on production. The independent native export scored 100 in all five categories. Every run reported zero console errors; maximum production CLS was 0.000106 and export CLS was zero. |
 
 ## Native WebMCP recursion
 
@@ -29,7 +29,7 @@ Exact results and archive SHA-256 digest: [`native-webmcp-result.json`](native-w
 
 ## Hosted browser boundary
 
-The deployed Browser MCP routes require a signed page capability stored in a Secure, HttpOnly, SameSite=Strict cookie. The retained gate record shows same-origin issuance and authorized analysis succeeding while unauthenticated API and raw SSE requests, a cross-origin issuance attempt, and a tampered capability are rejected. No cookie or secret value is retained.
+The deployed Browser MCP routes require a signed page capability stored in a Secure, HttpOnly, SameSite=Strict cookie. The retained 19-check gate record shows same-origin issuance and authorized analysis succeeding while unauthenticated API and raw SSE requests, a cross-origin issuance attempt, a tampered capability, and a private-network target are rejected. Export creation requires the page capability; downloads are capability-owned and single-use. No cookie, capability, or secret value is retained.
 
 Exact gate results: [`deployment-security-gates.json`](deployment-security-gates.json)
 
@@ -61,7 +61,7 @@ Exact redacted results: [`public-site-results.json`](public-site-results.json)
 
 ## Quality profile
 
-Three mobile Lighthouse samples of the production workspace scored 94–100 for performance, with a median of 100. Accessibility, best practices, SEO, and agentic browsing scored 100 in every sample. The maximum production cumulative layout shift was 0.000106, and every sample recorded zero console errors. The independently served native export scored 100 in all five categories, with zero layout shift and no console errors.
+Three mobile Lighthouse samples of the production workspace scored 99–100 for performance, with a median of 100. Accessibility, best practices, SEO, and agentic browsing scored 100 in every sample. The maximum production cumulative layout shift was 0.000106, and every sample recorded zero console errors. The independently served native export scored 100 in all five categories, with zero layout shift and no console errors.
 
 The aggregate sample record is retained in [`lighthouse-production-samples.json`](lighthouse-production-samples.json). Complete raw reports are retained for [production run 1](lighthouse-production-report-run1.json), [production run 2](lighthouse-production-report-run2.json), the [canonical production run](lighthouse-production-report.json), and the [independent native export](lighthouse-native-export-report.json). Compact summaries are retained in [`lighthouse-production-summary.json`](lighthouse-production-summary.json) and [`lighthouse-native-export-summary.json`](lighthouse-native-export-summary.json). Reproduction commands are documented in [`../scripts/README.md`](../scripts/README.md), and the complete deterministic suite and its coverage boundary are documented in [`../TEST_REPORT.md`](../TEST_REPORT.md).
 

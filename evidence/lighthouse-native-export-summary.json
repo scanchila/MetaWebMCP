@@ -1,10 +1,19 @@
 {
   "url": "http://127.0.0.1:4173/",
-  "capturedAt": "2026-09-03T03:43:43.801Z",
-  "deploymentVersion": "97b3a727-85d8-4a55-93f2-38afcc759428",
-  "sourceCommit": "9744d48c04a400f1879308a50e9f95eb656cd316",
+  "capturedAt": "2026-09-03T05:21:39.968Z",
+  "deploymentVersion": "c5ac5494-8d79-413e-9a9c-8db3dcd3339c",
+  "sourceCommit": "178f2ff8dd63dc6f1c29558f5ed36cf4798b23e8",
+  "deployedAt": "2026-09-03T05:14:13.265192Z",
+  "deploymentTag": "source-178f2ff8dd63",
+  "identityVerifiedFromHealth": true,
+  "summarizer": "summarize-lighthouse.mjs",
+  "summarizerSha256": "72b4e9c75a5600e2dfbd7b71f9e71610d5ab2ff53bbe28e054a3a365ea0ef489",
   "rawReport": "lighthouse-native-export-report.json",
-  "rawReportSha256": "ae34527ab024e4b808bd7a804aece1872b0fba022af2a78dc6be12e826fb07d8",
+  "rawReportSha256": "1a00dbe41b13e299a02dbe16305443d78de720281162283a0be22b6c8beb954e",
+  "inputArtifact": {
+    "file": "relay-sessions-webmcp.zip",
+    "sha256": "b8f1c1f0eb126816d92a6bc336e92dafd706c79bf08d1a5d8a23f3d9a5680e7a"
+  },
   "lighthouseVersion": "13.4.1",
   "browser": "HeadlessChrome/154.0.0.0",
   "formFactor": "mobile",

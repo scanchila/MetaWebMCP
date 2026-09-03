@@ -1,15 +1,15 @@
 # Test report
 
-Verification completed on **2026-09-03T03:52:59Z** (**2026-09-03 10:52:59, Asia/Ho_Chi_Minh**) against deployed Worker version `97b3a727-85d8-4a55-93f2-38afcc759428`, built from source commit `9744d48c04a400f1879308a50e9f95eb656cd316`.
+Verification completed on **2026-09-03T05:29:20Z** (**2026-09-03 12:29:20, Asia/Ho_Chi_Minh**) against deployed Worker version `c5ac5494-8d79-413e-9a9c-8db3dcd3339c`, built from source commit `178f2ff8dd63dc6f1c29558f5ed36cf4798b23e8`.
 
 ## Environment
 
 - Linux x86_64, kernel 6.8.0-138-generic
 - Node.js 24.5.0
 - npm 11.5.1
-- Python 3.14.2
-- Playwright for Python 1.62.0
-- Google Chrome 147.0.7727.116 for the deterministic local journey
+- Python 3.10.12
+- Playwright for Python 1.55.0
+- Playwright Chromium 140.0.7339.16 for the deterministic local journey
 - Google Chrome 154.0.8037.0 beta with `WebMCPTesting` for native-browser and Lighthouse validation
 - Lighthouse 13.4.1
 - Cloudflare Playwright MCP 0.0.5 with Cloudflare Playwright 1.3.6
@@ -18,15 +18,16 @@ Verification completed on **2026-09-03T03:52:59Z** (**2026-09-03 10:52:59, Asia/
 ## Automated results
 
 - Capture-script syntax checks: **passed**.
-- Static repository checks: **85 repository files passed**.
-- Node unit and integration tests: **39 passed, 0 failed**.
-- Cloudflare Worker dry-run bundle: **passed** with Browser Run, Durable Object, Rate Limit, and Static Assets bindings.
+- Static repository checks: **95 repository files passed**.
+- Node unit and integration tests: **51 passed, 0 failed**.
+- Evidence provenance tests: **4 passed, 0 failed**.
+- Cloudflare Worker dry-run bundle: **passed** with Browser Run, Durable Object, Rate Limit, Static Assets, and Worker Version Metadata bindings.
 - Recursive Chromium end-to-end journey: **14 checks passed** with no console or page errors.
 - Generated runtime evaluations: **4 contracts evaluated, 4 passed, 0 failed, 0 skipped, 0 not run**.
-- Production Lighthouse: **100 median performance (94–100 across three mobile samples)** and **100 accessibility, best practices, SEO, and agentic browsing in every sample**. Maximum CLS was **0.000106**; console errors were **0**.
+- Production Lighthouse: **100 median performance (99–100 across three mobile samples)** and **100 accessibility, best practices, SEO, and agentic browsing in every sample**. Maximum CLS was **0.000106**; console errors were **0**.
 - Independently served native export Lighthouse: **100 performance, accessibility, best practices, SEO, and agentic browsing**. CLS and console errors were **0**.
 
-The Node suite covers HTML and accessibility-snapshot analysis, complete form containment, required and constrained fields, rejection of ambiguous forms, repeated item-action grouping, bounded input-to-reference mappings, current and legacy Playwright reference schemas, response-scoped reference refresh, consequential-action classification, untrusted metadata containment, ZIP generation with portable Unix modes, runnable owner bundles, unsafe bundle rejection, direct and IPv4-mapped IPv6 SSRF targets, navigation validation, Streamable HTTP and long-lived SSE MCP clients, serialized operations, server-side workspace isolation, signed capability expiry and tamper rejection, cookie attributes, and page-owned MCP session reuse and closure.
+The Node suite covers HTML and accessibility-snapshot analysis, complete form containment, required and constrained fields, rejection of ambiguous forms, repeated item-action grouping, bounded input-to-reference mappings, current and legacy Playwright reference schemas, response-scoped reference refresh, consequential-action classification, untrusted metadata containment, ZIP generation with portable Unix modes, runnable owner bundles, unsafe bundle rejection, public-network target validation across reserved IPv4 and IPv6 ranges, DNS validation and proxy pinning, navigation and redirect validation, Streamable HTTP and long-lived SSE MCP clients, serialized operations, server-side workspace isolation, signed capability expiry and tamper rejection, cookie attributes, page-owned MCP session reuse and closure, capability-owned single-use exports, and deployment provenance enforcement.
 
 The deterministic browser journey verifies:
 
@@ -54,9 +55,9 @@ Deterministic local artifacts are retained in:
 
 ## Production-native validation
 
-Google Chrome 154 beta opened the deployed application with WebMCP testing enabled. The real top-level `document.modelContext` exposed seven permanent tools and eleven after activation. Analysis, ToolSpec creation, activation, all four generated-tool executions, complete evaluation, and export were invoked through tool objects discovered from that native registry. The downloaded archive was then extracted and served independently; its page registered and executed `find_sessions`, `add_session_to_itinerary`, `inspect_itinerary`, and `clear_itinerary` without the MetaWebMCP runtime. The retained result records nine generated-tool calls across the production and exported pages, no console errors, screenshot and ZIP hashes, deployed asset hashes, the capture-script hash, and the exact deployment provenance.
+Google Chrome 154 beta opened the deployed application with WebMCP testing enabled. The real top-level `document.modelContext` exposed seven permanent tools and eleven after activation. Analysis, ToolSpec creation, activation, all four generated-tool executions, complete evaluation, and export were invoked through tool objects discovered from that native registry. The downloaded archive was then extracted and served independently; its page registered and executed `find_sessions`, `add_session_to_itinerary`, `inspect_itinerary`, and `clear_itinerary` without the MetaWebMCP runtime. The retained result records nine native calls on the production page (five meta-tools and four generated tools) plus four generated-tool calls on the independent export: 13 native calls in total, eight of them domain-level. It also records no console errors, screenshot and ZIP hashes, deployed asset hashes, the capture-script hash, and the exact deployment provenance.
 
-The deployed Browser MCP routes were also checked at their HTTP boundary. Health and same-origin capability issuance succeeded; unauthenticated API access, unauthenticated raw SSE access, cross-origin capability issuance, and a tampered capability were rejected. The issued cookie was observed with Secure, HttpOnly, SameSite=Strict, and root-path attributes. No capability or secret value is retained in the gate record.
+The deployed Browser MCP routes were also checked at their HTTP boundary. Nineteen assertions cover health and deployment identity, same-origin capability issuance, authorized analysis, rejection of unauthenticated API and raw SSE access, cross-origin issuance, tampered capabilities, and private-network targets. They also verify capability-required export creation, capability ownership, a valid ZIP response, and single-use download semantics. The issued cookie was observed with Secure, HttpOnly, SameSite=Strict, and root-path attributes. No capability or secret value is retained in the gate record.
 
 Exact production-native records are retained in [`evidence/native-webmcp-result.json`](evidence/native-webmcp-result.json), [`evidence/relay-sessions-webmcp.zip`](evidence/relay-sessions-webmcp.zip), and [`evidence/deployment-security-gates.json`](evidence/deployment-security-gates.json).
 
@@ -76,7 +77,7 @@ The redacted machine record and paired target/workspace screenshots are retained
 
 ## Lighthouse evidence
 
-Three complete production Lighthouse reports are retained rather than selecting only the best run. Their performance scores were 94, 100, and 100; the median was 100. Accessibility, best practices, SEO, and agentic browsing were 100 in all three. All samples recorded zero console errors, and maximum CLS was 0.000105686448327509. The exact retained native-export ZIP was then served independently and scored 100 in all five categories with zero CLS and no console errors.
+Three complete production Lighthouse reports are retained rather than selecting only the best run. Their performance scores were 100, 100, and 99; the median was 100. Accessibility, best practices, SEO, and agentic browsing were 100 in all three. All samples recorded zero console errors, and maximum CLS was 0.000105686448327509. The exact retained native-export ZIP was then served independently and scored 100 in all five categories with zero CLS and no console errors.
 
 The raw reports, their SHA-256 digests, the three-run aggregate, and compact summaries are retained under [`evidence/`](evidence/). Reproduction instructions are in [`scripts/README.md`](scripts/README.md).
 

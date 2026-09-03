@@ -1,5 +1,5 @@
 {
-  "baseUrl": "http://127.0.0.1:57621",
+  "baseUrl": "http://127.0.0.1:43999",
   "checks": [
     "server health endpoint",
     "client prerequisites and responsive five-step non-native fallback",
@@ -94,7 +94,7 @@
       {
         "tool": "find_sessions",
         "status": "passed",
-        "durationMs": 95,
+        "durationMs": 93,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -150,7 +150,7 @@
       {
         "tool": "add_session_to_itinerary",
         "status": "passed",
-        "durationMs": 74,
+        "durationMs": 72,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -219,7 +219,7 @@
       {
         "tool": "inspect_itinerary",
         "status": "passed",
-        "durationMs": 3,
+        "durationMs": 1,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -288,7 +288,7 @@
       {
         "tool": "clear_itinerary",
         "status": "passed",
-        "durationMs": 75,
+        "durationMs": 72,
         "checks": [
           {
             "name": "registered in generated tool registry",
