@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 from playwright.sync_api import sync_playwright
-from evidence_provenance import browser_identity, configured_source_commit, verified_deployment_identity
+from evidence_provenance import browser_identity, capture_runtime, configured_source_commit, verified_deployment_identity
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,6 +43,7 @@ def chrome_executable():
 CHROME = chrome_executable()
 CAPTURE_SCRIPT_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 PROVENANCE_HELPER_SHA256 = hashlib.sha256(PROVENANCE_HELPER.read_bytes()).hexdigest()
+CAPTURE_RUNTIME = capture_runtime()
 
 
 def native_execute(page, name, arguments):
@@ -385,6 +386,7 @@ def main():
                 'captureScript': Path(__file__).name,
                 'captureScriptSha256': CAPTURE_SCRIPT_SHA256,
                 'captureDependencies': {PROVENANCE_HELPER.name: PROVENANCE_HELPER_SHA256},
+                'captureRuntime': CAPTURE_RUNTIME,
                 'browser': captured_browser_identity,
                 'browserLaunch': {
                     'executable': Path(CHROME).name,

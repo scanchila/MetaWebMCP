@@ -12,7 +12,7 @@ from evidence_append_provenance import (  # noqa: E402
     apply_browser_capture_provenance,
     apply_static_capture_provenance,
 )
-from evidence_provenance import browser_identity, configured_source_commit, verified_deployment_identity  # noqa: E402
+from evidence_provenance import browser_identity, capture_runtime, configured_source_commit, verified_deployment_identity  # noqa: E402
 
 
 SOURCE_COMMIT = 'a' * 40
@@ -26,6 +26,7 @@ STATIC_PROVENANCE = {
 }
 BROWSER_PROVENANCE = {
     'browser': 'Google Chrome 154.0.8037.0',
+    'captureRuntime': {'python': '3.12.14', 'playwright': '1.62.0'},
     'browserLaunch': {
         'executable': 'google-chrome-beta',
         'headless': True,
@@ -56,6 +57,19 @@ def opener(payload, calls):
 
 
 class EvidenceProvenanceTest(unittest.TestCase):
+    def test_capture_runtime_records_python_and_playwright_versions(self):
+        package_names = []
+
+        def package_version(name):
+            package_names.append(name)
+            return '1.62.0'
+
+        self.assertEqual(
+            capture_runtime(python_version=lambda: '3.12.14', package_version=package_version),
+            {'python': '3.12.14', 'playwright': '1.62.0'},
+        )
+        self.assertEqual(package_names, ['playwright'])
+
     def test_browser_identity_preserves_the_executable_product_name(self):
         identities = (
             'Google Chrome Beta 152.0.7977.75',
@@ -192,6 +206,10 @@ class EvidenceProvenanceTest(unittest.TestCase):
         mismatches = {
             'browser': {**BROWSER_PROVENANCE, 'browser': 'Google Chrome 155.0.8100.0'},
             'browserLaunch': changed_launch,
+            'captureRuntime': {
+                **BROWSER_PROVENANCE,
+                'captureRuntime': {'python': '3.12.14', 'playwright': '1.63.0'},
+            },
         }
         for field, current_provenance in mismatches.items():
             with self.subTest(field=field):
