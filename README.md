@@ -86,6 +86,8 @@ Choose one of three inputs:
 - **Public URL:** safely fetches server-rendered HTML, extracts stable forms and action groups, and exports an integration pack.
 - **Pasted HTML:** performs the same analysis without a network request.
 
+The desired outcome is part of candidate selection: when a page exposes more than twelve workflows, normalized goal-token overlap chooses the strongest twelve, document order breaks ties, and the workspace reports how many candidates were omitted.
+
 A generated pack includes:
 
 ```text
