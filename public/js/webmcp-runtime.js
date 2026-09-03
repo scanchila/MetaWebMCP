@@ -223,7 +223,7 @@ async function executeDomSpec(spec, input, context) {
       const control = form.querySelector(field.selector) || targetDocument.querySelector(field.selector);
       setControlValue(control, input[field.name], targetDocument);
     }
-    const submit = targetDocument.querySelector(executor.submitSelector) || form.querySelector(executor.submitSelector);
+    const submit = form.querySelector(executor.submitSelector) || targetDocument.querySelector(executor.submitSelector);
     if (submit?.click) submit.click();
     else if (typeof form.requestSubmit === 'function') form.requestSubmit();
     else form.dispatchEvent(new (targetWindowFor(targetDocument).Event)('submit', { bubbles: true, cancelable: true }));

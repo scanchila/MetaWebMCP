@@ -323,6 +323,17 @@ def main() -> int:
                 result["checks"].append("recursive dynamic registration from seven to eleven tools")
 
                 progress("invoking generated domain tools")
+                page.locator("#target-frame").evaluate(
+                    """frame => {
+                      const decoy = frame.contentDocument.createElement('button');
+                      decoy.id = 'outside-submit-decoy';
+                      decoy.type = 'button';
+                      decoy.hidden = true;
+                      frame.contentWindow.__outsideSubmitClicks = 0;
+                      decoy.addEventListener('click', () => { frame.contentWindow.__outsideSubmitClicks += 1; });
+                      frame.contentDocument.body.prepend(decoy);
+                    }"""
+                )
                 search_result = page.evaluate(
                     """async () => window.__callNative('find_sessions', {
                       query: 'agent', level: 'all', day: 'all'
@@ -330,6 +341,9 @@ def main() -> int:
                 )
                 assert search_result["ok"] is True
                 assert len(search_result["state"]["visibleSessions"]) >= 2
+                assert page.locator("#target-frame").evaluate(
+                    "frame => frame.contentWindow.__outsideSubmitClicks"
+                ) == 0
 
                 add_result = page.evaluate(
                     """async () => window.__callNative('add_session_to_itinerary', {
@@ -404,6 +418,9 @@ def main() -> int:
                 generated_shell = re.sub(
                     r'<script[^>]+src="\./src/webmcp\.generated\.js"[^>]*></script>', "", generated_shell
                 )
+                generated_shell = generated_shell.replace(
+                    "<body>", '<body><button id="outside-submit-decoy" type="button" hidden>Outside action</button>', 1
+                )
                 generated_page.set_content(generated_shell, wait_until="domcontentloaded")
                 generated_page.add_style_tag(content=generated_css)
                 generated_page.evaluate(
@@ -437,6 +454,10 @@ def main() -> int:
                         if (!tool) throw new Error(`Unknown native tool ${name}`);
                         return document.modelContext.executeTool(tool, JSON.stringify(input));
                       };
+                      window.__outsideSubmitClicks = 0;
+                      document.querySelector('#outside-submit-decoy').addEventListener('click', () => {
+                        window.__outsideSubmitClicks += 1;
+                      });
                     }
                     """
                 )
@@ -460,6 +481,7 @@ def main() -> int:
                     "async () => window.__callNative('find_sessions', { query: 'agent', level: 'all', day: 'all' })"
                 )
                 assert "Agent evals that catch regressions" in generated_search["visibleState"]
+                assert generated_page.evaluate("window.__outsideSubmitClicks") == 0
                 generated_add = generated_page.evaluate(
                     "async () => window.__callNative('add_session_to_itinerary', { item_id: 'agent-evals-that-catch-regressions' })"
                 )
@@ -468,7 +490,9 @@ def main() -> int:
                     "async () => window.__callNative('inspect_itinerary', {})"
                 )
                 assert "1 SESSION" in generated_inspect["visibleState"]
-                result["checks"].append("exported repository registers and executes its four native WebMCP tools")
+                result["checks"].append(
+                    "exported repository registers and executes four native tools with form-scoped submission"
+                )
                 generated_page.close()
 
                 progress("executing standalone browser-derived export")
