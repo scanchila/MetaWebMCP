@@ -1,21 +1,8 @@
 import { McpHttpClient, McpSseClient, flattenMcpText } from './mcp-http-client.js';
 import { runMcpRecipe } from './mcp-recipe.js';
+import { isBlockedPublicHostname } from './network-policy.js';
 
 const REQUIRED_TOOLS = ['browser_navigate', 'browser_snapshot'];
-
-function privateIpv4(hostname) {
-  const parts = hostname.split('.').map(Number);
-  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
-  const [a, b] = parts;
-  return a === 0
-    || a === 10
-    || a === 127
-    || (a === 100 && b >= 64 && b <= 127)
-    || (a === 169 && b === 254)
-    || (a === 172 && b >= 16 && b <= 31)
-    || (a === 192 && b === 168)
-    || a >= 224;
-}
 
 function normalizedTargetUrl(rawUrl) {
   let parsed;
@@ -26,17 +13,7 @@ function normalizedTargetUrl(rawUrl) {
   }
   if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Only HTTP and HTTPS targets are supported.');
   if (parsed.username || parsed.password) throw new Error('Target URLs may not contain credentials.');
-  const hostname = parsed.hostname.replace(/^\[|\]$/g, '').toLowerCase();
-  const privateIpv6 = hostname === '::'
-    || hostname === '::1'
-    || hostname.startsWith('::ffff:')
-    || /^(?:fc|fd|fe[89ab]|ff)/.test(hostname);
-  if (!hostname
-    || hostname === 'localhost'
-    || hostname.endsWith('.localhost')
-    || hostname.endsWith('.local')
-    || privateIpv4(hostname)
-    || privateIpv6) {
+  if (isBlockedPublicHostname(parsed.hostname)) {
     throw new Error('Private and local targets are blocked.');
   }
   return parsed.href;

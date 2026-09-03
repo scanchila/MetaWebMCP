@@ -132,28 +132,17 @@ The recipe runtime reads the connected tool schemas and supports both the curren
 
 Exporting this mode produces the same reviewed ToolSpecs with an owned-page runtime based on accessible names and bounded item context. Developers can install the generated module directly in the target application without shipping MetaWebMCP or a browser service, then replace compatibility lookups with stable application functions as they harden the integration.
 
-Start both services with Docker Compose:
+Start the application, isolated browser, and guarded egress proxy with Docker Compose:
 
 ```bash
 docker compose up --build
 # MetaWebMCP: http://localhost:8787
-# Playwright MCP: http://localhost:8931/mcp
+# Playwright MCP is reachable only by the application on the internal network
 ```
 
-Or start Playwright MCP separately:
+The Compose browser has no direct route outside its internal network. Chromium sends HTTP and HTTPS through `egress-proxy.mjs`, including destinations it would normally exempt as loopback. The proxy resolves every new connection, rejects the destination if any answer is private or reserved, permits only ports 80 and 443, and connects to the validated address rather than resolving it again. Redirects and subresources therefore cross the same boundary. `BROWSER_MCP_EGRESS_ISOLATED=1` only declares that an equivalent boundary exists; it does not create one, and the Node service refuses to enable Browser MCP without it.
 
-```bash
-npx @playwright/mcp@latest \
-  --headless \
-  --browser chromium \
-  --isolated \
-  --image-responses omit \
-  --port 8931
-
-BROWSER_MCP_URL=http://127.0.0.1:8931/mcp npm start
-```
-
-The Node bridge validates initial URLs, blocks private/reserved networks by default, and can restrict initial browser targets with `BROWSER_ALLOWED_ORIGINS`. Browser operations require a short-lived, signed, HttpOnly page capability, and server-side browser clients are keyed by both that capability and the page workspace. Generated recipes cannot issue new navigation calls. The hosted Browser MCP endpoint narrows its advertised operations, validates explicit navigation, and blocks direct local, private, reserved, and common metadata destinations inside the browser context. Application checks do not replace network egress policy or defend completely against DNS rebinding; keep the browser isolated and unauthenticated.
+Browser operations also require a short-lived, signed, HttpOnly page capability, and server-side browser clients are keyed by both that capability and the page workspace. Generated recipes cannot issue new navigation calls. `BROWSER_ALLOWED_ORIGINS` can further constrain initial and observed final navigation origins. The hosted Cloudflare path uses Browser Rendering's private-network blocking in addition to the shared literal-host policy.
 
 ## Configuration
 
@@ -162,6 +151,7 @@ The Node bridge validates initial URLs, blocks private/reserved networks by defa
 | `PORT` | `8787` | HTTP port |
 | `HOST` | `0.0.0.0` | Bind address |
 | `BROWSER_MCP_URL` | empty | Streamable HTTP endpoint, normally `http://127.0.0.1:8931/mcp` |
+| `BROWSER_MCP_EGRESS_ISOLATED` | `0` | Required declaration that the configured browser runtime has enforced connection-level private-network egress controls |
 | `MCP_CAPABILITY_SECRET` | random per process | Secret of at least 32 bytes used to sign page-issued Browser MCP capabilities; set explicitly when running multiple instances |
 | `MCP_SESSION_TTL_MS` | `1200000` | Inactivity timeout for each page-scoped Browser MCP client |
 | `MAX_PENDING_EXPORTS` | `8` | Maximum ZIP archives retained for pending Node downloads |
@@ -223,10 +213,12 @@ The showcase deployment runs at https://metawebmcp.neuryta.com. Its page-owned M
 ## Repository guide
 
 ```text
+egress-proxy.mjs             DNS-validating, address-pinning browser egress boundary
 lib/analyzer.mjs             conservative HTML and accessibility-tree analysis
 lib/generator.mjs            native integration repository generator
 public/js/mcp-http-client.js shared dependency-free Streamable HTTP MCP client
 public/js/browser-mcp-session.js page-scoped browser session with Node fallback
+public/js/network-policy.js  shared private/reserved address and hostname policy
 public/js/mcp-recipe.js      shared allowlisted recipe interpreter
 lib/security.mjs             URL, DNS, redirect, and network validation
 lib/zip.mjs                  dependency-free ZIP writer

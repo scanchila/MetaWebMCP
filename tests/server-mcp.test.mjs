@@ -126,6 +126,7 @@ test('Browser MCP transport sessions are isolated by MetaWebMCP workspace', { ti
       HOST: '127.0.0.1',
       PORT: String(appPort),
       BROWSER_MCP_URL: `http://127.0.0.1:${mcpPort}/mcp`,
+      BROWSER_MCP_EGRESS_ISOLATED: '1',
     },
     stdio: 'ignore',
   });
@@ -286,7 +287,9 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
         toolCalls.push({ name, args });
         const text = name === 'browser_snapshot'
           ? '- textbox "Topic" [ref=e1]\n- combobox "Level" [ref=e2]\n- button "Find sessions" [ref=e3]'
-          : `${name} completed`;
+          : name === 'browser_navigate' && args.url.endsWith('/redirect')
+            ? '### Page\n- Page URL: http://127.0.0.1:8931/mcp\n- HTTP status: 403 Forbidden'
+            : `${name} completed`;
         json(res, 200, { jsonrpc: '2.0', id: message.id, result: { content: [{ type: 'text', text }] } });
       } catch (error) {
         json(res, 200, { jsonrpc: '2.0', id: message.id, error: { code: -32602, message: error.message } });
@@ -308,7 +311,7 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
       HOST: '127.0.0.1',
       PORT: String(appPort),
       BROWSER_MCP_URL: `http://127.0.0.1:${mcpPort}/mcp`,
-      ALLOW_PRIVATE_TARGETS: '1',
+      BROWSER_MCP_EGRESS_ISOLATED: '1',
     },
     stdio: 'ignore',
   });
@@ -326,7 +329,7 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
   const analyzed = await fetch(`${base}/api/mcp/analyze`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', cookie },
-    body: JSON.stringify({ workspaceId, url: 'https://shop.example/', goal: 'Find sessions.' }),
+    body: JSON.stringify({ workspaceId, url: 'https://8.8.8.8/', goal: 'Find sessions.' }),
   });
   assert.equal(analyzed.status, 200);
   const analyzedPayload = await analyzed.json();
@@ -338,13 +341,21 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
     headers: { 'content-type': 'application/json', cookie },
     body: JSON.stringify({
       snapshot: '- textbox "Query" [ref=s1]\n- button "Search" [ref=s2]',
-      url: 'https://shop.example/',
+      url: 'https://8.8.8.8/',
       goal: 'Search the catalog.',
     }),
   });
   assert.equal(snapshotAnalyzed.status, 200);
   const snapshotPayload = await snapshotAnalyzed.json();
   assert.equal(snapshotPayload.analysis.capabilities[0].name, 'search');
+
+  const redirected = await fetch(`${base}/api/mcp/analyze`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ workspaceId, url: 'https://8.8.8.8/redirect', goal: 'Inspect.' }),
+  });
+  assert.equal(redirected.status, 400);
+  assert.match((await redirected.json()).error, /Private and reserved IP targets are blocked/);
 
   const executed = await fetch(`${base}/api/mcp/execute`, {
     method: 'POST',
@@ -359,8 +370,9 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
   const executedPayload = await executed.json();
   assert.equal(executedPayload.ok, true);
   assert.deepEqual(toolCalls, [
-    { name: 'browser_navigate', args: { url: 'https://shop.example/' } },
+    { name: 'browser_navigate', args: { url: 'https://8.8.8.8/' } },
     { name: 'browser_snapshot', args: {} },
+    { name: 'browser_navigate', args: { url: 'https://8.8.8.8/redirect' } },
     { name: 'browser_type', args: { element: 'Topic', ref: 'e1', text: 'WebMCP' } },
     { name: 'browser_select_option', args: { element: 'Level', ref: 'e2', values: ['Advanced'] } },
     { name: 'browser_click', args: { element: 'Find sessions', ref: 'e3' } },

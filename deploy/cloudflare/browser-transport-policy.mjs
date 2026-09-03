@@ -1,3 +1,5 @@
+import { isBlockedPublicHostname } from '../../public/js/network-policy.js';
+
 export const BROWSER_MCP_TOOL_NAMES = Object.freeze([
   'browser_navigate',
   'browser_snapshot',
@@ -11,42 +13,8 @@ export const BROWSER_MCP_TOOL_NAMES = Object.freeze([
 
 const BROWSER_MCP_TOOL_SET = new Set(BROWSER_MCP_TOOL_NAMES);
 
-function privateIpv4(hostname) {
-  const parts = hostname.split('.').map(Number);
-  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
-  const [a, b, c] = parts;
-  return a === 0
-    || a === 10
-    || a === 127
-    || (a === 100 && b >= 64 && b <= 127)
-    || (a === 169 && b === 254)
-    || (a === 172 && b >= 16 && b <= 31)
-    || (a === 192 && b === 0 && c === 0)
-    || (a === 192 && b === 0 && c === 2)
-    || (a === 192 && b === 168)
-    || (a === 198 && (b === 18 || b === 19))
-    || (a === 198 && b === 51 && c === 100)
-    || (a === 203 && b === 0 && c === 113)
-    || a >= 224;
-}
-
 export function isBlockedBrowserHostname(rawHostname) {
-  const hostname = String(rawHostname || '').replace(/^\[|\]$/g, '').toLowerCase();
-  const privateIpv6 = hostname === '::'
-    || hostname === '::1'
-    || hostname.startsWith('::ffff:')
-    || /^(?:fc|fd|fe[89ab]|ff)/.test(hostname)
-    || hostname === '2001:db8::'
-    || hostname.startsWith('2001:db8:');
-  return !hostname
-    || hostname === 'localhost'
-    || hostname.endsWith('.localhost')
-    || hostname.endsWith('.local')
-    || hostname.endsWith('.internal')
-    || hostname === 'home.arpa'
-    || hostname.endsWith('.home.arpa')
-    || privateIpv4(hostname)
-    || privateIpv6;
+  return isBlockedPublicHostname(rawHostname);
 }
 
 export function validatePublicTarget(rawUrl) {

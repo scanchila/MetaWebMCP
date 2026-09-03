@@ -7,11 +7,15 @@ services:
       PORT: 8787
       HOST: 0.0.0.0
       BROWSER_MCP_URL: http://playwright-mcp:8931/mcp
+      BROWSER_MCP_EGRESS_ISOLATED: "1"
     depends_on:
       - playwright-mcp
+    networks:
+      - default
+      - browser-internal
 
   playwright-mcp:
-    image: mcr.microsoft.com/playwright/mcp:latest
+    image: mcr.microsoft.com/playwright/mcp@sha256:dda1f7f9b812e22946635c8af7df9288b96d3b9e3f0f1b8576d6823e2031c1de
     init: true
     entrypoint: ["node", "/app/cli.js"]
     command:
@@ -27,4 +31,31 @@ services:
       - --host
       - 0.0.0.0
       - --allowed-hosts
-      - playwright-mcp,localhost,127.0.0.1
+      - playwright-mcp:8931,localhost:8931,127.0.0.1:8931
+      - --proxy-server
+      - http://egress-proxy:8080
+      - --proxy-bypass
+      - <-loopback>
+    depends_on:
+      - egress-proxy
+    networks:
+      - browser-internal
+
+  egress-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile.egress
+    expose:
+      - "8080"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - default
+      - browser-internal
+
+networks:
+  browser-internal:
+    internal: true

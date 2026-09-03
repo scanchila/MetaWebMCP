@@ -5,9 +5,11 @@ import { spawnSync } from 'node:child_process';
 const root = path.resolve(new URL('..', import.meta.url).pathname);
 const required = [
   'server.mjs',
+  'egress-proxy.mjs',
   'public/index.html',
   'public/js/app.js',
   'public/js/webmcp-runtime.js',
+  'public/js/network-policy.js',
   'public/demo/index.html',
   'README.md',
   'LICENSE',

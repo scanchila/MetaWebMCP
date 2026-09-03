@@ -132,7 +132,12 @@ test('page-scoped Browser MCP session blocks local targets before navigation', a
     return json({ jsonrpc: '2.0', id: message.id, result: {} });
   };
   const session = new BrowserMcpSession({ fetch: fetchMock, baseUrl: 'https://meta.example/' });
-  for (const url of ['http://127.0.0.1/admin', 'http://[::ffff:127.0.0.1]/admin']) {
+  for (const url of [
+    'http://127.0.0.1/admin',
+    'http://[::ffff:127.0.0.1]/admin',
+    'http://[64:ff9b::a9fe:a9fe]/latest/meta-data/',
+    'http://169.254.169.254.nip.io/latest/meta-data/',
+  ]) {
     await assert.rejects(
       session.analyze({ url, goal: 'Inspect.', workspaceId: 'workspace_page_7654321' }),
       /Private and local targets are blocked/,
