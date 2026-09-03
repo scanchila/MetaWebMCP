@@ -77,6 +77,14 @@ async function createExport(base, cookie, payload = exportPayload) {
   });
 }
 
+async function createAnalysis(base, payload) {
+  return fetch(`${base}/api/analyze`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
 test('exports require a page capability and downloads are owner-bound and single-use', async (t) => {
   const base = await startApp(t);
   const unauthorized = await createExport(base, '');
@@ -139,5 +147,48 @@ test('export generation has independent archive-size and request-rate limits', a
     const limited = await createExport(base, cookie);
     assert.equal(limited.status, 429);
     assert.match((await limited.json()).error, /request limit reached/i);
+  });
+});
+
+test('analysis work has independent request-rate and concurrency limits', async (t) => {
+  await t.test('request rate', async (rateTest) => {
+    const base = await startApp(rateTest, { ANALYSIS_RATE_LIMIT_PER_MINUTE: '2' });
+    const payload = { source: 'html', html: '<form><button>Save</button></form>', url: 'https://example.com/' };
+    assert.equal((await createAnalysis(base, payload)).status, 200);
+    assert.equal((await createAnalysis(base, payload)).status, 200);
+    const limited = await createAnalysis(base, payload);
+    assert.equal(limited.status, 429);
+    assert.match((await limited.json()).error, /request limit reached/i);
+  });
+
+  await t.test('concurrency', async (concurrencyTest) => {
+    let markArrived;
+    let releaseResponse;
+    const arrived = new Promise((resolve) => { markArrived = resolve; });
+    const released = new Promise((resolve) => { releaseResponse = resolve; });
+    const upstream = http.createServer(async (_request, response) => {
+      markArrived();
+      await released;
+      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      response.end('<main>Bounded analysis</main>');
+    });
+    const upstreamPort = await listen(upstream);
+    concurrencyTest.after(() => {
+      releaseResponse();
+      return new Promise((resolve) => upstream.close(resolve));
+    });
+    const base = await startApp(concurrencyTest, {
+      ALLOW_PRIVATE_TARGETS: '1',
+      ANALYSIS_RATE_LIMIT_PER_MINUTE: '10',
+      MAX_CONCURRENT_ANALYSES: '1',
+    });
+    const payload = { source: 'url', url: `http://127.0.0.1:${upstreamPort}/` };
+    const first = createAnalysis(base, payload);
+    await arrived;
+    const limited = await createAnalysis(base, payload);
+    assert.equal(limited.status, 429);
+    assert.match((await limited.json()).error, /capacity reached/i);
+    releaseResponse();
+    assert.equal((await first).status, 200);
   });
 });
