@@ -11,6 +11,7 @@ export const ALLOWED_MCP_TOOLS = Object.freeze([
 ]);
 
 const ALLOWED_MCP_TOOL_SET = new Set(ALLOWED_MCP_TOOLS);
+const SNAPSHOT_CONTROL = /^\s*-\s*'?(?:button|textbox|searchbox|combobox|checkbox|radio|link|spinbutton|slider)\s+"((?:\\.|[^"])*)"[^\n]*?\[ref=([^\]]+)\]/i;
 
 function renderValue(value, input) {
   if (typeof value === 'string') {
@@ -58,6 +59,34 @@ function normalizeReferenceArgument(name, args, definitions) {
   return args;
 }
 
+function snapshotName(value) {
+  try {
+    return JSON.parse(`"${value}"`);
+  } catch {
+    return value.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+  }
+}
+
+function normalizeAccessibleName(value) {
+  return String(value).replace(/\s+/g, ' ').trim();
+}
+
+function refreshedReference(args, previousResultText) {
+  const referenceKey = Object.hasOwn(args, 'ref')
+    ? 'ref'
+    : Object.hasOwn(args, 'target') ? 'target' : null;
+  if (!referenceKey || typeof args[referenceKey] !== 'string' || typeof args.element !== 'string') return args;
+
+  const expectedName = normalizeAccessibleName(args.element);
+  const matches = new Set();
+  for (const line of String(previousResultText || '').split(/\r?\n/)) {
+    const match = line.match(SNAPSHOT_CONTROL);
+    if (match && normalizeAccessibleName(snapshotName(match[1])) === expectedName) matches.add(match[2]);
+  }
+  if (matches.size !== 1) return args;
+  return { ...args, [referenceKey]: [...matches][0] };
+}
+
 export async function runMcpRecipe({ executor, input = {}, availableTools, callTool, resultText }) {
   if (!executor || executor.type !== 'mcp-recipe' || !Array.isArray(executor.steps)) {
     throw new Error('A valid MCP recipe is required.');
@@ -74,14 +103,17 @@ export async function runMcpRecipe({ executor, input = {}, availableTools, callT
 
   const { names: available, definitions } = availableToolDetails(availableTools);
   const trace = [];
+  let previousResultText = '';
   for (const step of executor.steps) {
     if (!step || !ALLOWED_MCP_TOOL_SET.has(step.tool)) {
       throw new Error(`MCP tool ${step?.tool || '(missing)'} is not allowed.`);
     }
     if (!available.has(step.tool)) throw new Error(`Connected MCP server does not expose ${step.tool}.`);
-    const args = normalizeReferenceArgument(step.tool, renderValue(step.arguments || {}, input), definitions);
+    const normalizedArgs = normalizeReferenceArgument(step.tool, renderValue(step.arguments || {}, input), definitions);
+    const args = refreshedReference(normalizedArgs, previousResultText);
     const result = await callTool(step.tool, args);
-    trace.push({ tool: step.tool, arguments: args, result: String(resultText(result)).slice(0, 18_000) });
+    previousResultText = String(resultText(result));
+    trace.push({ tool: step.tool, arguments: args, result: previousResultText.slice(0, 18_000) });
   }
   return { ok: true, trace, result: trace.at(-1)?.result || '' };
 }
