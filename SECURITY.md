@@ -10,11 +10,12 @@ MetaWebMCP is an experimental compatibility studio. It processes untrusted websi
 - Embedded URL credentials are rejected.
 - `localhost`, `.local`, direct private IPs, loopback, link-local, carrier-grade NAT, documentation ranges, multicast, and reserved ranges are blocked.
 - DNS answers are checked and a target is rejected if any answer resolves to a blocked range.
+- The Node runtime connects to one address from that validated answer set while preserving the original HTTP Host header and TLS SNI.
 - Every redirect destination is validated again.
 - Redirect count, request duration, response size, and accepted content types are capped.
 - `ALLOW_PRIVATE_TARGETS=1` exists only for deliberate local development of static HTML fetching; it does not relax Browser MCP egress.
 
-These controls reduce, but do not mathematically eliminate, DNS-rebinding and network-side race risks. A hardened public deployment should add egress policy at the container or VPC layer.
+The supplied Node path therefore does not perform a second hostname resolution between validation and connection. Container or VPC egress policy remains useful defense in depth on a public deployment.
 
 ### Browser MCP bridge
 
@@ -24,7 +25,8 @@ These controls reduce, but do not mathematically eliminate, DNS-rebinding and ne
 - The Node bridge performs DNS and private-network validation before analysis navigation and validates a reported final navigation URL. Navigation is not available to caller-supplied generated recipes.
 - Node Browser MCP remains disabled unless `BROWSER_MCP_EGRESS_ISOLATED=1` declares an enforced runtime boundary. The declaration is a fail-closed configuration guard, not the boundary itself.
 - The supplied Compose Playwright container has only an internal Docker network. Chromium's HTTP/HTTPS route is a forward proxy that validates every connection's full DNS answer set, permits only ports 80 and 443, and connects to one already-validated address. Chromium's implicit loopback and link-local proxy bypass is removed.
-- The Cloudflare transport applies the shared direct-target policy. Browser Rendering is configured with `blockPrivate: true` so redirects and page actions remain subject to the platform network boundary.
+- The Cloudflare transport applies the shared direct-target policy, then fulfills every Browser Rendering HTTP request through the Worker's public-Internet `fetch()` path. Redirects are manual so Chromium's next request crosses the same boundary; response and request sizes and request duration are capped.
+- Cloudflare Browser Rendering worker contexts, service-worker loads, and direct WebSocket, WebTransport, and WebRTC paths are disabled so page code cannot bypass the guarded HTTP route.
 - `BROWSER_ALLOWED_ORIGINS` can constrain initial navigation.
 - Generated recipes contain at most twelve steps.
 - Only the following MCP tools can be called by recipes:
@@ -37,7 +39,7 @@ These controls reduce, but do not mathematically eliminate, DNS-rebinding and ne
 - Arbitrary browser evaluation is deliberately excluded.
 - The supplied Compose service runs sandboxed Chromium as the non-root `node` user under Playwright's user-namespace seccomp profile. Its root filesystem is read-only, capabilities are dropped except for the sandbox's `SYS_CHROOT` requirement, writable state is limited to bounded temporary filesystems, and image responses are omitted.
 
-Playwright MCP origin filters and application-layer hostname checks are not complete network boundaries. External Browser MCP endpoints must independently enforce private-network egress on redirects and subresources before `BROWSER_MCP_EGRESS_ISOLATED=1` is set. Keep browser runtimes isolated, without host filesystem mounts or persistent authenticated profiles.
+Playwright MCP origin filters and application-layer hostname checks are not complete network boundaries. The supplied Cloudflare and Compose paths add lower network controls covering redirects and subresources. Other Browser MCP endpoints must independently enforce equivalent private-network egress before `BROWSER_MCP_EGRESS_ISOLATED=1` is set. Keep browser runtimes isolated, without host filesystem mounts or persistent authenticated profiles.
 
 A public same-origin MCP route is a powerful resource even when the product UI exposes only semantic generated tools. The Cloudflare deployment rejects cross-origin browser transport requests, limits them to 60 requests per source IP per minute, uses the account's browser quotas, and closes browser contexts on reset or page teardown. Production operators should also monitor abuse and account-level consumption.
 

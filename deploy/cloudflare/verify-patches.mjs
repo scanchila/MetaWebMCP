@@ -128,9 +128,11 @@ for (const build of ['esm', 'cjs']) {
     `./node_modules/@cloudflare/playwright-mcp/lib/${build}/src/context.js`,
     'utf8',
   );
-  assert.match(contextSource, /this\.config\.network\?\.blockPrivate/);
-  assert.match(contextSource, /169 && b === 254/);
-  assert.match(contextSource, /hostname\.endsWith\("\.internal"\)/);
+  assert.match(contextSource, /blockPrivate requires a connection-level request handler/);
+  assert.match(contextSource, /this\.config\.network\.requestHandler\(route\)/);
+  assert.match(contextSource, /context\.routeWebSocket/);
+  assert.match(contextSource, /context\.addInitScript/);
+  assert.doesNotMatch(contextSource, /const blockedIpv4/);
 }
 
 console.log('Cloudflare Playwright MCP compatibility checks passed.');

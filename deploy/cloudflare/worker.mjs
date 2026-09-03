@@ -10,6 +10,10 @@ import {
 } from '../../lib/browser-capability.mjs';
 import { generateProjectZip } from '../../lib/generator.mjs';
 import {
+  browserDirectNetworkInitScript,
+  proxyBrowserRequest,
+} from './browser-egress-proxy.mjs';
+import {
   BROWSER_MCP_TOOL_NAMES,
   validateBrowserTransportMessage,
   validatePublicTarget,
@@ -25,7 +29,12 @@ const SOURCE_COMMIT_PATTERN = /^[0-9a-f]{40,64}$/;
 export const PlaywrightMCP = createMcpAgent(runtimeEnv.BROWSER, {
   capabilities: ['core', 'wait'],
   allowedTools: BROWSER_MCP_TOOL_NAMES,
-  network: { blockPrivate: true },
+  network: {
+    blockPrivate: true,
+    requestHandler: proxyBrowserRequest,
+    blockWebSockets: true,
+    initScript: browserDirectNetworkInitScript,
+  },
 });
 
 function securityHeaders(contentType = '') {
