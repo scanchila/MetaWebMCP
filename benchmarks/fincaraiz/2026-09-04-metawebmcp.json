@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "fincaraiz-cheapest-with-laundry-v1",
+  "arm": "metawebmcp-agent-snapshot",
+  "startedAt": "2026-09-03T17:53:40.790Z",
+  "completedAt": "2026-09-03T17:53:43.697Z",
+  "input": {
+    "url": "https://www.fincaraiz.com.co/arriendo/apartamentos/bogota/bogota-dc/baratos",
+    "goal": "Find the 50 cheapest unique apartments with at least 2 bedrooms, 45–100 m², and an explicit laundry-area phrase; rank by rent plus administration.",
+    "snapshotCharacters": 78687,
+    "snapshotBytes": 79124,
+    "snapshotSha256": "2407f3ef32e4ddd4dfadb3b3cfaae76fafb386ef6b77b89652e3ae16773a697f"
+  },
+  "timing": {
+    "browserNavigationMs": 2902,
+    "localAnalysisMs": 4.613,
+    "totalMs": 2906
+  },
+  "browserCalls": 1,
+  "analysis": {
+    "summary": {
+      "controls": 271,
+      "buttons": 137,
+      "inputs": 0,
+      "candidates": 8,
+      "discoveredCandidates": 8,
+      "omittedCandidates": 0
+    },
+    "warnings": [
+      "63 buttons had no accessible name and could not become reliable tools."
+    ],
+    "capabilities": [
+      {
+        "id": "mcp_group_1_contactar",
+        "kind": "action-group",
+        "name": "contactar",
+        "title": "Contactar",
+        "risk": "write",
+        "inputProperties": [
+          "item"
+        ],
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      },
+      {
+        "id": "mcp_group_2_phone_llamar",
+        "kind": "action-group",
+        "name": "phone_llamar",
+        "title": "phone Llamar",
+        "risk": "write",
+        "inputProperties": [
+          "item"
+        ],
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      },
+      {
+        "id": "mcp_group_3_whats_app_whatsapp",
+        "kind": "action-group",
+        "name": "whats_app_whatsapp",
+        "title": "whats-app Whatsapp",
+        "risk": "write",
+        "inputProperties": [
+          "item"
+        ],
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      },
+      {
+        "id": "mcp_group_4_mas",
+        "kind": "action-group",
+        "name": "mas",
+        "title": "Más",
+        "risk": "write",
+        "inputProperties": [
+          "item"
+        ],
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      },
+      {
+        "id": "mcp_button_5_tool_",
+        "kind": "action",
+        "name": "tool_",
+        "title": "☰",
+        "risk": "write",
+        "inputProperties": [],
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      },
+      {
+        "id": "mcp_button_6_abrir_menu_proyectos_de_vivienda",
+        "kind": "action",
+        "name": "abrir_menu_proyectos_de_vivienda",
+        "title": "Abrir menu Proyectos de vivienda",
+        "risk": "write",
+        "inputProperties": [],
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      },
+      {
+        "id": "mcp_button_7_abrir_menu_venta",
+        "kind": "action",
+        "name": "abrir_menu_venta",
+        "title": "Abrir menu Venta",
+        "risk": "write",
+        "inputProperties": [],
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      },
+      {
+        "id": "mcp_button_8_abrir_menu_arriendo",
+        "kind": "action",
+        "name": "abrir_menu_arriendo",
+        "title": "Abrir menu Arriendo",
+        "risk": "write",
+        "inputProperties": [],
+        "recipeSteps": [
+          "browser_click",
+          "browser_snapshot"
+        ]
+      }
+    ]
+  },
+  "taskCoverage": {
+    "listingExtractionContract": false,
+    "benchmarkFilterInputs": false,
+    "paginationContract": false,
+    "canCompleteTask": false,
+    "reason": "The generated candidates (contactar, phone_llamar, whats_app_whatsapp, mas, tool_, abrir_menu_proyectos_de_vivienda, abrir_menu_venta, abrir_menu_arriendo) do not provide all three required contracts: structured listing output, benchmark filter inputs, and pagination."
+  },
+  "limitations": [
+    "This exercises the same accessibility-snapshot analyzer used by meta_analyze_site; native Site Tools discovery was unavailable in the non-interactive Codex CLI used for this run.",
+    "No result-quality score is assigned because the generated tool surface cannot attempt the benchmark task."
+  ]
+}

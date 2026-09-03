@@ -274,7 +274,13 @@ test('failed Browser MCP analysis closes its transport before a direct retry', a
   const session = new BrowserMcpSession({ fetch: fetchMock, baseUrl: 'https://meta.example/' });
   await assert.rejects(
     session.analyze({ url: 'https://shop.example', goal: 'Search.', workspaceId: 'workspace_retry_123456' }),
-    /Hosted browser capacity is unavailable.*agent_snapshot/i,
+    (error) => {
+      assert.equal(error.code, 'HOSTED_BROWSER_RATE_LIMITED');
+      assert.match(error.message, /Cloudflare-hosted browser is rate-limited/i);
+      assert.match(error.message, /run the browser from your agent.*agent_snapshot/i);
+      assert.match(error.message, /Run path guide/i);
+      return true;
+    },
   );
 
   const analysis = await session.analyze({
@@ -292,4 +298,84 @@ test('failed Browser MCP analysis closes its transport before a direct retry', a
     { session: 'retry-session-2', name: 'browser_navigate' },
     { session: 'retry-session-2', name: 'browser_snapshot' },
   ]);
+});
+
+test('hosted Browser MCP translates worker memory failures into agent-browser guidance', async () => {
+  let closeSent = false;
+  let closed = false;
+  const session = new BrowserMcpSession({ baseUrl: 'https://meta.example/' });
+  session.configurationPromise = Promise.resolve({ browserMcpEndpoint: '/mcp' });
+  session.client = {
+    listTools: async () => [
+      { name: 'browser_navigate' },
+      { name: 'browser_snapshot' },
+      { name: 'browser_close' },
+    ],
+    callTool: async (name) => {
+      assert.equal(name, 'browser_navigate');
+      throw new Error('MCP tool browser_navigate failed: Error: PageScript.callFunctionOn: Worker exceeded memory limit.');
+    },
+    sendToolCallKeepalive: (name) => {
+      assert.equal(name, 'browser_close');
+      closeSent = true;
+      return true;
+    },
+    close: async () => { closed = true; },
+  };
+
+  await assert.rejects(
+    session.analyze({ url: 'https://heavy.example', goal: 'Inspect.', workspaceId: 'workspace_memory_123456' }),
+    (error) => {
+      assert.equal(error.code, 'HOSTED_BROWSER_RESOURCE_LIMIT');
+      assert.match(error.message, /Cloudflare-hosted browser ran out of resources/i);
+      assert.doesNotMatch(error.message, /rate-limited/i);
+      assert.match(error.message, /run the browser from your agent.*agent_snapshot/i);
+      assert.match(error.message, /Run path guide/i);
+      return true;
+    },
+  );
+  assert.equal(closeSent, true);
+  assert.equal(closed, true);
+});
+
+test('server-side collection execution receives the reviewed schema and executor', async () => {
+  let submitted;
+  const fetchMock = async (input, options = {}) => {
+    const url = new URL(input);
+    if (url.pathname === '/api/browser-session') return json({ ok: true, expiresInSeconds: 1200 }, { status: 201 });
+    if (url.pathname === '/api/config') return json({ ok: true, browserMcpConfigured: true });
+    if (url.pathname === '/api/mcp/execute') {
+      submitted = JSON.parse(options.body);
+      return json({ ok: true, complete: true, results: [] });
+    }
+    return json({ ok: false, error: 'Unexpected path' }, { status: 404 });
+  };
+  const inputSchema = {
+    type: 'object',
+    properties: { limit: { type: 'integer', minimum: 1, maximum: 10 } },
+    additionalProperties: false,
+  };
+  const executor = {
+    type: 'mcp-collection',
+    scope: { origin: 'https://homes.example', pathPrefix: '/rentals' },
+    item: { urlContains: '/listing/' },
+    fields: [{ name: 'url', source: 'url', parser: { type: 'identity' }, required: true }],
+    limit: { input: 'limit', default: 10, maximum: 10 },
+  };
+  const session = new BrowserMcpSession({ fetch: fetchMock, baseUrl: 'https://meta.example/' });
+
+  const result = await session.execute({
+    executor,
+    inputSchema,
+    input: { limit: 5 },
+    workspaceId: 'workspace_collection_123456',
+  });
+
+  assert.equal(result.complete, true);
+  assert.deepEqual(submitted, {
+    executor,
+    input: { limit: 5 },
+    inputSchema,
+    workspaceId: 'workspace_collection_123456',
+  });
 });

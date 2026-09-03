@@ -15,7 +15,7 @@ test('Cloudflare deployment declares immutable version metadata and source ident
   const config = JSON.parse(await readFile(new URL('../deploy/cloudflare/wrangler.jsonc', import.meta.url), 'utf8'));
   assert.deepEqual(config.version_metadata, { binding: 'CF_VERSION_METADATA' });
   assert.equal(config.vars.HOSTED_BROWSER_ENABLED, '1');
-  assert.equal(config.vars.HOSTED_BROWSER_ENGINE, 'kitesurf');
+  assert.equal(config.vars.HOSTED_BROWSER_ENGINE, 'chromium');
   assert.ok(config.compatibility_flags.includes('global_fetch_strictly_public'));
   assert.deepEqual(
     config.ratelimits.find((binding) => binding.name === 'ANALYSIS_RATE_LIMITER')?.simple,

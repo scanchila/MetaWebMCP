@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "fincaraiz-cheapest-with-laundry-v1",
+  "repositoryBaselineCommit": "b0408ba03a95d65d4333880fae22ff207cb7d3e8",
+  "environment": {
+    "codexCli": "0.150.1",
+    "model": "gpt-5.6-sol",
+    "reasoningEffort": "max",
+    "node": "v24.5.0",
+    "browser": "Google Chrome 147.0.7727.116",
+    "playwrightMcp": "0.0.55"
+  },
+  "inputs": {
+    "browserPromptSha256": "b63a4c3aeacd93058f704ff1a9b9ec9fa86690f95cbe70b7da0af8be6d750457",
+    "resultSchemaSha256": "90802b6b7dab7aa9401113c12dce1b5aed40849885f029b4ce6846ade90369a4",
+    "browserResultSha256": "d243dca75122900bbe624c626f9b5403f9e3026ed1b20d92c5104de233308223",
+    "oracleCaptureScriptSha256": "e3721a8032d383bdadf4504ca05391b52ea4e1e540b3dd84477965b27259c6bf",
+    "metawebmcpCaptureScriptSha256": "92b21bd8b3231d5ca11c6aa4390e3c7e6fb2bfd450e3ab8afac8e1137df42319",
+    "scorerScriptSha256": "d078943ab18ba1864ef4ef4c8c6a1e42e5376c385a5de232fb89598d59b4cf4b",
+    "oracleArtifactSha256": "f7e00210c314cb8e80bdbb7a382bec9a7db245d2df1c1865336654845d2071f0",
+    "browserScoreArtifactSha256": "35438cdf8c2e597e5c1b0d7308e75d1af086ee2628802741059b4aa32fa3dd93",
+    "metawebmcpArtifactSha256": "62b3ff354e04ecf63f0cb45f9bd5f6e10bc8d6e897c1a24786e0fd696a09aa14"
+  },
+  "browserRuns": [
+    {
+      "name": "unoptimized-snapshot-prompt",
+      "startedAt": "2026-09-03T17:22:32.805Z",
+      "completedAt": "2026-09-03T17:32:56.516Z",
+      "wallMs": 623711,
+      "qualityGatePassed": true,
+      "uniquePagesVisited": 13,
+      "browserCalls": {
+        "navigate": 13,
+        "snapshot": 16,
+        "total": 29
+      },
+      "rawBrowserResponseCharacters": 2308306,
+      "tokenUsage": {
+        "input": 1645182,
+        "cachedInput": 1509888,
+        "output": 28314,
+        "reasoningOutput": 20184,
+        "processedTotal": 1673496,
+        "nonCachedTotal": 163608
+      },
+      "note": "The prompt allowed navigation and snapshot calls without stating that successful navigation already returns a snapshot."
+    },
+    {
+      "name": "navigation-response-prompt",
+      "primary": true,
+      "startedAt": "2026-09-03T17:41:18.954Z",
+      "completedAt": "2026-09-03T17:50:50.216Z",
+      "wallMs": 571262,
+      "qualityGatePassed": true,
+      "uniquePagesVisited": 13,
+      "browserCalls": {
+        "navigate": 18,
+        "snapshot": 0,
+        "total": 18,
+        "repeatedFirstPageNavigations": 5
+      },
+      "rawBrowserResponseCharacters": 1439518,
+      "contextCompactions": 1,
+      "tokenUsage": {
+        "input": 6041019,
+        "cachedInput": 5791616,
+        "output": 17655,
+        "reasoningOutput": 11014,
+        "processedTotal": 6058674,
+        "nonCachedTotal": 267058
+      },
+      "note": "This run used browser-prompt.md. It returned byte-identical results to the unoptimized run."
+    }
+  ],
+  "metawebmcpRun": {
+    "startedAt": "2026-09-03T17:53:40.790Z",
+    "completedAt": "2026-09-03T17:53:43.697Z",
+    "wallMs": 2906,
+    "browserCalls": 1,
+    "snapshotCharacters": 78687,
+    "localAnalysisMs": 4.613,
+    "generatedCandidates": 8,
+    "taskCapabilityAvailable": false,
+    "qualityGatePassed": false,
+    "tokenUsage": null
+  },
+  "oracle": {
+    "startedAt": "2026-09-03T17:40:04.511Z",
+    "completedAt": "2026-09-03T17:40:05.968Z",
+    "wallMs": 1457,
+    "pagesVisited": 13,
+    "rawListingsSeen": 273,
+    "uniqueListingsSeen": 269,
+    "qualifyingListingsSeen": 73,
+    "completeTop50": true
+  },
+  "limitations": [
+    "This is one point-in-time run against a volatile third-party site, not a general performance estimate.",
+    "MetaWebMCP model-token usage is null because native Site Tools were not discoverable from the non-interactive Codex CLI used for this run.",
+    "The MetaWebMCP wall time measures reaching the capability failure, not completing the benchmark task.",
+    "Cumulative processed tokens include cached input on every model turn; nonCachedTotal subtracts cached input but is not a monetary cost calculation."
+  ]
+}

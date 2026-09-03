@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "fincaraiz-cheapest-with-laundry-v1",
+  "arm": "codex-direct-browser-fresh",
+  "repositoryBaselineCommit": "ee788c535efb182f1c592a4214b99e626b092d7e",
+  "startedAt": "2026-09-03T19:38:53.782Z",
+  "completedAt": "2026-09-03T19:49:28.412Z",
+  "environment": {
+    "codexCli": "0.150.1",
+    "model": "gpt-5.6-sol",
+    "reasoningEffort": "max",
+    "node": "v24.5.0",
+    "browser": "Google Chrome 147.0.7727.116",
+    "playwrightMcp": "0.0.55"
+  },
+  "isolation": {
+    "ephemeral": true,
+    "emptyWorkingDirectory": true,
+    "userConfigurationLoaded": false,
+    "repositoryInstructionsLoaded": false,
+    "appsEnabled": false
+  },
+  "inputs": {
+    "promptSha256": "b63a4c3aeacd93058f704ff1a9b9ec9fa86690f95cbe70b7da0af8be6d750457",
+    "resultSchemaSha256": "90802b6b7dab7aa9401113c12dce1b5aed40849885f029b4ce6846ade90369a4",
+    "resultSha256": "d243dca75122900bbe624c626f9b5403f9e3026ed1b20d92c5104de233308223",
+    "scoreSha256": "ee5c656899eb4d3a1d536ce7fb4a76e8aafef97c32965b340915c83c427a7c00",
+    "oracleSha256": "1794ab5f780348dd7a55dfb51dbc2b5c5529bb861fc1027749fcbb67bb15832e",
+    "rawEventLogSha256": "ba588dc6aa109b90224b88ff44172d5db14e79a3619b07729ddd1b4e735f4817"
+  },
+  "result": {
+    "status": "completed",
+    "qualityGatePassed": true,
+    "results": 50,
+    "exactUrls": 50,
+    "exactFields": 50,
+    "exactRanks": 50,
+    "duplicates": 0,
+    "pagesVisited": 13
+  },
+  "timing": {
+    "wallMs": 634630
+  },
+  "agent": {
+    "browserMcpOnly": true,
+    "nonBrowserToolCalls": 0,
+    "browserCalls": 15,
+    "navigateCalls": 15,
+    "snapshotCalls": 0,
+    "uniquePages": 13,
+    "repeatedFirstPageNavigations": 2,
+    "browserResponseCharacters": 1205716,
+    "tokenUsage": {
+      "input": 5976556,
+      "cachedInput": 5661056,
+      "output": 21223,
+      "reasoningOutput": 14601,
+      "processedTotal": 5997779,
+      "nonCachedTotal": 336723
+    }
+  },
+  "oracle": {
+    "startedAt": "2026-09-03T19:38:43.814Z",
+    "completedAt": "2026-09-03T19:38:45.321Z",
+    "pagesVisited": 13,
+    "rawListingsSeen": 273,
+    "uniqueListingsSeen": 263,
+    "qualifyingListingsSeen": 73,
+    "completeTop50": true
+  },
+  "comparisonToColdMetaWebMcp": {
+    "metaWebMcpWallMs": 290550,
+    "wallSpeedup": 2.1842,
+    "metaWebMcpProcessedTokens": 345737,
+    "processedTokenReductionFactor": 17.3478,
+    "metaWebMcpNonCachedTokens": 71689,
+    "nonCachedTokenReductionFactor": 4.697,
+    "metaWebMcpSemanticResponseCharacters": 51277,
+    "modelFacingResponseReductionFactor": 23.5138,
+    "metaWebMcpInternalBrowserCalls": 15
+  },
+  "limitations": [
+    "This is one fresh direct-browser trial, not a repeated statistical estimate.",
+    "The direct-browser and cold MetaWebMCP arms were captured about eleven minutes apart against separate adjacent oracles on a volatile site.",
+    "Processed token totals include cached input on every model turn. Non-cached totals subtract cached input but are not a monetary cost calculation."
+  ]
+}

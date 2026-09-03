@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "fincaraiz-cheapest-with-laundry-v1",
+  "arm": "metawebmcp-cold-agent",
+  "repositoryBaselineCommit": "ee788c535efb182f1c592a4214b99e626b092d7e",
+  "startedAt": "2026-09-03T19:27:27.299Z",
+  "completedAt": "2026-09-03T19:32:17.849Z",
+  "environment": {
+    "codexCli": "0.150.1",
+    "model": "gpt-5.6-sol",
+    "reasoningEffort": "max",
+    "node": "v24.5.0",
+    "browser": "Google Chrome 147.0.7727.116",
+    "playwrightMcp": "0.0.55"
+  },
+  "inputs": {
+    "promptSha256": "f95670add5845bb3beeee429a4a1d8439f0eff58265080861cf4ca6118a9fe9e",
+    "resultSchemaSha256": "90802b6b7dab7aa9401113c12dce1b5aed40849885f029b4ce6846ade90369a4",
+    "mcpBridgeSha256": "4a73a64351f78a048490a3b7718e5bb249e29c30acce6488877acccb1f430cf7",
+    "resultSha256": "65ed0901bc3e25184792bf299bbd5ad55cf4aa9c737fe0a125d941ede1f3baf6",
+    "scoreSha256": "2e022abc4c42e4800a179fadf46ca01fe699e2b047afedc5e9db910ba6fb91e9",
+    "oracleSha256": "3f0c43484696a926d8d4cd01f25c770a0af216e653f31e486de9797567cd6168",
+    "traceSha256": "9b624813f8bc5c9bc5e136e8e21950b59e60f0bc01c95280147fee614ed17291",
+    "rawEventLogSha256": "7ffa1a5ad98ed5cdbf12affe551b65bea7ba8b5d156fb8f9b8ebf779681054e4"
+  },
+  "result": {
+    "status": "completed",
+    "qualityGatePassed": true,
+    "results": 50,
+    "exactUrls": 50,
+    "exactFields": 50,
+    "exactRanks": 50,
+    "duplicates": 0,
+    "pagesVisited": 13
+  },
+  "timing": {
+    "wallMs": 290550,
+    "analysisCallMs": 2868,
+    "localAnalysisMs": 8.852,
+    "analysisToValidContractMs": 137444,
+    "localAuthoringValidationMs": 0.718,
+    "collectionExecutionMs": 21771
+  },
+  "agent": {
+    "mcpOnly": true,
+    "nonMcpToolCalls": 0,
+    "metaToolCalls": 8,
+    "toolNames": [
+      "meta_analyze_site",
+      "meta_create_webmcp",
+      "meta_activate_webmcp",
+      "meta_invoke_webmcp"
+    ],
+    "authoringAttempts": 5,
+    "failedAuthoringAttempts": 4,
+    "failedAuthoringReason": "The authoring guide described the stopping rule but did not enumerate its sourceField and resultField property names.",
+    "semanticResponseCharacters": 51277,
+    "tokenUsage": {
+      "input": 333545,
+      "cachedInput": 274048,
+      "output": 12192,
+      "reasoningOutput": 4021,
+      "processedTotal": 345737,
+      "nonCachedTotal": 71689
+    }
+  },
+  "browser": {
+    "internalCalls": 15,
+    "navigate": 14,
+    "snapshot": 1,
+    "internalResponseCharacters": 1204733
+  },
+  "execution": {
+    "tool": "find_cheapest_bogota_apartments_with_laundry",
+    "pagesScanned": 13,
+    "recordsScanned": 263,
+    "matchedRecords": 73,
+    "complete": true,
+    "terminationReason": "page minimum rent_cop exceeded ranked total_monthly_cop at rank 50"
+  },
+  "oracle": {
+    "startedAt": "2026-09-03T19:26:58.216Z",
+    "completedAt": "2026-09-03T19:27:12.206Z",
+    "pagesVisited": 13,
+    "rawListingsSeen": 273,
+    "uniqueListingsSeen": 263,
+    "qualifyingListingsSeen": 73,
+    "completeTop50": true
+  },
+  "comparisonToDirectBrowser": {
+    "directWallMs": 634630,
+    "wallSpeedup": 2.1842,
+    "directProcessedTokens": 5997779,
+    "processedTokenReductionFactor": 17.3478,
+    "directNonCachedTokens": 336723,
+    "nonCachedTokenReductionFactor": 4.697,
+    "directModelFacingResponseCharacters": 1205716,
+    "modelFacingResponseReductionFactor": 23.5138,
+    "directBrowserCalls": 15,
+    "browserCallReductionRate": 0
+  },
+  "limitations": [
+    "This is one cold-agent trial, not a repeated statistical estimate.",
+    "The direct-browser and cold MetaWebMCP arms were captured about eleven minutes apart against separate adjacent oracles on a volatile site.",
+    "Non-interactive Codex cannot discover browser-native Site Tools, so a thin stdio MCP transport adapter exposed the same MetaWebMCP analysis, validation, registry, and collection runtime. It did not contain a domain ToolSpec or FincaRaiz parsing logic.",
+    "The agent needed four rejected authoring retries because the generic guide omitted exact stopWhen property names; those retries remain in wall time and token usage.",
+    "Processed token totals include cached input on every model turn. Non-cached totals subtract cached input but are not a monetary cost calculation."
+  ]
+}

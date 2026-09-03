@@ -44,6 +44,7 @@ function loadGeneratedRuntime(source, environment = {}) {
     InputEvent: Event,
     location: { href: 'https://example.com/' },
     setTimeout,
+    URL,
     window: environment.window || {},
     document,
     HTMLElement: environment.HTMLElement || class {},
@@ -77,6 +78,70 @@ test('generated project directly registers WebMCP tools and includes review arti
   assert.match(project.files['AGENTS.md'], /Replace DOM clicks with stable application functions/);
   assert.match(project.files['tests/manual-evals.md'], /Expected selection: `find_sessions`/);
   assert.doesNotThrow(() => JSON.parse(project.files['src/tool-spec.json']));
+});
+
+test('generated collection tools use the same parsers and filtering on an owned page', async () => {
+  const collectionTool = {
+    ...structuredClone(tool),
+    id: 'collection_apartments',
+    kind: 'agent-authored',
+    name: 'find_apartments',
+    description: 'Find matching apartments on the current owned page.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        minimum_bedrooms: { type: 'number' },
+        limit: { type: 'integer', minimum: 1, maximum: 10 },
+      },
+      required: ['minimum_bedrooms'],
+      additionalProperties: false,
+    },
+    sampleArgs: { minimum_bedrooms: 2, limit: 10 },
+    executor: {
+      type: 'mcp-collection',
+      scope: { origin: 'https://homes.example', pathPrefix: '/rentals' },
+      item: { urlContains: '/listing/', minTextLength: 10 },
+      fields: [
+        { name: 'url', source: 'url', parser: { type: 'identity' }, required: true },
+        { name: 'rent', source: 'text', parser: { type: 'currency', occurrence: 0 }, required: true },
+        { name: 'administration', source: 'text', parser: { type: 'currency-before', marker: 'admin', default: 0 } },
+        { name: 'bedrooms', source: 'text', parser: { type: 'number-before', marker: 'Habs.' }, required: true },
+      ],
+      filters: [{ field: 'bedrooms', operator: 'gte', value: { input: 'minimum_bedrooms' } }],
+      computed: [],
+      sort: [{ field: 'rent', direction: 'asc' }],
+      limit: { input: 'limit', default: 10, maximum: 10 },
+      maxItems: 20,
+    },
+  };
+  const anchors = [
+    { href: 'https://homes.example/listing/a', innerText: '$ 900.000 + $ 100.000 admin Apartment A 2 Habs.', textContent: '$ 900.000 + $ 100.000 admin Apartment A 2 Habs.' },
+    { href: 'https://homes.example/listing/b', innerText: '$ 700.000 Apartment B 1 Habs.', textContent: '$ 700.000 Apartment B 1 Habs.' },
+    { href: 'https://homes.example/listing/c#details', innerText: '$ 800.000 Apartment C label Habs. 3 Habs. Canon $ 700.000 Administración incluida', textContent: '$ 800.000 Apartment C label Habs. 3 Habs. Canon $ 700.000 Administración incluida' },
+  ];
+  anchors.forEach((anchor) => { anchor.getAttribute = () => null; });
+  const project = generateProjectFiles({ projectName: 'collection-webmcp', tools: [collectionTool] });
+  const { registered } = await loadGeneratedRuntime(project.files['src/webmcp.generated.js'], {
+    document: {
+      title: 'Homes',
+      body: { innerText: 'Homes' },
+      querySelectorAll: (selector) => selector === 'a[href]' ? anchors : [],
+    },
+  });
+
+  const result = JSON.parse(JSON.stringify(await registered[0].execute({ minimum_bedrooms: 2, limit: 10 })));
+  assert.deepEqual(result, {
+    ok: true,
+    pagesScanned: 1,
+    recordsScanned: 3,
+    matchedRecords: 2,
+    complete: true,
+    terminationReason: 'single page collection',
+    results: [
+      { url: 'https://homes.example/listing/c', rent: 800000, administration: 0, bedrooms: 3 },
+      { url: 'https://homes.example/listing/a', rent: 900000, administration: 100000, bedrooms: 2 },
+    ],
+  });
 });
 
 test('generated runtime requires own schema properties for prototype-colliding names', async () => {

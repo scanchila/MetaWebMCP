@@ -1,4 +1,5 @@
 import { McpHttpClient, McpSseClient, flattenMcpText } from './mcp-http-client.js';
+import { runMcpCollection } from './mcp-collection.js';
 import { runMcpRecipe } from './mcp-recipe.js';
 import { isBlockedPublicHostname } from './network-policy.js';
 
@@ -6,6 +7,27 @@ const REQUIRED_TOOLS = ['browser_navigate', 'browser_snapshot'];
 const SCREENSHOT_TOOL = 'browser_take_screenshot';
 const MAX_INLINE_IMAGE_CHARACTERS = 8_000_000;
 const INLINE_IMAGE_TYPES = new Set(['image/jpeg', 'image/png']);
+const AGENT_BROWSER_GUIDANCE = 'Please run the browser from your agent instead and call meta_analyze_site with source: "agent_snapshot". See the Run path guide for instructions.';
+
+function hostedBrowserFailure(error) {
+  const detail = error instanceof Error ? error.message : String(error);
+  let code;
+  let summary;
+  if (/\b429\b|rate[ -]?limit|request limit|browser time limit|quota|too many requests/i.test(detail)) {
+    code = 'HOSTED_BROWSER_RATE_LIMITED';
+    summary = 'The Cloudflare-hosted browser is rate-limited.';
+  } else if (/worker exceeded memory limit|memory limit (?:has been|would be) exceeded|out of memory|out-of-memory/i.test(detail)) {
+    code = 'HOSTED_BROWSER_RESOURCE_LIMIT';
+    summary = 'The Cloudflare-hosted browser ran out of resources while opening this page.';
+  } else {
+    return error instanceof Error ? error : new Error(detail);
+  }
+  const failure = new Error(`${summary} ${AGENT_BROWSER_GUIDANCE}`);
+  failure.name = 'HostedBrowserError';
+  failure.code = code;
+  failure.cause = error;
+  return failure;
+}
 
 function inlineImageFromResult(result) {
   const content = result?.content ?? result?.result?.content;
@@ -134,27 +156,25 @@ export class BrowserMcpSession {
       };
     } catch (error) {
       await this.reset(workspaceId).catch(() => {});
-      const detail = error instanceof Error ? error.message : String(error);
-      if (/\b429\b|rate limit|request limit/i.test(detail)) {
-        throw new Error('Hosted browser capacity is unavailable. Retry after the service limit resets, or use source "agent_snapshot" with a snapshot from the calling agent’s browser.');
-      }
-      throw error;
+      throw hostedBrowserFailure(error);
     }
   }
 
-  async execute({ executor, input, workspaceId }) {
+  async execute({ executor, input, inputSchema, workspaceId }) {
     const client = await this.directClient();
     if (!client) {
       return this.json('/api/mcp/execute', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ executor, input, workspaceId }),
+        body: JSON.stringify({ executor, input, inputSchema, workspaceId }),
       });
     }
     const tools = await client.listTools();
-    return runMcpRecipe({
+    const execute = executor?.type === 'mcp-collection' ? runMcpCollection : runMcpRecipe;
+    return execute({
       executor,
       input,
+      inputSchema,
       availableTools: tools,
       callTool: (name, args) => client.callTool(name, args),
       resultText: flattenMcpText,

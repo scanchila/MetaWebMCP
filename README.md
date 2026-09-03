@@ -6,8 +6,9 @@
 
 Most websites expose useful workflows but no WebMCP tools. MetaWebMCP makes
 compatibility incremental: if an agent can safely observe part of a website,
-it can turn that workflow into a bounded semantic recipe and reuse it through
-an easy-to-invoke tool instead of rediscovering low-level controls every time.
+it can author domain-specific tools over bounded action and collection
+primitives, then reuse them instead of rediscovering low-level controls every
+time.
 
 MetaWebMCP exposes a permanent WebMCP control plane that lets an agent inspect a website, turn observed workflows into narrow semantic tools, register those tools immediately on the same top-level page, verify their execution, and export a standalone native integration repository.
 
@@ -37,6 +38,18 @@ No model API key is required. The browser agent supplies the reasoning and calls
 The deployed build has been exercised through a real browser `document.modelContext`: seven permanent tools became eleven after activation, all four generated-tool checks passed, and the downloaded 13-file repository registered and ran the same four tools independently. Through that same native entrypoint, the session-scoped hosted adapter completed semantic search, a two-stage sign-in and cart workflow, and a visible page-state mutation across three public targets.
 
 Screenshots and redacted machine-readable results are retained in [`evidence/`](evidence/). Three mobile Lighthouse samples gave the production workspace a 100 median performance score (99–100) and 100 for accessibility, best practices, SEO, and agentic browsing; the independently served native export scored 100 in all five categories. The exact production-generated [`relay-sessions-webmcp.zip`](evidence/relay-sessions-webmcp.zip) is retained alongside its SHA-256 digest and independent execution result.
+
+The first retained live-site benchmark asks for the 50 cheapest Bogotá rental
+apartments satisfying numeric and description-level conditions. Both arms
+returned the exact oracle result. Direct browser parsing took 634.630 seconds;
+the cold MetaWebMCP agent took 290.550 seconds including analysis, five
+ToolSpec authoring attempts, activation, execution, and final output. That is
+a 2.18× wall-time improvement for this captured task. It used 17.3× fewer
+processed tokens, 4.70× fewer non-cached tokens, and 23.5× less model-facing
+tool-response text. A separate 19.568-second warm executor run is retained as
+a runtime diagnostic, not the headline comparison. The task, limitations,
+oracle, token accounting, and machine-readable results are in
+[`benchmarks/fincaraiz/`](benchmarks/fincaraiz/).
 
 ## Run it with native WebMCP
 
@@ -77,6 +90,8 @@ The controlled fallback needs no account, credentials, model API, or external se
 - Dynamic registration and unregistration through `document.modelContext.registerTool(...)` and `AbortController`.
 - A dependency-free native integration ZIP generator. Controlled and browser-derived ToolSpecs both execute on an owned page without MetaWebMCP; bundled targets are tested as standalone WebMCP sites.
 - A URL-first hosted inspector that keeps the rendered target, accessibility model, generated recipes, and resulting state visible in one workspace.
+- Managing-agent authoring of up to twelve domain tools grounded in observed capabilities, using constrained action recipes or typed collection plans.
+- Reusable collection parsers, filters, computed fields, stable sorting, deduplication, bounded pagination, and ordered stopping proofs.
 - Agent/API inputs for URL, HTML, and caller-controlled accessibility observations without exposing raw snapshot entry in the human interface.
 - Browser-local IndexedDB autosave for drafts, analysis, reviewed contracts, recipes, evaluation state, and active generated tools.
 - A Streamable HTTP client for the official Playwright MCP server. The Cloudflare deployment keeps one isolated target session in the open page; the local Node service supports an isolated server-side equivalent when configured.
@@ -142,7 +157,7 @@ The generated module contains direct `document.modelContext.registerTool(...)` c
 
 ### Any public site
 
-The visible workspace is URL-first. Enter a public HTTP(S) URL and MetaWebMCP opens it in an isolated hosted browser, captures both the rendered page and accessibility model, and displays them as switchable **Page view** and **Accessibility** panels. Generated recipes execute in that same bounded session; after each action, the page view and accessibility result refresh in the workspace.
+The visible workspace is URL-first. Enter a public HTTP(S) URL and MetaWebMCP opens it in an isolated hosted browser, captures both the rendered page and accessibility model, and displays them as switchable **Page view** and **Accessibility** panels. Generated tools execute in that same bounded session; after each action, the page view and accessibility result refresh in the workspace.
 
 If a calling agent already controls an authorized target session, it can use the advanced tool-only observation path without asking a person to copy data between browsers:
 
@@ -155,15 +170,40 @@ meta_analyze_site({
 })
 ```
 
-MetaWebMCP turns that observation into the same reviewed ToolSpecs and export. While those tools are active on the studio page, invoking one returns a validated `agent_browser_required` recipe with `completed: false`; the calling agent performs those steps in its retained target session and verifies the visible result. This path is an agent-to-agent API contract, not a textarea in the human workspace.
+The analysis response includes evidence-backed capability IDs, collection
+scaffolds where repeated links were observed, the supported executor types,
+and the common parser catalog. The managing agent can either accept and rename
+the inferred candidates or pass complete definitions in
+`meta_create_webmcp({ authored_tools: [...] })`. This permits arbitrary domain
+semantics expressible as a bounded `mcp-recipe` or `mcp-collection`: custom
+input schemas, multiple observed capabilities per tool, typed extraction,
+filters, computed sums, sorting, limits, and pagination.
+
+MetaWebMCP validates the definitions, fixes collection navigation to the
+analyzed origin and path, rejects risk downgrades and ungrounded collection
+matchers, and registers the resulting ToolSpecs immediately. It does not
+accept JavaScript or expose a generic browser MCP escape hatch.
+
+While caller-browser tools are active on the studio page, invoking a recipe or
+collection returns a validated `agent_browser_required` plan with
+`completed: false`; the calling agent performs it in its retained target
+session and verifies the result. This path is an agent-to-agent API contract,
+not a textarea in the human workspace.
 
 Controls without accessible names are not converted into generic tools. The analysis reports how many were omitted and identifies inputs that could not be associated with a named submit action, so the caller knows where direct browser judgment or a source-site accessibility fix is still required.
 
-In the hosted path, generated WebMCP tools stay semantic while low-level `browser_snapshot`, `browser_type`, `browser_click`, screenshot, and related calls remain hidden behind the adapter.
+In the hosted path, generated WebMCP tools stay semantic while low-level
+`browser_snapshot`, `browser_type`, `browser_click`, bounded collection
+navigation, screenshot, and related calls remain hidden behind the adapter.
 
 The recipe runtime reads the connected tool schemas and supports both the current Playwright MCP `target` reference field and the Cloudflare package's `ref` field. Repeated controls such as product-level “Add to basket” buttons are collapsed into one item-scoped tool instead of flooding the registry with duplicate actions.
 
-Exporting this mode produces the same reviewed ToolSpecs with an owned-page runtime based on accessible names and bounded item context. Developers can install the generated module directly in the target application without shipping MetaWebMCP or a browser service, then replace compatibility lookups with stable application functions as they harden the integration.
+Exporting this mode produces the same reviewed ToolSpecs with an owned-page
+runtime based on accessible names and bounded item context. Single-page
+collections execute directly; paginated collections use an explicit source
+owner adapter or browser bridge. Developers can install the generated module
+without shipping MetaWebMCP, then replace compatibility lookups with stable
+application functions as they harden the integration.
 
 ## Browser-local persistence
 
@@ -183,7 +223,7 @@ docker compose up --build
 
 The Compose browser has no direct route outside its internal network. Chromium sends HTTP and HTTPS through `egress-proxy.mjs`, including destinations it would normally exempt as loopback. The proxy resolves every new connection, rejects the destination if any answer is private or reserved, permits only ports 80 and 443, and connects to the validated address rather than resolving it again. Redirects and subresources therefore cross the same boundary. `BROWSER_MCP_EGRESS_ISOLATED=1` only declares that an equivalent boundary exists; it does not create one, and the Node service refuses to enable Browser MCP without it.
 
-Browser operations also require a short-lived, signed, HttpOnly page capability, and server-side browser clients are keyed by both that capability and the page workspace. Generated recipes cannot issue new navigation calls. `BROWSER_ALLOWED_ORIGINS` can further constrain initial and observed final navigation origins. On the hosted Cloudflare path, every browser HTTP request is fulfilled through a size- and time-bounded Worker `fetch()` using public-Internet routing; redirects are returned to Chromium and intercepted again. Worker contexts, service workers, WebSockets, WebTransport, and WebRTC are disabled so page code cannot bypass that HTTP boundary.
+Browser operations also require a short-lived, signed, HttpOnly page capability, and server-side browser clients are keyed by both that capability and the page workspace. Generated action recipes cannot issue navigation calls; collection pagination can only substitute page numbers into a validated same-origin/path template. `BROWSER_ALLOWED_ORIGINS` can further constrain initial and observed final navigation origins. On the hosted Cloudflare path, every browser HTTP request is fulfilled through a size- and time-bounded Worker `fetch()` using public-Internet routing; redirects are returned to Chromium and intercepted again. Worker contexts, service workers, WebSockets, WebTransport, and WebRTC are disabled so page code cannot bypass that HTTP boundary.
 
 ## Configuration
 
@@ -227,10 +267,10 @@ The end-to-end test launches the included server and an available Chromium build
 8. The extracted repository registers and executes its four generated WebMCP tools against the bundled target UI.
 9. The human workspace exposes a URL-first website inspector rather than snapshot/HTML paste controls, and shows hosted page images plus the accessibility model in switchable views.
 10. A hosted generated-tool execution refreshes both the visible page image and accessibility result.
-11. A reviewed caller-browser workspace, including its generated recipe, survives a real page reload; temporary export links do not, and Reset removes the saved record.
+11. A reviewed caller-browser workspace, including its generated execution plan, survives a real page reload; temporary export links do not, and Reset removes the saved record.
 12. The completed workspace remains usable from desktop down to a 390 px mobile viewport without horizontal overflow.
 
-The unit/integration suite verifies caller-supplied observation analysis and recipe handoff plus both hosted transport layouts: isolated server-side workspaces and one Streamable HTTP session owned by the open page from analysis through generated-tool execution and visual capture.
+The unit/integration suite verifies caller-supplied observation analysis, recipe and collection handoff, collection parsing and navigation bounds, and both hosted transport layouts: isolated server-side workspaces and one page-owned MCP session from analysis through generated-tool execution and visual capture.
 
 See [`TEST_REPORT.md`](TEST_REPORT.md) for the exact environment and latest run.
 
@@ -242,7 +282,7 @@ Production-native and public-site evidence is retained in [`evidence/`](evidence
 - Generated tools are small and domain-specific rather than exposing an entire browser MCP tool surface.
 - Target content and generated metadata are treated as untrusted.
 - Consequential tools can be generated for review but are not automatically executed in the public studio.
-- Browser MCP recipes are restricted to a small allowlist and have a maximum step count.
+- Browser MCP recipes are restricted to a small allowlist and have a maximum step count. Collection tools have fixed origin/path scope and bounded fields, filters, result size, records, and pages.
 - The static analyzer is intentionally conservative. The main client-rendered-site flow uses the hosted website viewer; calling agents may instead submit an accessibility observation through `meta_analyze_site` when they already control the target session.
 - The app remains usable as an ordinary human interface where WebMCP is not present; its internal registry provides the same deterministic demo path.
 
@@ -268,6 +308,8 @@ public/js/mcp-http-client.js shared dependency-free Streamable HTTP MCP client
 public/js/browser-mcp-session.js page-scoped browser session with Node fallback
 public/js/network-policy.js  shared private/reserved address and hostname policy
 public/js/mcp-recipe.js      shared allowlisted recipe interpreter
+public/js/mcp-collection.js  shared bounded collection interpreter and parsers
+public/js/tool-authoring.js  managing-agent ToolSpec validation and grounding
 public/js/workspace-store.js browser-local IndexedDB workspace record
 lib/security.mjs             URL, DNS, redirect, and network validation
 lib/zip.mjs                  dependency-free ZIP writer

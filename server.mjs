@@ -15,6 +15,7 @@ import { generateProjectZip } from './lib/generator.mjs';
 import { McpHttpClient, flattenMcpText } from './lib/mcp-http-client.mjs';
 import { fetchTargetHtml, validateBrowserTarget } from './lib/security.mjs';
 import { runMcpRecipe } from './public/js/mcp-recipe.js';
+import { runMcpCollection } from './public/js/mcp-collection.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_ROOT = path.join(ROOT, 'public');
@@ -238,9 +239,11 @@ async function analyzeWithBrowserMcp(body, capabilityId) {
 async function executeMcpRecipe(body, capabilityId) {
   const client = getMcpClient(body.workspaceId, capabilityId);
   const tools = await client.listTools();
-  return runMcpRecipe({
+  const execute = body.executor?.type === 'mcp-collection' ? runMcpCollection : runMcpRecipe;
+  return execute({
     executor: body.executor,
     input: body.input ?? {},
+    inputSchema: body.inputSchema,
     availableTools: tools,
     callTool: (name, args) => client.callTool(name, args),
     resultText: flattenMcpText,

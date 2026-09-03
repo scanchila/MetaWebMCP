@@ -22,7 +22,7 @@
   },
   "vars": {
     "HOSTED_BROWSER_ENABLED": "1",
-    "HOSTED_BROWSER_ENGINE": "kitesurf"
+    "HOSTED_BROWSER_ENGINE": "chromium"
   },
   "ratelimits": [
     {

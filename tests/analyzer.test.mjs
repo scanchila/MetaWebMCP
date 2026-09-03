@@ -187,6 +187,34 @@ test('snapshot forms omit dropdown inputs when their choices are not observable'
   assert.match(result.warnings.join(' '), /dropdown did not expose its choices and was omitted/i);
 });
 
+test('accessibility snapshot analysis exposes repeated linked data as a collection scaffold', () => {
+  const snapshot = `- main "Apartment results"
+  - link "Apartment image" [ref=e1]:
+    - /url: /apartamento-en-arriendo/chico/a1
+  - link "$ 800.000 + $ 100.000 admin Apartment A 2 Habs. 48 m² Zona de lavado" [ref=e2]:
+    - /url: /apartamento-en-arriendo/chico/a1
+  - link "$ 900.000 Apartment B 3 Habs. 60 m² Área de ropas" [ref=e3]:
+    - /url: /apartamento-en-arriendo/chapinero/b2
+  - link "$ 950.000 Apartment C 2 Habs. 55 m² Zona de lavado" [ref=e4]:
+    - /url: /apartamento-en-arriendo/cedritos/c3
+  - link "Page 2" [ref=e5]:
+    - /url: /arriendo/apartamentos/bogota/baratos/pagina2`;
+
+  const result = analyzeAccessibilitySnapshot({
+    snapshot,
+    url: 'https://homes.example/arriendo/apartamentos/bogota/baratos',
+    goal: 'Find and rank apartments.',
+  });
+  const collection = result.capabilities.find((capability) => capability.kind === 'collection');
+
+  assert.ok(collection);
+  assert.equal(collection.executor.type, 'mcp-collection');
+  assert.equal(collection.executor.item.urlContains, '/apartamento-en-arriendo');
+  assert.equal(collection.evidence.filter((item) => item.type === 'collection-item').length, 3);
+  assert.equal(collection.executor.pagination.urlTemplate, 'https://homes.example/arriendo/apartamentos/bogota/baratos/pagina{{page}}');
+  assert.equal(result.summary.collections, 1);
+});
+
 test('snapshot analysis explains unnamed actions instead of generating a generic button tool', () => {
   const result = analyzeAccessibilitySnapshot({
     snapshot: `- main "Property search"
