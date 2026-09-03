@@ -1,7 +1,8 @@
 {
-  "baseUrl": "http://127.0.0.1:53063",
+  "baseUrl": "http://127.0.0.1:49221",
   "checks": [
     "server health endpoint",
+    "landing explains incremental compatibility, opens the workspace, reveals it for tool activity, and remains responsive",
     "native client prerequisites, readable judge guidance, and responsive five-step fallback",
     "browser-local workspace survives reload without reviving an export link and Reset clears it",
     "workspace remains usable when IndexedDB is unavailable",
@@ -19,6 +20,27 @@
     "exported repository registers and independently executes all four native tools with form-scoped submission",
     "browser-derived export validates inputs before effects, rejects ambiguous forms, runs without the bridge, and fails closed when an item disappears",
     "workspace has no horizontal overflow from 390px through 1440px"
+  ],
+  "landingScreenshot": "test-artifacts/metawebmcp-landing.png",
+  "landingResponsiveLayouts": [
+    {
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "heroWidth": 1440,
+      "figureWidth": 576.21875
+    },
+    {
+      "viewport": 900,
+      "documentWidth": 900,
+      "heroWidth": 900,
+      "figureWidth": 800
+    },
+    {
+      "viewport": 390,
+      "documentWidth": 390,
+      "heroWidth": 390,
+      "figureWidth": 354
+    }
   ],
   "screenshot": "test-artifacts/metawebmcp-e2e.png",
   "responsiveScreenshot": "test-artifacts/metawebmcp-mobile.png",
@@ -98,7 +120,7 @@
       {
         "tool": "find_sessions",
         "status": "passed",
-        "durationMs": 100,
+        "durationMs": 96,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -292,7 +314,7 @@
       {
         "tool": "clear_itinerary",
         "status": "passed",
-        "durationMs": 74,
+        "durationMs": 75,
         "checks": [
           {
             "name": "registered in generated tool registry",

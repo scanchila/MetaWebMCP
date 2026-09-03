@@ -63,6 +63,10 @@ def browser_module_url(source: str) -> str:
 def build_browser_sources() -> tuple[str, str, str, str]:
     index_html = (ROOT / "public/index.html").read_text()
     index_html = index_html.replace("<head>", '<head><base href="http://metawebmcp.test/">', 1)
+    index_html = index_html.replace(
+        '<link rel="icon" href="/favicon.svg" type="image/svg+xml">',
+        '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E">',
+    )
     index_html = index_html.replace('<link rel="stylesheet" href="/styles.css">', "")
     index_html = index_html.replace('<script type="module" src="/js/app.js"></script>', "")
     index_html = index_html.replace('src="/demo/"', 'src="about:blank"')
@@ -217,6 +221,73 @@ def main() -> int:
                 preview_page.add_style_tag(content=styles)
                 preview_page.add_script_tag(content=app_source, type="module")
                 preview_page.wait_for_function("window.MetaWebMCP")
+                expect(preview_page.locator("#home")).to_be_visible()
+                expect(preview_page.locator("#workspace-app")).to_be_hidden()
+                landing_text = preview_page.locator("#home").inner_text().lower()
+                for expected in [
+                    "give any website a useful webmcp surface",
+                    "bounded semantic recipes",
+                    "use the recipe now. integrate it when you own the site",
+                    "agent-side compatibility",
+                    "native site integration",
+                    "authentication, authorization, validation, and confirmation",
+                ]:
+                    assert expected in landing_text, expected
+                assert preview_page.evaluate("window.MetaWebMCP.registry.list().length") == 7
+
+                landing_layouts = []
+                for width in [1440, 900, 390]:
+                    preview_page.set_viewport_size({"width": width, "height": 900})
+                    landing_layout = preview_page.evaluate(
+                        """() => ({
+                          viewport: window.innerWidth,
+                          documentWidth: document.documentElement.scrollWidth,
+                          heroWidth: document.querySelector('.landing-hero').getBoundingClientRect().width,
+                          figureWidth: document.querySelector('.compatibility-figure').getBoundingClientRect().width,
+                        })"""
+                    )
+                    assert landing_layout["documentWidth"] <= landing_layout["viewport"], landing_layout
+                    assert landing_layout["heroWidth"] <= landing_layout["viewport"], landing_layout
+                    assert landing_layout["figureWidth"] <= landing_layout["viewport"], landing_layout
+                    landing_layouts.append(landing_layout)
+                preview_page.set_viewport_size({"width": 1440, "height": 1000})
+                landing_screenshot_path = ARTIFACTS / "metawebmcp-landing.png"
+                preview_page.screenshot(
+                    path=str(landing_screenshot_path),
+                    full_page=True,
+                    animations="disabled",
+                )
+                result["landingScreenshot"] = str(landing_screenshot_path.relative_to(ROOT))
+                result["landingResponsiveLayouts"] = landing_layouts
+
+                preview_page.locator('.landing-nav a[href="#how-it-works"]').click()
+                expect(preview_page.locator("#home")).to_be_visible()
+                assert preview_page.evaluate("location.hash") == "#how-it-works"
+                assert abs(preview_page.locator("#how-it-works").bounding_box()["y"]) < 90
+                preview_page.locator('.landing-nav .brand').click()
+                preview_page.locator("#landing-open-workspace").click()
+                expect(preview_page.locator("#home")).to_be_hidden()
+                expect(preview_page.locator("#workspace-app")).to_be_visible()
+                assert preview_page.evaluate("location.hash") == "#workspace"
+                preview_page.locator("#workspace-home-link").click()
+                expect(preview_page.locator("#home")).to_be_visible()
+                expect(preview_page.locator("#workspace-app")).to_be_hidden()
+                preview_page.evaluate(
+                    """async () => {
+                      const session = window.__browserMcpSessionForTest;
+                      const originalReset = session.reset;
+                      session.reset = async () => ({ ok: true });
+                      try {
+                        await window.MetaWebMCP.execute('meta_reset_workspace', {});
+                      } finally {
+                        session.reset = originalReset;
+                      }
+                    }"""
+                )
+                expect(preview_page.locator("#home")).to_be_hidden()
+                expect(preview_page.locator("#workspace-app")).to_be_visible()
+
+                preview_page.set_viewport_size({"width": 1840, "height": 1120})
                 assert preview_page.locator("#native-status").inner_text() == "Preview registry"
                 assert preview_page.locator("#client-guide").evaluate("element => element.open") is True
                 assert "no native WebMCP client" in preview_page.locator("#client-status-copy").inner_text()
@@ -265,6 +336,9 @@ def main() -> int:
                     preview_page.set_viewport_size({"width": width, "height": 844})
                     assert preview_page.evaluate("document.documentElement.scrollWidth <= window.innerWidth") is True
                 preview_page.close()
+                result["checks"].append(
+                    "landing explains incremental compatibility, opens the workspace, reveals it for tool activity, and remains responsive"
+                )
                 result["checks"].append(
                     "native client prerequisites, readable judge guidance, and responsive five-step fallback"
                 )
@@ -486,8 +560,13 @@ def main() -> int:
                 progress("loading production browser modules")
                 page.add_script_tag(content=app_source, type="module")
                 page.wait_for_function("window.MetaWebMCP && Object.keys(window.__nativeTools || {}).length === 7")
+                expect(page.locator("#home")).to_be_visible()
+                expect(page.locator("#workspace-app")).to_be_hidden()
                 assert page.locator("#native-status").inner_text() == "WebMCP active"
                 assert "7 tools are registered" in page.locator("#client-status-copy").inner_text()
+                page.locator("#landing-open-workspace").click()
+                expect(page.locator("#home")).to_be_hidden()
+                expect(page.locator("#workspace-app")).to_be_visible()
 
                 page.evaluate(
                     """() => {

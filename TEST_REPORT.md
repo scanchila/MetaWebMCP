@@ -1,6 +1,6 @@
 # Test report
 
-Local regression verification completed on **2026-09-03T16:43:05Z** (**2026-09-03 23:43:05, Asia/Ho_Chi_Minh**) against the working tree based on source commit `cd6ecff9bc6610956007516bc49ca4dcde0d9d8e`. At the time of this verification, these browser-local persistence changes had not yet been deployed.
+Local regression verification completed on **2026-09-03T17:09:29Z** (**2026-09-04 00:09:29, Asia/Ho_Chi_Minh**) against the working tree based on source commit `18648d5e4891593a05ffd9006e773ebd5add5ae9`. At the time of this verification, the landing-page changes had not yet been deployed.
 
 The retained production-native and Lighthouse evidence below was captured earlier against deployed Worker version `c5ac5494-8d79-413e-9a9c-8db3dcd3339c`, built from source commit `178f2ff8dd63dc6f1c29558f5ed36cf4798b23e8`.
 
@@ -9,9 +9,9 @@ The retained production-native and Lighthouse evidence below was captured earlie
 - Linux x86_64, kernel 6.8.0-138-generic
 - Node.js 24.5.0
 - npm 11.5.1
-- Python 3.10.12
-- Playwright for Python 1.55.0
-- Playwright Chromium 140.0.7339.16 for the deterministic local journey
+- Python 3.10.12 for evidence tests; Python 3.12.12 for the browser journey
+- Playwright for Python 1.62.0
+- Google Chrome 147.0.7727.116 for the deterministic local journey
 - Google Chrome 154.0.8037.0 beta with `WebMCPTesting` for native-browser and Lighthouse validation
 - Lighthouse 13.4.1
 - Cloudflare Playwright MCP 0.0.5 with Cloudflare Playwright 1.3.6
@@ -20,11 +20,11 @@ The retained production-native and Lighthouse evidence below was captured earlie
 ## Automated results
 
 - Capture-script syntax checks: **passed**.
-- Static repository checks: **107 release files passed**.
+- Static repository checks: **111 repository files passed**.
 - Node unit and integration tests: **85 passed, 0 failed**.
 - Evidence provenance tests: **11 passed, 0 failed**.
 - Cloudflare Worker dry-run bundle: **passed** with Browser Run, Durable Object, Rate Limit, Static Assets, and Worker Version Metadata bindings.
-- Recursive Chromium end-to-end journey: **18 checks passed** with no console or page errors.
+- Recursive Chromium end-to-end journey: **19 checks passed** with no console or page errors.
 - Generated runtime evaluations: **4 contracts evaluated, 4 passed, 0 failed, 0 skipped, 0 not run**.
 - Retained production Lighthouse: **100 median performance (99–100 across three mobile samples)** and **100 accessibility, best practices, SEO, and agentic browsing in every sample**. Maximum CLS was **0.000106**; console errors were **0**.
 - Retained independently served native export Lighthouse: **100 performance, accessibility, best practices, SEO, and agentic browsing**. CLS and console errors were **0**.
@@ -34,24 +34,26 @@ The Node suite covers HTML and accessibility-snapshot analysis, caller-browser r
 The deterministic browser journey verifies:
 
 1. The server health endpoint responds.
-2. The client guide identifies native and non-native states and remains usable without horizontal overflow from 1440 px down to 390 px.
-3. Browser-local drafts, contracts, and active caller recipes survive a real reload; temporary export links do not, Reset removes the saved record, and unavailable IndexedDB leaves the in-memory workflow functional.
-4. Source-mode controls expose pressed-button semantics and respond to native keyboard activation.
-5. The fallback exposes source evidence for explicit review and never reports skipped or partial verification as complete, including after export.
-6. Seven permanent meta-tools register on the top-level page while the target iframe has no WebMCP registry.
-7. `meta_analyze_site` derives four evidence-backed capabilities from the live target.
-8. `meta_create_webmcp` constructs constrained ToolSpecs.
-9. `meta_activate_webmcp` changes the top-level registry from seven to eleven tools.
-10. The generated tools search sessions, add an itinerary item, inspect the visible state, and clear it.
-11. `meta_test_webmcp` completes registration, schema, execution, and visible-postcondition checks for all four tools.
-12. `meta_export_webmcp` returns a valid 13-file repository ZIP with direct `document.modelContext.registerTool(...)` source.
-13. The extracted site independently registers and executes all four exported tools, including a zero-item postcondition after `clear_itinerary`.
-14. A browser-derived export validates inputs before effects, rejects form ambiguity, registers on a separate owned-page fixture, runs without MetaWebMCP or a browser bridge, and fails closed when the requested item disappears.
-15. The completed workspace has no horizontal overflow at the tested responsive breakpoints.
+2. The root landing page explains incremental compatibility and both recipe destinations, remains responsive from 1440 px down to 390 px, opens the workspace, and reveals the workspace automatically when an agent starts stateful work.
+3. The client guide identifies native and non-native states and remains usable without horizontal overflow from 1440 px down to 390 px.
+4. Browser-local drafts, contracts, and active caller recipes survive a real reload; temporary export links do not, Reset removes the saved record, and unavailable IndexedDB leaves the in-memory workflow functional.
+5. Source-mode controls expose pressed-button semantics and respond to native keyboard activation.
+6. The fallback exposes source evidence for explicit review and never reports skipped or partial verification as complete, including after export.
+7. Seven permanent meta-tools register on the top-level page while the target iframe has no WebMCP registry.
+8. `meta_analyze_site` derives four evidence-backed capabilities from the live target.
+9. `meta_create_webmcp` constructs constrained ToolSpecs.
+10. `meta_activate_webmcp` changes the top-level registry from seven to eleven tools.
+11. The generated tools search sessions, add an itinerary item, inspect the visible state, and clear it.
+12. `meta_test_webmcp` completes registration, schema, execution, and visible-postcondition checks for all four tools.
+13. `meta_export_webmcp` returns a valid 13-file repository ZIP with direct `document.modelContext.registerTool(...)` source.
+14. The extracted site independently registers and executes all four exported tools, including a zero-item postcondition after `clear_itinerary`.
+15. A browser-derived export validates inputs before effects, rejects form ambiguity, registers on a separate owned-page fixture, runs without MetaWebMCP or a browser bridge, and fails closed when the requested item disappears.
+16. The completed workspace has no horizontal overflow at the tested responsive breakpoints.
 
 Deterministic local artifacts are retained in:
 
 - `test-artifacts/e2e-result.json`
+- `test-artifacts/metawebmcp-landing.png`
 - `test-artifacts/metawebmcp-e2e.png`
 - `test-artifacts/metawebmcp-mobile.png`
 - `test-artifacts/relay-sessions-webmcp.zip`

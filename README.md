@@ -4,6 +4,11 @@
 
 **Live application:** https://metawebmcp.neuryta.com
 
+Most websites expose useful workflows but no WebMCP tools. MetaWebMCP makes
+compatibility incremental: if an agent can safely observe part of a website,
+it can turn that workflow into a bounded semantic recipe and reuse it through
+an easy-to-invoke tool instead of rediscovering low-level controls every time.
+
 MetaWebMCP exposes a permanent WebMCP control plane that lets an agent inspect a website, turn observed workflows into narrow semantic tools, register those tools immediately on the same top-level page, verify their execution, and export a standalone native integration repository.
 
 The central demonstration is recursive:
@@ -40,7 +45,13 @@ Choose either native path:
 - **ChatGPT Site Tools:** Open MetaWebMCP as a top-level page in the latest ChatGPT desktop app's built-in browser. Use ChatGPT Work or Codex with GPT‑5.6 Sol or Terra. Site Tools are disabled on Luna, unavailable in ChatGPT Enterprise and Edu, and still rolling out, so an otherwise eligible workspace may not expose them yet. See the current [Site Tools setup reference](https://learn.chatgpt.com/docs/webmcp).
 - **Google Chrome 149 or later:** Open `chrome://flags/#enable-webmcp-testing`, enable the WebMCP testing flag, restart Chrome, then open the deployed URL as a top-level page.
 
-With either native setup, confirm that the header reads **WebMCP active** and the seven `meta_*` tools appear in the client. If the header reads **Preview registry**, the ordinary browser fallback exercises the same implementations without native tool discovery:
+The overview loads first. Choose **Build a WebMCP recipe** to enter the visible
+workspace, or open <https://metawebmcp.neuryta.com/#workspace> directly. The
+seven permanent `meta_*` tools register on the top-level page even while the
+overview is visible. In the workspace, confirm that the header reads **WebMCP
+active** and the tools appear in the client. If the header reads **Preview
+registry**, the ordinary browser fallback exercises the same implementations
+without native tool discovery:
 
 1. Keep **Owned page → Controlled legacy demo**, then select **Observe this interface** (1).
 2. Review the evidence-backed candidates and select **Shape selected tools** (2).
@@ -52,7 +63,7 @@ The controlled fallback needs no account, credentials, model API, or external se
 
 ## What is included
 
-- A polished, top-level MetaWebMCP workspace.
+- A compatibility-first landing page and polished top-level MetaWebMCP workspace.
 - Seven permanent imperative WebMCP tools:
   - `meta_analyze_site`
   - `meta_create_webmcp`

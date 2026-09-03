@@ -5,6 +5,9 @@ import { createWorkspaceStore } from './workspace-store.js';
 
 const $ = (selector) => document.querySelector(selector);
 const elements = {
+  landingView: $('#home'),
+  workspaceApp: $('#workspace-app'),
+  workspace: $('#workspace'),
   nativeStatus: $('#native-status'),
   storageStatus: $('#storage-status'),
   toolCount: $('#tool-count'),
@@ -106,6 +109,31 @@ const persistence = {
   timer: null,
   queue: Promise.resolve(),
 };
+
+function syncPrimaryView({ focus = false } = {}) {
+  const workspaceOpen = location.hash === '#workspace';
+  elements.landingView.hidden = workspaceOpen;
+  elements.workspaceApp.hidden = !workspaceOpen;
+  document.body.classList.toggle('workspace-open', workspaceOpen);
+  document.title = workspaceOpen
+    ? 'MetaWebMCP Workspace — WebMCP builds WebMCP'
+    : 'MetaWebMCP — WebMCP builds WebMCP';
+
+  if (!focus) return;
+  const target = workspaceOpen ? elements.workspace : elements.landingView;
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    target.focus({ preventScroll: true });
+  });
+}
+
+function revealWorkspaceForActivity() {
+  if (!elements.workspaceApp.hidden) return;
+  const url = new URL(location.href);
+  url.hash = 'workspace';
+  history.replaceState(null, '', url);
+  syncPrimaryView({ focus: true });
+}
 
 function clone(value) {
   return value == null ? value : structuredClone(value);
@@ -314,6 +342,7 @@ function setBusy(active) {
 }
 
 async function invoke(name, input = {}) {
+  revealWorkspaceForActivity();
   setBusy(true);
   try {
     return await registry.execute(name, input);
@@ -899,6 +928,7 @@ async function registerGeneratedContracts() {
       if (names.has(spec.name)) throw new Error(`Generated tool name ${spec.name} is duplicated.`);
       names.add(spec.name);
       await registry.register(spec, async (input, context) => {
+        revealWorkspaceForActivity();
         const result = await executeGeneratedSpec(spec, input, {
           ...context,
           getTargetDocument,
@@ -1255,6 +1285,7 @@ async function registerMetaTools() {
   for (const { spec, execute } of metaTools) {
     META_TOOL_NAMES.add(spec.name);
     await registry.register(spec, async (input, context) => {
+      if (spec.name !== 'meta_get_state') revealWorkspaceForActivity();
       const result = await execute(input, context);
       if (spec.name === 'meta_reset_workspace') await clearPersistedWorkspace();
       else if (PERSISTED_META_MUTATIONS.has(spec.name)) {
@@ -1306,6 +1337,25 @@ async function switchMode(mode) {
 }
 
 function bindEvents() {
+  window.addEventListener('hashchange', () => {
+    const viewChanged = ['#workspace', '#home', ''].includes(location.hash);
+    syncPrimaryView({ focus: viewChanged });
+  });
+  document.addEventListener('click', (event) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = event.target.closest('a[href^="#"]');
+    if (!link) return;
+    const targetHash = link.getAttribute('href');
+    if (!targetHash || targetHash === '#') return;
+    event.preventDefault();
+    if (location.hash !== targetHash) {
+      location.hash = targetHash;
+      return;
+    }
+    const viewChanged = ['#workspace', '#home'].includes(targetHash);
+    syncPrimaryView({ focus: viewChanged });
+    if (!viewChanged) document.querySelector(targetHash)?.scrollIntoView();
+  });
   elements.ownerMode.addEventListener('click', () => switchMode('owner').catch((error) => addTrace('Mode change failed', error.message, 'error')));
   elements.adapterMode.addEventListener('click', () => switchMode('adapter').catch((error) => addTrace('Mode change failed', error.message, 'error')));
   elements.adapterSourceKind.addEventListener('change', async () => {
@@ -1372,6 +1422,7 @@ function bindEvents() {
     browserMcpSession.closeOnPageHide();
   });
   window.addEventListener('keydown', (event) => {
+    if (elements.workspaceApp.hidden) return;
     if (event.metaKey || event.ctrlKey || event.altKey || /INPUT|TEXTAREA|SELECT/.test(event.target?.tagName)) return;
     const actions = {
       1: () => elements.analyzeButton.click(),
@@ -1385,6 +1436,7 @@ function bindEvents() {
 }
 
 async function initialize() {
+  syncPrimaryView();
   bindEvents();
   renderSourceControls();
   setPersistenceStatus('Checking local save…', 'saving');

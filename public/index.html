@@ -3,16 +3,141 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="MetaWebMCP uses WebMCP tools to create, activate, test, and export other WebMCP integrations.">
+  <meta name="description" content="MetaWebMCP makes useful parts of observable websites WebMCP-compatible through reusable semantic recipes an agent can use or a site owner can integrate.">
   <meta name="theme-color" content="#f2efe6">
   <title>MetaWebMCP — WebMCP builds WebMCP</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <div class="app-shell">
+  <main id="home" class="landing-view" aria-labelledby="landing-title" tabindex="-1">
+    <header class="landing-nav">
+      <a class="brand" href="#home" aria-label="MetaWebMCP home">
+        <span class="brand-mark" aria-hidden="true">M/</span>
+        <span><strong>MetaWebMCP</strong><small>Web compatibility studio</small></span>
+      </a>
+      <nav aria-label="Landing page">
+        <a href="#how-it-works">How it works</a>
+        <a href="#use-or-integrate">Use or integrate</a>
+        <a class="landing-nav-action" href="#workspace">Open workspace <span aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+
+    <section class="landing-hero">
+      <div class="landing-hero-copy">
+        <span class="landing-kicker"><i aria-hidden="true"></i> Compatibility for the existing web</span>
+        <h1 id="landing-title">Give any website a useful WebMCP surface.</h1>
+        <p class="landing-lede">MetaWebMCP observes the parts of a site an agent can safely use, turns them into bounded semantic recipes, and exposes those recipes as simple tools—without waiting for the site to ship native WebMCP.</p>
+        <div class="landing-actions">
+          <a id="landing-open-workspace" class="landing-button primary" href="#workspace">Build a WebMCP recipe <span aria-hidden="true">→</span></a>
+          <a class="landing-button secondary" href="#how-it-works">See how it works</a>
+        </div>
+        <p class="landing-note">Use a recipe immediately from the agent’s browser, or export and integrate it into a site you own.</p>
+      </div>
+
+      <figure class="compatibility-figure" aria-labelledby="compatibility-caption">
+        <div class="site-preview">
+          <div class="preview-toolbar"><span><i></i><i></i><i></i></span><code>existing.website</code></div>
+          <div class="preview-body">
+            <span class="preview-label">Website · no WebMCP</span>
+            <h2>Find a useful session</h2>
+            <div class="preview-field">agent evaluation</div>
+            <div class="preview-controls"><span>Advanced</span><strong>Search sessions</strong></div>
+          </div>
+        </div>
+
+        <div class="recipe-transfer" aria-hidden="true">
+          <span>Observe</span><i>→</i><span>Shape</span>
+        </div>
+
+        <div class="recipe-preview">
+          <div class="recipe-preview-head"><span>Generated recipe</span><strong><i></i> Ready</strong></div>
+          <code class="recipe-name">find_sessions</code>
+          <dl>
+            <div><dt>Intent</dt><dd>Find sessions by topic and level</dd></div>
+            <div><dt>Inputs</dt><dd>query · level · day</dd></div>
+            <div><dt>Result</dt><dd>Visible matching sessions</dd></div>
+          </dl>
+          <div class="agent-call"><span>Agent invokes</span><code>find_sessions({ query })</code></div>
+        </div>
+        <figcaption id="compatibility-caption">An existing human interface becomes a small, reusable semantic surface.</figcaption>
+      </figure>
+    </section>
+
+    <dl class="landing-principles" aria-label="MetaWebMCP principles">
+      <div><dt>Any observable site</dt><dd>Compatibility grows from the stable controls and state an agent can legitimately access.</dd></div>
+      <div><dt>Recipes, not raw browsing</dt><dd>Meaningful operations hide repetitive click-and-type mechanics behind a narrow contract.</dd></div>
+      <div><dt>Use now or own it</dt><dd>Run recipes from the current browser session or export the same contracts as native WebMCP.</dd></div>
+      <div><dt>Existing boundaries stay</dt><dd>Authentication, authorization, validation, and confirmation remain in force.</dd></div>
+    </dl>
+
+    <section id="how-it-works" class="landing-section landing-how" aria-labelledby="how-title">
+      <div class="landing-section-heading">
+        <span class="eyebrow">How it works</span>
+        <h2 id="how-title">Compatibility, one workflow at a time.</h2>
+        <p>A website does not need complete native coverage to become useful to an agent. MetaWebMCP finds the safe, observable portion and gives it a stable semantic shape.</p>
+      </div>
+      <ol class="landing-steps">
+        <li>
+          <span>01</span>
+          <div><strong>Observe the real interface</strong><p>Use an owned page, supplied HTML, or an accessibility snapshot from the calling agent’s existing browser session.</p></div>
+        </li>
+        <li>
+          <span>02</span>
+          <div><strong>Shape a bounded recipe</strong><p>Turn accessible controls into a small tool with a clear name, schema, evidence, risk, and deterministic browser steps.</p></div>
+        </li>
+        <li>
+          <span>03</span>
+          <div><strong>Activate, verify, and reuse</strong><p>Add the recipe to the live tool registry, let the agent invoke it by intent, and verify the visible result before export.</p></div>
+        </li>
+      </ol>
+    </section>
+
+    <section id="use-or-integrate" class="landing-section landing-destinations" aria-labelledby="destinations-title">
+      <div class="landing-section-heading">
+        <span class="eyebrow">One contract · two destinations</span>
+        <h2 id="destinations-title">Use the recipe now. Integrate it when you own the site.</h2>
+      </div>
+      <div class="destination-grid">
+        <article>
+          <span class="destination-number">A</span>
+          <div>
+            <span class="destination-label">Agent-side compatibility</span>
+            <h3>Operate the website as it exists.</h3>
+            <p>The calling agent keeps its current page and authenticated session. A generated WebMCP tool gives it a validated recipe with the accessible targets, inputs, and expected result needed to complete the workflow.</p>
+            <ul><li>No change to the target site</li><li>No unrestricted JavaScript</li><li>Reusable semantic invocation</li></ul>
+          </div>
+        </article>
+        <article>
+          <span class="destination-number">B</span>
+          <div>
+            <span class="destination-label">Native site integration</span>
+            <h3>Take the same recipe into your own site.</h3>
+            <p>Export a standalone repository with the reviewed ToolSpecs and direct <code>document.modelContext.registerTool(...)</code> calls. Integrate them as-is, or bind the contracts to your application functions and permission checks.</p>
+            <ul><li>Direct imperative WebMCP</li><li>Owned, editable source</li><li>Evidence and eval guidance included</li></ul>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="landing-boundary" aria-labelledby="boundary-title">
+      <span class="boundary-mark" aria-hidden="true">≈</span>
+      <div><span class="eyebrow">Compatible to the degree the interface allows</span><h2 id="boundary-title">Broad reach without pretending every action is safe.</h2></div>
+      <p>MetaWebMCP omits ambiguous or inaccessible controls, keeps consequential actions behind review and confirmation, and never weakens the access already enforced by the target website.</p>
+    </section>
+
+    <section class="landing-final-cta" aria-labelledby="final-cta-title">
+      <span class="eyebrow">WebMCP builds WebMCP</span>
+      <h2 id="final-cta-title">Start with a website. Leave with tools an agent can use.</h2>
+      <a class="landing-button primary" href="#workspace">Open the compatibility workspace <span aria-hidden="true">→</span></a>
+    </section>
+
+    <footer class="landing-footer"><span>MetaWebMCP</span><p>A narrowly scoped proof that the existing web can become incrementally agent-usable.</p><a href="#workspace">Enter workspace</a></footer>
+  </main>
+
+  <div id="workspace-app" class="app-shell" hidden>
     <header class="topbar">
-      <a class="brand" href="/">
+      <a id="workspace-home-link" class="brand" href="#home" aria-label="Return to MetaWebMCP overview">
         <span class="brand-mark" aria-hidden="true">M/</span>
         <span><strong>MetaWebMCP</strong><small>Interface foundry</small></span>
       </a>
@@ -25,7 +150,7 @@
       </div>
     </header>
 
-    <main class="workspace">
+    <main id="workspace" class="workspace" tabindex="-1">
       <section class="target-column" aria-labelledby="target-title">
         <div class="section-heading target-heading">
           <span class="eyebrow">Build brief</span>

@@ -16,17 +16,17 @@ MetaWebMCP
 
 ## One-sentence pitch
 
-MetaWebMCP is a WebMCP-native compatibility studio that lets an agent observe a website, create a minimal semantic tool surface, activate it immediately, verify it against real page state, and export the same contracts as a native integration repository.
+MetaWebMCP lets an agent make useful parts of any observable website WebMCP-compatible by translating its workflows into bounded, reusable semantic recipes that can be activated as tools and exported as native code.
 
 ## Submission description
 
-Websites contain useful workflows, but most expose them only through interfaces designed for people. Adding WebMCP manually requires a developer to understand the page's state, choose the right semantic boundaries, write schemas and descriptions an agent can select reliably, preserve existing permissions and confirmations, and test the result against the real interface.
+Most websites were not built with WebMCP, but their interfaces already expose useful workflows. MetaWebMCP treats compatibility as a spectrum: an agent can observe a website it is allowed to access, translate the useful parts into bounded semantic recipes, and invoke those recipes through a small WebMCP tool surface instead of reconstructing low-level browser steps for every task.
 
 MetaWebMCP makes that process itself agent-operable.
 
 The application exposes seven permanent WebMCP tools: analyze a target, construct reviewed tool contracts, activate the generated tools, evaluate them, export a native repository, inspect state, and reset. When the agent activates a project, MetaWebMCP dynamically registers a second set of domain tools on the same top-level page. In the included demonstration, an ordinary conference planner starts with no WebMCP integration. The agent uses MetaWebMCP to derive and register `find_sessions`, `add_session_to_itinerary`, `inspect_itinerary`, and `clear_itinerary`, then uses those generated tools to operate the original interface.
 
-For a site owner, MetaWebMCP analyzes live or supplied HTML and produces a standalone integration pack containing direct imperative WebMCP registration, the tool manifest, evidence, installation instructions, and agent eval prompts. For a third-party site, the calling agent can supply an accessibility snapshot from its own browser and receive bounded semantic recipes to execute there. An opt-in Playwright MCP runtime can instead provide a hosted session. Both paths export the same reviewed ToolSpecs with a constrained owned-page runtime; low-level browser operations never become the registered semantic interface.
+For a site owner, MetaWebMCP analyzes live or supplied HTML and produces a standalone integration pack containing direct imperative WebMCP registration, the tool manifest, evidence, installation instructions, and agent eval prompts. For a third-party site, the calling agent can supply an accessibility snapshot from its own browser and receive bounded semantic recipes to execute in its existing session. An opt-in Playwright MCP runtime can instead provide a hosted session. Both paths expose the same reviewed ToolSpecs; low-level browser operations never become the registered semantic interface. Compatibility remains limited to what the agent can legitimately access, observe, and operate safely.
 
 The project does not need a separate model API. The WebMCP client is the reasoning agent: it reviews the discovered evidence, chooses the capabilities, refines contracts when needed, activates the new surface, and asks MetaWebMCP to test and export it.
 
@@ -53,15 +53,17 @@ The retained screenshots and redacted machine results are in `evidence/` in the 
 
 ### 0:00–0:15 — Problem
 
-“Most websites can already perform useful work, but agents see either a page made for humans or a large set of low-level browser controls. Adding a good semantic WebMCP surface still requires substantial design and testing.”
+“Most websites contain useful workflows but expose no WebMCP tools. MetaWebMCP makes compatibility incremental: if an agent can safely observe a workflow, it can turn that workflow into a reusable semantic recipe instead of relearning the page's controls for every task.”
 
-Show the Relay Sessions target. Point out the visible “Legacy UI · no WebMCP” label.
+Show the landing page’s existing-web compatibility promise and the two paths:
+use a recipe from the agent’s browser, or integrate it into an owned site.
 
 ### 0:15–0:30 — Recursive premise
 
 “MetaWebMCP is a WebMCP application whose tools create other WebMCP tools.”
 
-Open the top-level page in ChatGPT's supported browser. Show the seven discovered `meta_*` tools.
+Choose **Build a WebMCP recipe**. Show the uninstrumented Relay Sessions target
+and the seven discovered `meta_*` tools.
 
 ### 0:30–0:54 — Analyze
 
@@ -107,7 +109,7 @@ Run the exported repository and briefly show that the same four tools register f
 
 ### 2:35–2:48 — Close
 
-“MetaWebMCP lets an agent use the web as it exists, while giving site owners a direct path from observed interface to reviewed native WebMCP. WebMCP builds WebMCP.”
+“MetaWebMCP makes the existing web incrementally WebMCP-compatible. An agent observes a workflow once, then reuses it as a semantic recipe. WebMCP builds WebMCP.”
 
 ## Suggested prompts
 
@@ -134,8 +136,12 @@ Run the generated WebMCP evaluation suite and export a repository named relay-se
 1. Choose a native client:
    - **ChatGPT Site Tools:** In the latest ChatGPT desktop app, open the deployed HTTPS URL as a top-level page in the built-in browser. Use ChatGPT Work or Codex with GPT‑5.6 Sol or Terra. Site Tools are disabled on Luna and unavailable in ChatGPT Enterprise and Edu. Availability is still rolling out and can differ between otherwise eligible workspaces; the current requirements are in the [Site Tools setup reference](https://learn.chatgpt.com/docs/webmcp).
    - **Google Chrome 149 or later:** Open `chrome://flags/#enable-webmcp-testing`, enable the WebMCP testing flag, restart Chrome, then open the deployed HTTPS URL as a top-level page.
-2. Confirm that the page header reads **WebMCP active** and the seven `meta_*` tools appear.
-3. Run the prompt sequence above.
+2. On the overview, choose **Build a WebMCP recipe** to enter the workspace. The
+   seven permanent tools are already registered on the top-level page while the
+   overview is visible.
+3. Confirm that the workspace header reads **WebMCP active** and the seven
+   `meta_*` tools appear.
+4. Run the prompt sequence above.
 
 ### Ordinary browser fallback
 

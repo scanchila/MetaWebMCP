@@ -2,13 +2,14 @@
 
 > MetaWebMCP is a WebMCP application that observes website interfaces, creates narrow semantic tools, activates them in a browser-local workspace, verifies them against visible state, and exports the same contracts as native integration code.
 
-The live workspace exposes seven permanent `meta_*` WebMCP tools. A completed build adds reviewed, domain-specific tools to the same top-level registry without adding WebMCP to the target page. The controlled Relay Sessions demo is deterministic. For any public site, the preferred path is for the calling agent to navigate with its own browser, capture an accessibility snapshot, and call `meta_analyze_site` with `source: "agent_snapshot"`; hosted Browser MCP is an optional deployment feature.
+The root page explains how observable website workflows become reusable semantic recipes. The workspace is available at `/#workspace`. Seven permanent `meta_*` WebMCP tools register on the top-level page even while the overview is visible. A completed build adds reviewed, domain-specific tools to the same registry without adding WebMCP to the target page. The controlled Relay Sessions demo is deterministic. For any public site, the preferred path is for the calling agent to navigate with its own browser, capture an accessibility snapshot, and call `meta_analyze_site` with `source: "agent_snapshot"`; hosted Browser MCP is an optional deployment feature.
 
 The current workspace is saved in same-origin IndexedDB and restored after reload. `meta_reset_workspace` deletes that browser-local copy. Temporary export URLs and hosted browser sessions are not restored.
 
 ## Primary links
 
-- [Live workspace](https://metawebmcp.neuryta.com/)
+- [Product overview](https://metawebmcp.neuryta.com/)
+- [Live workspace](https://metawebmcp.neuryta.com/#workspace)
 - [Source and setup](https://github.com/scanchila/MetaWebMCP)
 - [Architecture](https://github.com/scanchila/MetaWebMCP/blob/main/ARCHITECTURE.md)
 - [Security model](https://github.com/scanchila/MetaWebMCP/blob/main/SECURITY.md)
