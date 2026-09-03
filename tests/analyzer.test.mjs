@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { analyzeAccessibilitySnapshot, analyzeHtml, parseAttributes, slugifyToolName } from '../lib/analyzer.mjs';
 import { runMcpRecipe } from '../public/js/mcp-recipe.js';
+import { executeGeneratedSpec } from '../public/js/webmcp-runtime.js';
 
 const FIXTURE = `<!doctype html>
 <html><head><title>Tool Shop</title></head><body>
@@ -58,6 +59,27 @@ test('HTML analysis discovers complete forms and grouped actions', () => {
   const view = result.capabilities.find((capability) => capability.title === 'View cart');
   assert.ok(view);
   assert.equal(view.risk, 'read');
+});
+
+test('consequential language takes precedence over read-like words and GET methods', async () => {
+  const html = `<form method="get">
+    <input name="saved_search" required>
+    <button type="submit">Delete saved search</button>
+  </form>`;
+  const htmlCapability = analyzeHtml({ html, url: 'https://search.example/' }).capabilities[0];
+  assert.equal(htmlCapability.title, 'Delete saved search');
+  assert.equal(htmlCapability.risk, 'consequential');
+  await assert.rejects(
+    executeGeneratedSpec(htmlCapability, { saved_search: 'weekly' }),
+    /Consequential generated tools are disabled/,
+  );
+
+  const snapshotCapability = analyzeAccessibilitySnapshot({
+    snapshot: '- button "Delete saved search" [ref=e1]',
+    url: 'https://search.example/',
+  }).capabilities[0];
+  assert.equal(snapshotCapability.title, 'Delete saved search');
+  assert.equal(snapshotCapability.risk, 'consequential');
 });
 
 test('accessibility snapshot analysis produces browser MCP recipes', () => {
