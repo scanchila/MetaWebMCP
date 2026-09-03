@@ -16,13 +16,27 @@ services:
 
   playwright-mcp:
     image: mcr.microsoft.com/playwright/mcp@sha256:dda1f7f9b812e22946635c8af7df9288b96d3b9e3f0f1b8576d6823e2031c1de
+    user: node
     init: true
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_CHROOT
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=./seccomp_profile.json
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=512m,mode=1777
+      - /home/node/.cache:rw,nosuid,nodev,noexec,size=64m,mode=0700,uid=1000,gid=1000
+      - /home/node/.config:rw,nosuid,nodev,noexec,size=64m,mode=0700,uid=1000,gid=1000
+    shm_size: "512mb"
     entrypoint: ["node", "/app/cli.js"]
     command:
       - --headless
       - --browser
       - chromium
-      - --no-sandbox
+      - --sandbox
       - --isolated
       - --image-responses
       - omit

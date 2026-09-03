@@ -35,7 +35,7 @@ These controls reduce, but do not mathematically eliminate, DNS-rebinding and ne
   - `browser_wait_for`
 - The Cloudflare Browser MCP transport advertises only navigation, snapshot, type, click, select, wait, close, and inline screenshot operations; calls outside that set are rejected before they reach the browser service.
 - Arbitrary browser evaluation is deliberately excluded.
-- The supplied Compose service uses an isolated, headless browser profile and omits image responses.
+- The supplied Compose service runs sandboxed Chromium as the non-root `node` user under Playwright's user-namespace seccomp profile. Its root filesystem is read-only, capabilities are dropped except for the sandbox's `SYS_CHROOT` requirement, writable state is limited to bounded temporary filesystems, and image responses are omitted.
 
 Playwright MCP origin filters and application-layer hostname checks are not complete network boundaries. External Browser MCP endpoints must independently enforce private-network egress on redirects and subresources before `BROWSER_MCP_EGRESS_ISOLATED=1` is set. Keep browser runtimes isolated, without host filesystem mounts or persistent authenticated profiles.
 
