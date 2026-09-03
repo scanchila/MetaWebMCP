@@ -27,7 +27,7 @@ EXPECTED_DEPLOYMENT_VERSION = os.environ.get('META_WEBMCP_DEPLOYMENT_VERSION', '
 DRY_RUN = os.environ.get('META_WEBMCP_EVIDENCE_DRY_RUN') == '1'
 APPEND = os.environ.get('META_WEBMCP_EVIDENCE_APPEND') == '1'
 CASE_SLUG = os.environ.get('META_WEBMCP_EVIDENCE_CASE')
-BROWSER_ARGS = ['--no-sandbox', '--disable-dev-shm-usage', '--enable-blink-features=WebMCPTesting']
+BROWSER_ARGS = ['--no-sandbox', '--disable-dev-shm-usage', '--enable-features=WebMCPTesting']
 PROVENANCE_HELPER = Path(__file__).with_name('evidence_provenance.py')
 APPEND_PROVENANCE_HELPER = Path(__file__).with_name('evidence_append_provenance.py')
 
@@ -244,7 +244,7 @@ def main():
         )
         try:
             apply_browser_capture_provenance(report, {
-                'browser': f'Google Chrome {browser.version} beta',
+                'browser': f'Google Chrome {browser.version}',
                 'browserLaunch': {
                     'executable': Path(CHROME).name,
                     'headless': True,
@@ -264,6 +264,11 @@ def main():
                     response = page.goto(APP_URL, wait_until='networkidle', timeout=30_000)
                     if not response or response.status != 200:
                         raise RuntimeError(f"MetaWebMCP returned {response.status if response else 'no response'}")
+                    if not page.evaluate('Boolean(document.modelContext)'):
+                        raise RuntimeError(
+                            'Chrome did not expose document.modelContext. '
+                            'Headless evidence capture requires Chrome 152+ with WebMCPTesting enabled.'
+                        )
                     page.locator('#native-status', has_text='WebMCP active').wait_for(state='visible')
                     initial_tools = page.evaluate("async () => (await document.modelContext.getTools()).map(tool => tool.name)")
                     if len(initial_tools) != 7:

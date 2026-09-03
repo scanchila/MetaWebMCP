@@ -25,11 +25,11 @@ STATIC_PROVENANCE = {
     },
 }
 BROWSER_PROVENANCE = {
-    'browser': 'Google Chrome 154.0.8037.0 beta',
+    'browser': 'Google Chrome 154.0.8037.0',
     'browserLaunch': {
         'executable': 'google-chrome-beta',
         'headless': True,
-        'args': ['--no-sandbox', '--enable-blink-features=WebMCPTesting'],
+        'args': ['--no-sandbox', '--enable-features=WebMCPTesting'],
         'viewport': {'width': 1840, 'height': 1120},
         'deviceScaleFactor': 1,
     },
@@ -56,6 +56,14 @@ def opener(payload, calls):
 
 
 class EvidenceProvenanceTest(unittest.TestCase):
+    def test_capture_scripts_use_the_current_headless_webmcp_feature_flag(self):
+        for script_name in ('capture-native-evidence.py', 'capture-public-evidence.py'):
+            source = (ROOT / 'scripts' / script_name).read_text()
+            with self.subTest(script=script_name):
+                self.assertIn("'--enable-features=WebMCPTesting'", source)
+                self.assertNotIn('--enable-blink-features=WebMCPTesting', source)
+                self.assertIn('Headless evidence capture requires Chrome 152+', source)
+
     def test_requires_an_explicit_full_source_commit(self):
         self.assertEqual(configured_source_commit({'META_WEBMCP_SOURCE_COMMIT': SOURCE_COMMIT.upper()}), SOURCE_COMMIT)
         with self.assertRaisesRegex(RuntimeError, 'exact full deployed commit'):
@@ -140,7 +148,7 @@ class EvidenceProvenanceTest(unittest.TestCase):
         changed_launch = deepcopy(BROWSER_PROVENANCE)
         changed_launch['browserLaunch']['args'].append('--disable-dev-shm-usage')
         mismatches = {
-            'browser': {**BROWSER_PROVENANCE, 'browser': 'Google Chrome 155.0.8100.0 beta'},
+            'browser': {**BROWSER_PROVENANCE, 'browser': 'Google Chrome 155.0.8100.0'},
             'browserLaunch': changed_launch,
         }
         for field, current_provenance in mismatches.items():
