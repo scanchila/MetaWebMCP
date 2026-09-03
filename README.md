@@ -53,7 +53,7 @@ active** and the tools appear in the client. If the header reads **Preview
 registry**, the ordinary browser fallback exercises the same implementations
 without native tool discovery:
 
-1. Keep **Owned page → Controlled legacy demo**, then select **Observe this interface** (1).
+1. Enter a public URL and select **Open and inspect website** (1), or choose **Use sample** for the deterministic Relay Sessions target.
 2. Review the evidence-backed candidates and select **Shape selected tools** (2).
 3. Select **Activate tools** (3).
 4. Select **Run live checks** (4).
@@ -76,10 +76,10 @@ The controlled fallback needs no account, credentials, model API, or external se
 - Live DOM analysis that derives four domain tools from that target.
 - Dynamic registration and unregistration through `document.modelContext.registerTool(...)` and `AbortController`.
 - A dependency-free native integration ZIP generator. Controlled and browser-derived ToolSpecs both execute on an owned page without MetaWebMCP; bundled targets are tested as standalone WebMCP sites.
-- URL and pasted-HTML analysis for site owners.
-- A quota-free caller-browser path for third-party sites: the agent navigates with its own browser, supplies an accessibility snapshot, and receives bounded recipes to execute itself.
+- A URL-first hosted inspector that keeps the rendered target, accessibility model, generated recipes, and resulting state visible in one workspace.
+- Agent/API inputs for URL, HTML, and caller-controlled accessibility observations without exposing raw snapshot entry in the human interface.
 - Browser-local IndexedDB autosave for drafts, analysis, reviewed contracts, recipes, evaluation state, and active generated tools.
-- An optional Streamable HTTP client for the official Playwright MCP server. A same-origin deployment can keep the transport session in the open page; the local Node service provides an isolated server-side fallback.
+- A Streamable HTTP client for the official Playwright MCP server. The Cloudflare deployment keeps one isolated target session in the open page; the local Node service supports an isolated server-side equivalent when configured.
 - SSRF defenses, an allowlisted browser recipe executor, risk annotations, and disabled consequential actions.
 - Node unit tests and a Chromium end-to-end test that drives the full recursive sequence through a WebMCP-shaped browser mock.
 
@@ -106,11 +106,11 @@ The controlled demo works immediately. Use the numbered actions or invoke the to
 
 After step 3, the top-level page contains eleven tools: seven meta-tools and four newly generated domain tools. The target iframe remains uninstrumented; all agent-facing registration occurs in the parent page.
 
-## Modes
+## Inspection paths
 
 ### Owned page
 
-Choose one of three inputs:
+The WebMCP control plane accepts three owner-oriented inputs:
 
 - **Controlled legacy demo:** analyzes a live same-origin application, activates the generated tools, executes them, and exports native code.
 - **Public URL:** safely fetches server-rendered HTML, extracts stable forms and action groups, and exports an integration pack.
@@ -142,7 +142,9 @@ The generated module contains direct `document.modelContext.registerTool(...)` c
 
 ### Any public site
 
-The default path spends no MetaWebMCP browser quota. The calling agent navigates the target with its own browser tools, captures an accessibility snapshot, and submits it to the existing analysis tool:
+The visible workspace is URL-first. Enter a public HTTP(S) URL and MetaWebMCP opens it in an isolated hosted browser, captures both the rendered page and accessibility model, and displays them as switchable **Page view** and **Accessibility** panels. Generated recipes execute in that same bounded session; after each action, the page view and accessibility result refresh in the workspace.
+
+If a calling agent already controls an authorized target session, it can use the advanced tool-only observation path without asking a person to copy data between browsers:
 
 ```text
 meta_analyze_site({
@@ -153,11 +155,11 @@ meta_analyze_site({
 })
 ```
 
-MetaWebMCP turns that observation into the same reviewed ToolSpecs and export. While those tools are active on the studio page, invoking one returns a validated `agent_browser_required` recipe with `completed: false`; the calling agent performs those steps in its retained target session and verifies the visible result. WebMCP does not currently provide a standard callback for a page tool to invoke another client-side browser tool, so the studio reports this handoff explicitly instead of claiming remote execution.
+MetaWebMCP turns that observation into the same reviewed ToolSpecs and export. While those tools are active on the studio page, invoking one returns a validated `agent_browser_required` recipe with `completed: false`; the calling agent performs those steps in its retained target session and verifies the visible result. This path is an agent-to-agent API contract, not a textarea in the human workspace.
 
 Controls without accessible names are not converted into generic tools. The analysis reports how many were omitted and identifies inputs that could not be associated with a named submit action, so the caller knows where direct browser judgment or a source-site accessibility fix is still required.
 
-Deployments may also opt into a standard Streamable HTTP browser MCP endpoint. In that hosted path, generated WebMCP tools stay semantic while low-level `browser_snapshot`, `browser_type`, `browser_click`, and related calls remain hidden behind the adapter.
+In the hosted path, generated WebMCP tools stay semantic while low-level `browser_snapshot`, `browser_type`, `browser_click`, screenshot, and related calls remain hidden behind the adapter.
 
 The recipe runtime reads the connected tool schemas and supports both the current Playwright MCP `target` reference field and the Cloudflare package's `ref` field. Repeated controls such as product-level “Add to basket” buttons are collapsed into one item-scoped tool instead of flooding the registry with duplicate actions.
 
@@ -165,7 +167,7 @@ Exporting this mode produces the same reviewed ToolSpecs with an owned-page runt
 
 ## Browser-local persistence
 
-MetaWebMCP automatically saves one workspace in IndexedDB for its current origin and browser profile. A reload restores input drafts, supplied HTML or accessibility snapshots, analysis, capability selection and review drafts, generated ToolSpecs and recipes, evaluation history, trace history, and active generated tools. Nothing is synchronized between browsers or sent to a project database.
+MetaWebMCP automatically saves one workspace in IndexedDB for its current origin and browser profile. A reload restores input drafts, tool-supplied HTML or accessibility observations, analysis, capability selection and review drafts, generated ToolSpecs and recipes, evaluation history, trace history, and active generated tools. Nothing is synchronized between browsers or sent to a project database. Hosted browser images and sessions are intentionally transient; reopen the target to resume a live visual session.
 
 Temporary export download links are deliberately not restored because their server-side archives are single-use and expire within twenty minutes. Hosted Browser MCP sessions are also not resumed; their saved contracts remain visible, but the target must be analyzed again before execution. **Reset** removes the browser-local record as well as the active generated tools. Clearing site data in the browser has the same effect. If IndexedDB is unavailable, the studio remains functional with in-memory state only.
 
@@ -202,7 +204,7 @@ Browser operations also require a short-lived, signed, HttpOnly page capability,
 | `ALLOW_PRIVATE_TARGETS` | `0` | Local development override; never enable on a public deployment |
 | `BROWSER_ALLOWED_ORIGINS` | empty | Optional comma-separated initial target origin allowlist |
 
-The Cloudflare deployment additionally recognizes `HOSTED_BROWSER_ENABLED=1`. It defaults to `0`, so anonymous traffic cannot consume account-wide Browser Run capacity; the caller-browser snapshot path remains available.
+The Cloudflare deployment additionally recognizes `HOSTED_BROWSER_ENABLED`. The showcase configuration sets it to `1` so the URL-first website viewer works from the page; set it to `0` to disable anonymous Browser Run usage. The controlled sample and agent/API observation inputs remain available without it.
 
 ## Tests
 
@@ -223,10 +225,12 @@ The end-to-end test launches the included server and an available Chromium build
 6. Deterministic evals pass.
 7. The exported ZIP opens and contains directly registered WebMCP source.
 8. The extracted repository registers and executes its four generated WebMCP tools against the bundled target UI.
-9. A reviewed caller-browser workspace, including its generated recipe, survives a real page reload; temporary export links do not, and Reset removes the saved record.
-10. The completed workspace remains usable from desktop down to a 390 px mobile viewport without horizontal overflow.
+9. The human workspace exposes a URL-first website inspector rather than snapshot/HTML paste controls, and shows hosted page images plus the accessibility model in switchable views.
+10. A hosted generated-tool execution refreshes both the visible page image and accessibility result.
+11. A reviewed caller-browser workspace, including its generated recipe, survives a real page reload; temporary export links do not, and Reset removes the saved record.
+12. The completed workspace remains usable from desktop down to a 390 px mobile viewport without horizontal overflow.
 
-The unit/integration suite verifies caller-supplied snapshot analysis and recipe handoff plus both optional hosted transport layouts: isolated server-side workspaces and one Streamable HTTP session owned by the open page from analysis through generated-tool execution.
+The unit/integration suite verifies caller-supplied observation analysis and recipe handoff plus both hosted transport layouts: isolated server-side workspaces and one Streamable HTTP session owned by the open page from analysis through generated-tool execution and visual capture.
 
 See [`TEST_REPORT.md`](TEST_REPORT.md) for the exact environment and latest run.
 
@@ -239,7 +243,7 @@ Production-native and public-site evidence is retained in [`evidence/`](evidence
 - Target content and generated metadata are treated as untrusted.
 - Consequential tools can be generated for review but are not automatically executed in the public studio.
 - Browser MCP recipes are restricted to a small allowlist and have a maximum step count.
-- The static analyzer is intentionally conservative. Client-rendered sites should use a caller-supplied accessibility snapshot or an explicitly enabled Browser MCP runtime.
+- The static analyzer is intentionally conservative. The main client-rendered-site flow uses the hosted website viewer; calling agents may instead submit an accessibility observation through `meta_analyze_site` when they already control the target session.
 - The app remains usable as an ordinary human interface where WebMCP is not present; its internal registry provides the same deterministic demo path.
 
 ## Deployment
@@ -252,7 +256,7 @@ The repository includes:
 - `docker-compose.yml` for MetaWebMCP plus Playwright MCP.
 - GitHub Actions CI for static, unit, and Chromium end-to-end tests.
 
-The showcase deployment runs at https://metawebmcp.neuryta.com. Its default “any site” path uses the calling agent's browser and does not allocate Cloudflare Browser Run instances. Operators can explicitly enable the page-owned Cloudflare Browser Run adapter. The controlled recursive flow and native exports never require Browser Run; export creation and download still use the page's short-lived signed capability. See [`deploy/cloudflare/README.md`](deploy/cloudflare/README.md) for the reproducible deployment and compatibility pins.
+The showcase deployment runs at https://metawebmcp.neuryta.com. Its default public-site path uses a page-owned Cloudflare Browser Run session so the target and its accessibility model remain visible inside MetaWebMCP. The controlled recursive sample and native exports do not require Browser Run; export creation and download still use the page's short-lived signed capability. See [`deploy/cloudflare/README.md`](deploy/cloudflare/README.md) for the reproducible deployment and compatibility pins.
 
 ## Repository guide
 

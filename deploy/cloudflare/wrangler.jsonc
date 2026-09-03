@@ -21,7 +21,7 @@
     "binding": "CF_VERSION_METADATA"
   },
   "vars": {
-    "HOSTED_BROWSER_ENABLED": "0"
+    "HOSTED_BROWSER_ENABLED": "1"
   },
   "ratelimits": [
     {

@@ -90,9 +90,10 @@ These distinctions keep the submission precise:
   tools independently.
 - **Observed previously:** The opt-in hosted Browser MCP path completed retained
   public-site exercises against Wikipedia, SauceDemo, and The Internet.
-- **Current deployment behavior:** Anonymous hosted browsing is disabled by
-  default; the quota-free public-site path asks the calling agent to supply an
-  accessibility snapshot.
+- **Current deployment behavior:** The public-site workspace opens a URL in an
+  isolated hosted browser and displays both the rendered page and accessibility
+  model. A calling agent can still submit an existing authorized observation
+  through the tool API; the human UI has no snapshot-paste step.
 - **Not demonstrated:** Automated probabilistic model-selection evals, measured
   improvement over DOM-only automation, production adoption, or arbitrary
   client-rendered-site compatibility.

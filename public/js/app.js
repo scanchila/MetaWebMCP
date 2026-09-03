@@ -12,26 +12,25 @@ const elements = {
   storageStatus: $('#storage-status'),
   toolCount: $('#tool-count'),
   resetButton: $('#reset-button'),
-  ownerMode: $('#owner-mode'),
-  adapterMode: $('#adapter-mode'),
-  ownerSourceControls: $('#owner-source-controls'),
-  adapterSourceControls: $('#adapter-source-controls'),
-  adapterSourceKind: $('#adapter-source-kind'),
-  sourceKind: $('#source-kind'),
   urlField: $('#url-field'),
   targetUrl: $('#target-url'),
-  htmlField: $('#html-field'),
-  targetHtml: $('#target-html'),
-  snapshotField: $('#snapshot-field'),
-  targetSnapshot: $('#target-snapshot'),
+  useDemoButton: $('#use-demo-button'),
   goal: $('#goal'),
   analyzeButton: $('#analyze-button'),
   mcpNotice: $('#mcp-notice'),
   mcpTitle: $('#mcp-title'),
   mcpCopy: $('#mcp-copy'),
   targetFrame: $('#target-frame'),
+  stageViewSwitch: $('#stage-view-switch'),
+  visualViewTab: $('#visual-view-tab'),
+  accessibilityViewTab: $('#accessibility-view-tab'),
+  stageOpenTarget: $('#stage-open-target'),
+  visualView: $('#visual-view'),
+  targetScreenshot: $('#target-screenshot'),
   snapshotPreview: $('#snapshot-preview'),
   stagePlaceholder: $('#stage-placeholder'),
+  stagePlaceholderTitle: $('#stage-placeholder-title'),
+  stagePlaceholderCopy: $('#stage-placeholder-copy'),
   stageLabel: $('#stage-label'),
   stageState: $('#stage-state'),
   clientGuide: $('#client-guide'),
@@ -64,6 +63,7 @@ const elements = {
 const META_ORIGIN = 'meta';
 const GENERATED_ORIGIN = 'generated';
 const WORKSPACE_RECORD_VERSION = 1;
+const DEFAULT_GOAL = 'Find the primary actions on this website and turn the useful ones into simple tools.';
 const RISK_SEVERITY = Object.freeze({ read: 0, write: 1, consequential: 2 });
 const META_TOOL_NAMES = new Set();
 const PERSISTED_META_MUTATIONS = new Set([
@@ -83,9 +83,10 @@ const workspaceId = (() => {
 })();
 
 const state = {
-  mode: 'owner',
+  mode: 'adapter',
   phase: 0,
-  sourceKind: 'demo',
+  sourceKind: 'browser_mcp',
+  sourceInput: { html: '', snapshot: '' },
   analysis: null,
   contracts: [],
   selectedCapabilityIds: new Set(),
@@ -95,7 +96,9 @@ const state = {
   export: null,
   trace: [],
   selectedToolName: null,
-  browserMcp: { checked: false, configured: false, tools: [] },
+  browserMcp: { checked: false, checking: false, configured: false, tools: [] },
+  browserImageUrl: null,
+  stageView: 'visual',
   latestTargetState: null,
 };
 
@@ -118,8 +121,12 @@ function syncPrimaryView({ focus = false } = {}) {
   document.title = workspaceOpen
     ? 'MetaWebMCP Workspace — WebMCP builds WebMCP'
     : 'MetaWebMCP — WebMCP builds WebMCP';
+  if (workspaceOpen && !state.browserMcp.checked && !state.browserMcp.checking) checkBrowserMcp();
 
-  if (!focus) return;
+  if (!focus) {
+    if (workspaceOpen) requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+    return;
+  }
   const target = workspaceOpen ? elements.workspace : elements.landingView;
   requestAnimationFrame(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
@@ -173,11 +180,10 @@ function workspaceRecord() {
     version: WORKSPACE_RECORD_VERSION,
     savedAt,
     draft: {
-      adapterSourceKind: elements.adapterSourceKind.value,
-      sourceKind: elements.sourceKind.value,
+      sourceKind: state.sourceKind,
       targetUrl: elements.targetUrl.value,
-      targetHtml: elements.targetHtml.value,
-      targetSnapshot: elements.targetSnapshot.value,
+      targetHtml: state.sourceInput.html,
+      targetSnapshot: state.sourceInput.snapshot,
       goal: elements.goal.value,
       reviewDrafts: currentReviewDrafts(),
     },
@@ -224,7 +230,7 @@ function validWorkspaceRecord(record) {
     && Array.isArray(saved.evals) && saved.evals.length <= 25
     && Array.isArray(saved.trace) && saved.trace.length <= 30
     && isRecord(draft)
-    && ['adapterSourceKind', 'sourceKind', 'targetUrl', 'targetHtml', 'targetSnapshot', 'goal']
+    && ['sourceKind', 'targetUrl', 'targetHtml', 'targetSnapshot', 'goal']
       .every((key) => typeof draft[key] === 'string')
     && Array.isArray(draft.reviewDrafts || [])
     && draft.reviewDrafts.every((review) => (
@@ -384,54 +390,85 @@ function defaultProjectName() {
 }
 
 function renderSourceControls() {
-  const adapter = state.mode === 'adapter';
-  elements.ownerMode.setAttribute('aria-pressed', String(!adapter));
-  elements.adapterMode.setAttribute('aria-pressed', String(adapter));
-  elements.ownerSourceControls.classList.toggle('hidden', adapter);
-  elements.adapterSourceControls.classList.toggle('hidden', !adapter);
+  const isDemo = state.sourceKind === 'demo';
+  elements.useDemoButton.classList.toggle('selected', isDemo);
+  elements.useDemoButton.textContent = isDemo ? 'Sample selected' : 'Use sample';
+  elements.useDemoButton.setAttribute('aria-pressed', String(isDemo));
+  elements.mcpNotice.classList.toggle('hidden', isDemo);
+  elements.analyzeButton.querySelector('span').textContent = isDemo
+    ? 'Inspect sample website'
+    : 'Open and inspect website';
+  renderTargetStage();
+}
 
-  const source = adapter ? elements.adapterSourceKind.value : elements.sourceKind.value;
-  state.sourceKind = source;
-  elements.urlField.classList.toggle('hidden', !(adapter || source === 'url'));
-  elements.htmlField.classList.toggle('hidden', source !== 'html');
-  elements.snapshotField.classList.toggle('hidden', source !== 'agent_snapshot');
-  elements.mcpNotice.classList.toggle('hidden', !adapter);
-  if (source === 'agent_snapshot') {
-    elements.mcpNotice.classList.remove('connected', 'error');
-    elements.mcpTitle.textContent = 'Caller-controlled browser';
-    elements.mcpCopy.textContent = 'Navigate and capture the target with the calling agent, then supply the accessibility snapshot. This uses no hosted browser quota.';
-  } else if (!state.browserMcp.checked) {
-    elements.mcpTitle.textContent = 'Hosted Browser MCP';
-    elements.mcpCopy.textContent = 'Checking the optional hosted browser runtime.';
+function targetLink(rawUrl) {
+  try {
+    const parsed = new URL(rawUrl);
+    return ['http:', 'https:'].includes(parsed.protocol) && !parsed.username && !parsed.password
+      ? parsed.href
+      : '';
+  } catch {
+    return '';
   }
+}
+
+function selectStageView(view) {
+  if (!['visual', 'accessibility'].includes(view)) return;
+  state.stageView = view;
   renderTargetStage();
 }
 
 function renderTargetStage() {
-  const source = state.mode === 'adapter' ? elements.adapterSourceKind.value : state.sourceKind;
+  const source = state.sourceKind;
   const isDemo = source === 'demo';
   const isBrowser = ['agent_snapshot', 'browser_mcp'].includes(source);
+  const snapshot = typeof state.latestTargetState === 'string'
+    ? state.latestTargetState
+    : state.analysis?.snapshot || '';
+  const hasVisual = Boolean(state.browserImageUrl);
+  const hasAccessibility = Boolean(snapshot);
+  if (state.stageView === 'visual' && !hasVisual && hasAccessibility) state.stageView = 'accessibility';
+  if (state.stageView === 'accessibility' && !hasAccessibility && hasVisual) state.stageView = 'visual';
+
   elements.targetFrame.classList.toggle('hidden', !isDemo);
-  elements.snapshotPreview.classList.toggle('hidden', !isBrowser);
-  elements.stagePlaceholder.classList.toggle('hidden', isDemo || isBrowser);
+  elements.stageViewSwitch.classList.toggle('hidden', !isBrowser || (!hasVisual && !hasAccessibility));
+  elements.visualView.classList.toggle('hidden', isDemo || (isBrowser && state.stageView !== 'visual'));
+  elements.snapshotPreview.classList.toggle('hidden', !isBrowser || state.stageView !== 'accessibility');
+  elements.targetScreenshot.classList.toggle('hidden', !hasVisual);
+  elements.stagePlaceholder.classList.toggle('hidden', isDemo || hasVisual || (isBrowser && state.stageView === 'accessibility'));
+  elements.visualViewTab.disabled = !hasVisual;
+  elements.accessibilityViewTab.disabled = !hasAccessibility;
+  elements.visualViewTab.setAttribute('aria-selected', String(state.stageView === 'visual'));
+  elements.accessibilityViewTab.setAttribute('aria-selected', String(state.stageView === 'accessibility'));
+  if (hasVisual) elements.targetScreenshot.src = state.browserImageUrl;
+  else elements.targetScreenshot.removeAttribute('src');
+  elements.snapshotPreview.textContent = snapshot;
+
+  const rawUrl = state.analysis?.source?.url || elements.targetUrl.value;
+  const linkedUrl = targetLink(rawUrl);
+  elements.stageOpenTarget.classList.toggle('hidden', !linkedUrl);
+  if (linkedUrl) elements.stageOpenTarget.href = linkedUrl;
+  else elements.stageOpenTarget.removeAttribute('href');
 
   if (isDemo) {
-    elements.stageLabel.textContent = 'Uninstrumented target';
+    elements.stageLabel.textContent = 'Relay Sessions · sample website';
     elements.stageState.textContent = state.activated ? `${state.contracts.length} tools via parent` : 'No WebMCP';
   } else if (isBrowser) {
-    const latestSnapshot = typeof state.latestTargetState === 'string' ? state.latestTargetState : '';
-    elements.stageLabel.textContent = source === 'agent_snapshot'
-      ? 'Caller-supplied browser snapshot'
-      : 'Isolated hosted Browser MCP session';
-    elements.stageState.textContent = latestSnapshot
-      ? 'Latest tool result'
-      : state.activated ? `${state.contracts.length} virtual tools` : 'External target unchanged';
-    elements.snapshotPreview.textContent = latestSnapshot
-      || state.analysis?.snapshot
-      || 'Analyze a target to populate the accessibility snapshot.';
+    elements.stageLabel.textContent = state.analysis?.source?.title || 'Isolated website session';
+    elements.stageState.textContent = hasVisual
+      ? state.latestTargetState ? 'View refreshed' : 'Page captured'
+      : hasAccessibility ? 'Accessibility captured' : 'Waiting for URL';
+    elements.stagePlaceholderTitle.textContent = state.analysis
+      ? 'The visual capture is unavailable'
+      : 'Your website view will appear here';
+    elements.stagePlaceholderCopy.textContent = state.analysis
+      ? 'The accessibility model is still available and the generated recipes remain bounded to observed controls.'
+      : 'Enter a public URL and inspect it. You will be able to see the rendered page and the accessibility model used to derive tools.';
   } else {
-    elements.stageLabel.textContent = 'Native integration analysis';
+    elements.stageLabel.textContent = state.analysis?.source?.title || 'Supplied source analysis';
     elements.stageState.textContent = state.contracts.length ? `${state.contracts.length} contracts` : 'Export target';
+    elements.stagePlaceholderTitle.textContent = 'Source analysis complete';
+    elements.stagePlaceholderCopy.textContent = 'This source was supplied through the WebMCP tool API. Its evidence and generated contracts are available in the workspace.';
   }
 }
 
@@ -446,6 +483,8 @@ function clearBuildState({ keepTrace = true } = {}) {
   state.evals = [];
   state.export = null;
   state.selectedToolName = null;
+  state.browserImageUrl = null;
+  state.stageView = 'visual';
   state.latestTargetState = null;
   if (!keepTrace) state.trace = [];
   elements.capabilitySection.classList.add('hidden');
@@ -453,7 +492,6 @@ function clearBuildState({ keepTrace = true } = {}) {
   elements.capabilityList.replaceChildren();
   elements.downloadLink.classList.add('hidden');
   elements.downloadLink.removeAttribute('href');
-  elements.snapshotPreview.textContent = '';
   renderTargetStage();
   renderActions();
   renderRegistry();
@@ -580,18 +618,9 @@ function renderCapabilities() {
   elements.capabilitySection.classList.toggle('hidden', !state.analysis?.capabilities?.length);
 }
 
-function setSavedSelectValue(select, value) {
-  if ([...select.options].some((option) => option.value === value)) select.value = value;
-}
-
-function applySavedDraft(draft, saved) {
-  setSavedSelectValue(elements.adapterSourceKind, draft.adapterSourceKind);
-  setSavedSelectValue(elements.sourceKind, draft.sourceKind);
-  if (saved.mode === 'adapter') setSavedSelectValue(elements.adapterSourceKind, saved.sourceKind);
-  else setSavedSelectValue(elements.sourceKind, saved.sourceKind);
+function applySavedDraft(draft) {
   elements.targetUrl.value = draft.targetUrl;
-  elements.targetHtml.value = draft.targetHtml;
-  elements.targetSnapshot.value = draft.targetSnapshot;
+  state.sourceInput = { html: draft.targetHtml, snapshot: draft.targetSnapshot };
   elements.goal.value = draft.goal;
 }
 
@@ -639,7 +668,7 @@ async function restoreWorkspace() {
   }
 
   const saved = record.workspace;
-  applySavedDraft(record.draft, saved);
+  applySavedDraft(record.draft);
   state.mode = saved.mode;
   state.sourceKind = saved.sourceKind;
   state.analysis = clone(saved.analysis);
@@ -654,6 +683,8 @@ async function restoreWorkspace() {
   state.export = null;
   state.trace = clone(saved.trace);
   state.selectedToolName = saved.selectedToolName;
+  state.browserImageUrl = null;
+  state.stageView = ['agent_snapshot', 'browser_mcp'].includes(saved.sourceKind) ? 'accessibility' : 'visual';
   state.latestTargetState = clone(saved.latestTargetState);
 
   renderSourceControls();
@@ -753,10 +784,6 @@ function renderRegistry() {
     elements.nativeStatus.className = 'status-pill preview';
     elements.nativeStatus.innerHTML = '<i></i>Preview registry';
     elements.clientStatusCopy.textContent = 'This browser has no native WebMCP client. The numbered controls run the same complete workflow.';
-    if (!elements.clientGuide.dataset.autoOpened) {
-      elements.clientGuide.open = true;
-      elements.clientGuide.dataset.autoOpened = 'true';
-    }
   }
 }
 
@@ -789,14 +816,21 @@ function compactAnalysis(analysis) {
 
 function resolveAnalysisRequest(input) {
   const requested = input.source && input.source !== 'current' ? input.source : null;
-  const source = requested || (state.mode === 'adapter' ? elements.adapterSourceKind.value : elements.sourceKind.value);
+  const source = requested || state.sourceKind;
   return {
     source,
     goal: String(input.goal ?? elements.goal.value).trim(),
     url: String(input.url ?? elements.targetUrl.value).trim(),
-    html: String(input.html ?? elements.targetHtml.value),
-    snapshot: String(input.snapshot ?? elements.targetSnapshot.value),
+    html: String(input.html ?? state.sourceInput.html),
+    snapshot: String(input.snapshot ?? state.sourceInput.snapshot),
   };
+}
+
+async function captureCurrentWebsiteView() {
+  const view = await browserMcpSession.captureView(workspaceId);
+  state.browserImageUrl = view.imageUrl;
+  state.stageView = 'visual';
+  return view;
 }
 
 async function analyzeTarget(input = {}) {
@@ -808,16 +842,18 @@ async function analyzeTarget(input = {}) {
 
   const adapterSource = ['agent_snapshot', 'browser_mcp'].includes(request.source);
   state.mode = adapterSource ? 'adapter' : 'owner';
-  if (adapterSource) elements.adapterSourceKind.value = request.source;
-  else if (['demo', 'url', 'html'].includes(request.source)) elements.sourceKind.value = request.source;
-  renderSourceControls();
-
+  state.sourceKind = request.source;
   elements.goal.value = request.goal;
-  if (['url', 'agent_snapshot', 'browser_mcp'].includes(request.source)) elements.targetUrl.value = request.url;
-  if (request.source === 'html') elements.targetHtml.value = request.html;
-  if (request.source === 'agent_snapshot') elements.targetSnapshot.value = request.snapshot;
+  if (request.source === 'demo') elements.targetUrl.value = new URL('/demo/', location.href).href;
+  else if (['url', 'agent_snapshot', 'browser_mcp'].includes(request.source)) elements.targetUrl.value = request.url;
+  state.sourceInput = request.source === 'html'
+    ? { html: request.html, snapshot: '' }
+    : request.source === 'agent_snapshot'
+      ? { html: '', snapshot: request.snapshot }
+      : { html: '', snapshot: '' };
 
   clearBuildState({ keepTrace: true });
+  renderSourceControls();
   addTrace('Observing target', `Source: ${request.source}. Goal: ${request.goal}`, 'warning');
   let analysis;
   if (request.source === 'demo') {
@@ -832,6 +868,16 @@ async function analyzeTarget(input = {}) {
 
   state.analysis = analysis;
   state.sourceKind = request.source;
+  if (request.source === 'browser_mcp') {
+    try {
+      await captureCurrentWebsiteView();
+    } catch (error) {
+      state.stageView = 'accessibility';
+      addTrace('Page view unavailable', error instanceof Error ? error.message : String(error), 'warning');
+    }
+  } else if (request.source === 'agent_snapshot') {
+    state.stageView = 'accessibility';
+  }
   state.selectedCapabilityIds = new Set(analysis.capabilities.map((capability) => capability.id));
   renderCapabilities();
   renderTargetStage();
@@ -938,6 +984,16 @@ async function registerGeneratedContracts() {
           workspaceId,
         });
         state.latestTargetState = clone(result.state || result.result || result);
+        if (state.analysis?.source?.kind === 'browser_mcp'
+          && spec.executor.type === 'mcp-recipe'
+          && result.completed !== false) {
+          try {
+            await captureCurrentWebsiteView();
+          } catch (error) {
+            state.stageView = 'accessibility';
+            addTrace('Page view refresh failed', error instanceof Error ? error.message : String(error), 'warning');
+          }
+        }
         addTrace(
           result.completed === false ? `Prepared ${spec.name}` : `Executed ${spec.name}`,
           result.completed === false
@@ -1112,7 +1168,7 @@ async function exportWebMcp(input = {}) {
       },
     };
   } else if (state.analysis?.source?.kind === 'html') {
-    ownerBundle = { html: elements.targetHtml.value, files: {} };
+    ownerBundle = { html: state.sourceInput.html, files: {} };
   }
   const response = await fetch('/api/export', {
     method: 'POST',
@@ -1168,6 +1224,12 @@ async function resetWorkspace() {
     error: error instanceof Error ? error.message : String(error),
   }));
   clearBuildState({ keepTrace: false });
+  state.mode = 'adapter';
+  state.sourceKind = 'browser_mcp';
+  state.sourceInput = { html: '', snapshot: '' };
+  elements.targetUrl.value = '';
+  elements.goal.value = DEFAULT_GOAL;
+  renderSourceControls();
   addTrace('Workspace reset', 'The meta-tool control plane remains registered; generated tools and project state were removed.');
   if (browserReset.ok === false) addTrace('Browser cleanup incomplete', browserReset.error, 'warning');
   return { ok: true, browserReset, remainingTools: registry.list().map((tool) => tool.name) };
@@ -1177,12 +1239,12 @@ const metaTools = [
   {
     spec: {
       name: 'meta_analyze_site',
-      description: 'Observe a website source and return evidence-backed candidate workflows. For a third-party site, prefer agent_snapshot: navigate with the calling agent’s browser and supply its accessibility snapshot. Call this first.',
+      description: 'Open or observe a website and return evidence-backed candidate workflows. Use browser_mcp for the in-site hosted viewer; an agent may use agent_snapshot when it already controls the target browser. Call this first.',
       risk: 'read',
       inputSchema: {
         type: 'object',
         properties: {
-          source: { type: 'string', enum: ['current', 'demo', 'url', 'html', 'agent_snapshot', 'browser_mcp'], description: 'Use agent_snapshot when the calling agent can navigate the target and supply its own accessibility snapshot. Use browser_mcp only for an explicitly configured hosted runtime.' },
+          source: { type: 'string', enum: ['current', 'demo', 'url', 'html', 'agent_snapshot', 'browser_mcp'], description: 'Use current for the website entered in the workspace, browser_mcp for hosted visual inspection, or agent_snapshot for an observation already captured by the calling agent.' },
           goal: { type: 'string', description: 'What agents should be able to accomplish on the target site.' },
           url: { type: 'string', description: 'Required for URL, agent-snapshot, or Browser MCP analysis.' },
           html: { type: 'string', description: 'Required when source is html.' },
@@ -1298,42 +1360,28 @@ async function registerMetaTools() {
 }
 
 async function checkBrowserMcp() {
+  if (state.browserMcp.checking) return;
+  state.browserMcp.checking = true;
   elements.mcpNotice.classList.remove('connected', 'error');
-  elements.mcpCopy.textContent = 'Checking the configured Streamable HTTP endpoint.';
+  elements.mcpCopy.textContent = 'Checking the isolated browser runtime.';
   try {
     const payload = await browserMcpSession.status(workspaceId);
-    state.browserMcp = { checked: true, configured: Boolean(payload.configured), tools: payload.tools || [] };
+    state.browserMcp = { checked: true, checking: false, configured: Boolean(payload.configured), tools: payload.tools || [] };
     if (payload.configured) {
       elements.mcpNotice.classList.add('connected');
-      elements.mcpTitle.textContent = 'Browser MCP connected';
-      elements.mcpCopy.textContent = `${payload.tools.length} low-level browser tools available behind the semantic adapter.`;
+      elements.mcpTitle.textContent = 'Hosted website viewer ready';
+      elements.mcpCopy.textContent = 'The site will open the target in an isolated session and show both its rendered page and accessibility model here.';
     } else {
       elements.mcpNotice.classList.add('error');
-      elements.mcpTitle.textContent = 'Browser MCP optional';
-      elements.mcpCopy.textContent = 'Hosted browsing is disabled. Select Calling agent supplies snapshot to analyze public sites without deployment browser quota.';
+      elements.mcpTitle.textContent = 'Hosted website viewer unavailable';
+      elements.mcpCopy.textContent = 'Public-site inspection is not enabled in this environment. The built-in sample remains available.';
     }
   } catch (error) {
-    state.browserMcp = { checked: true, configured: false, tools: [] };
+    state.browserMcp = { checked: true, checking: false, configured: false, tools: [] };
     elements.mcpNotice.classList.add('error');
     elements.mcpTitle.textContent = 'Browser MCP unavailable';
     elements.mcpCopy.textContent = error instanceof Error ? error.message : String(error);
   }
-}
-
-async function switchMode(mode) {
-  if (!['owner', 'adapter'].includes(mode) || state.mode === mode) return;
-  await browserMcpSession.reset(workspaceId).catch((error) => {
-    addTrace('Browser cleanup incomplete', error instanceof Error ? error.message : String(error), 'warning');
-  });
-  state.mode = mode;
-  clearBuildState({ keepTrace: false });
-  renderSourceControls();
-  addTrace(mode === 'owner' ? 'Owner mode selected' : 'Any-site adapter mode selected', mode === 'owner'
-    ? 'Analyze a controlled demo, public HTML, or pasted HTML and export native WebMCP code.'
-    : 'Supply a snapshot from the calling agent’s browser, or explicitly select the optional hosted adapter.');
-  if (mode === 'adapter' && elements.adapterSourceKind.value === 'browser_mcp') await checkBrowserMcp();
-  persistence.paused = false;
-  await persistWorkspace();
 }
 
 function bindEvents() {
@@ -1356,30 +1404,31 @@ function bindEvents() {
     syncPrimaryView({ focus: viewChanged });
     if (!viewChanged) document.querySelector(targetHash)?.scrollIntoView();
   });
-  elements.ownerMode.addEventListener('click', () => switchMode('owner').catch((error) => addTrace('Mode change failed', error.message, 'error')));
-  elements.adapterMode.addEventListener('click', () => switchMode('adapter').catch((error) => addTrace('Mode change failed', error.message, 'error')));
-  elements.adapterSourceKind.addEventListener('change', async () => {
+  elements.useDemoButton.addEventListener('click', async () => {
     await browserMcpSession.reset(workspaceId).catch(() => {});
-    state.sourceKind = elements.adapterSourceKind.value;
+    state.mode = 'owner';
+    state.sourceKind = 'demo';
+    state.sourceInput = { html: '', snapshot: '' };
+    elements.targetUrl.value = new URL('/demo/', location.href).href;
+    elements.goal.value = 'Find conference sessions, add the useful ones to an itinerary, and inspect the resulting plan.';
     clearBuildState({ keepTrace: false });
     renderSourceControls();
-    addTrace(
-      state.sourceKind === 'agent_snapshot' ? 'Caller browser selected' : 'Hosted browser selected',
-      state.sourceKind === 'agent_snapshot'
-        ? 'The calling agent supplies the target accessibility snapshot and performs live actions.'
-        : 'The deployment will use its explicitly enabled Browser MCP runtime.',
-    );
-    if (state.sourceKind === 'browser_mcp') await checkBrowserMcp();
-    persistence.paused = false;
-    await persistWorkspace();
-  });
-  elements.sourceKind.addEventListener('change', () => {
-    state.sourceKind = elements.sourceKind.value;
-    clearBuildState({ keepTrace: false });
-    renderSourceControls();
-    addTrace('Source changed', `Ready to analyze ${state.sourceKind}.`);
+    addTrace('Sample website selected', 'The visible Relay Sessions page has no WebMCP tools of its own. Inspect it to derive a compatible surface.');
     scheduleWorkspaceSave();
   });
+  elements.targetUrl.addEventListener('input', () => {
+    if (state.sourceKind !== 'browser_mcp' || state.analysis) {
+      state.mode = 'adapter';
+      state.sourceKind = 'browser_mcp';
+      state.sourceInput = { html: '', snapshot: '' };
+      clearBuildState({ keepTrace: false });
+      renderSourceControls();
+      addTrace('Public website selected', 'Ready to open this URL in the isolated website viewer.');
+    }
+    scheduleWorkspaceSave();
+  });
+  elements.visualViewTab.addEventListener('click', () => selectStageView('visual'));
+  elements.accessibilityViewTab.addEventListener('click', () => selectStageView('accessibility'));
   elements.analyzeButton.addEventListener('click', () => invoke('meta_analyze_site', { source: 'current' }).catch(() => {}));
   elements.selectAllButton.addEventListener('click', () => {
     const boxes = [...elements.capabilityList.querySelectorAll('input[type="checkbox"]')];
@@ -1412,7 +1461,7 @@ function bindEvents() {
     state.latestTargetState = clone(event.data.state);
     scheduleWorkspaceSave();
   });
-  for (const field of [elements.targetUrl, elements.targetHtml, elements.targetSnapshot, elements.goal, elements.labInput]) {
+  for (const field of [elements.goal, elements.labInput]) {
     field.addEventListener('input', scheduleWorkspaceSave);
   }
   elements.capabilityList.addEventListener('input', scheduleWorkspaceSave);
@@ -1440,7 +1489,7 @@ async function initialize() {
   bindEvents();
   renderSourceControls();
   setPersistenceStatus('Checking local save…', 'saving');
-  addTrace('MetaWebMCP ready', 'The permanent control plane is registering. The embedded target still exposes no WebMCP of its own.');
+  addTrace('MetaWebMCP ready', 'Enter a public URL to inspect it here, or use the visible sample. The permanent control plane is registering now.');
   registry.addEventListener('registrychange', renderRegistry);
   await registerMetaTools();
   const restored = await restoreWorkspace();

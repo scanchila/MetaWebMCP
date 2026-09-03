@@ -211,13 +211,18 @@ def main() -> int:
                 preview_page.set_default_timeout(12_000)
                 preview_page.on(
                     "console",
-                    lambda message: console_errors.append(f"preview: {message.text}")
+                    lambda message: console_errors.append(
+                        f"preview: {message.text} @ {message.location.get('url', '')}"
+                    )
                     if message.type == "error"
                     else None,
                 )
                 preview_page.on("pageerror", lambda error: console_errors.append(f"preview: {error}"))
                 preview_page.goto(base_url, wait_until="domcontentloaded")
-                preview_page.set_content(index_html, wait_until="domcontentloaded")
+                preview_page.set_content(
+                    index_html.replace("http://metawebmcp.test/", f"{base_url}/"),
+                    wait_until="domcontentloaded",
+                )
                 preview_page.add_style_tag(content=styles)
                 preview_page.add_script_tag(content=app_source, type="module")
                 preview_page.wait_for_function("window.MetaWebMCP")
@@ -289,8 +294,9 @@ def main() -> int:
 
                 preview_page.set_viewport_size({"width": 1840, "height": 1120})
                 assert preview_page.locator("#native-status").inner_text() == "Preview registry"
-                assert preview_page.locator("#client-guide").evaluate("element => element.open") is True
+                assert preview_page.locator("#client-guide").evaluate("element => element.open") is False
                 assert "no native WebMCP client" in preview_page.locator("#client-status-copy").inner_text()
+                preview_page.locator("#client-guide summary").click()
                 assert preview_page.locator("#client-guide .run-steps li").count() == 5
                 guide_text = preview_page.locator("#client-guide").inner_text()
                 for expected in [
@@ -423,7 +429,8 @@ def main() -> int:
                 assert restored_workspace["persistence"]["restored"] is True
                 assert restored_workspace["persistence"]["savedAt"]
                 assert persistence_page.locator("#goal").input_value() == "Search the persisted catalog."
-                assert "Catalog query" in persistence_page.locator("#target-snapshot").input_value()
+                assert restored_workspace["source"]["kind"] == "agent_snapshot"
+                assert persistence_page.locator("#target-snapshot").count() == 0
                 assert persistence_page.locator("#download-link").is_hidden()
                 restored_recipe = persistence_page.evaluate(
                     "async () => window.__callNative('search_catalog', { catalog_query: 'WebMCP' })"
@@ -647,23 +654,97 @@ def main() -> int:
                 page.evaluate("async () => window.__callNative('meta_reset_workspace', {})")
                 result["checks"].append("calling-agent snapshot analysis and delegated browser recipe")
 
-                page.locator('#owner-mode').click()
-                page.wait_for_function("document.querySelector('#owner-mode').getAttribute('aria-pressed') === 'true'")
-                assert page.locator('[role="tablist"], [role="tab"], [aria-selected]').count() == 0
-                assert page.locator('#owner-mode[aria-pressed="true"]').count() == 1
-                assert page.locator('#adapter-mode[aria-pressed="false"]').count() == 1
-                page.locator('#adapter-mode').focus()
+                assert page.locator('#target-url').is_visible()
+                assert page.locator('#target-snapshot, #target-html').count() == 0
+                assert page.locator('#owner-mode, #adapter-mode, #source-kind, #adapter-source-kind').count() == 0
+                page.locator('#use-demo-button').focus()
                 page.keyboard.press('Enter')
-                assert page.locator('#owner-mode[aria-pressed="false"]').count() == 1
-                assert page.locator('#adapter-mode[aria-pressed="true"]').count() == 1
-                assert page.locator('#adapter-source-kind').input_value() == "agent_snapshot"
-                assert page.locator('#snapshot-field').is_visible()
-                assert page.locator('#mcp-title').inner_text() == "Caller-controlled browser"
-                page.locator('#owner-mode').focus()
-                page.keyboard.press('Space')
-                assert page.locator('#owner-mode[aria-pressed="true"]').count() == 1
-                assert page.locator('#adapter-mode[aria-pressed="false"]').count() == 1
-                result["checks"].append("mode controls expose pressed-button semantics and native keyboard activation")
+                assert page.locator('#use-demo-button').get_attribute('aria-pressed') == "true"
+                assert page.locator('#target-frame').is_visible()
+                page.locator('#target-url').fill('https://example.com/')
+                assert page.locator('#use-demo-button').get_attribute('aria-pressed') == "false"
+                assert page.locator('#target-frame').is_hidden()
+                result["checks"].append("URL-first workspace removes human snapshot and source-mode inputs while retaining a visible sample")
+
+                page.evaluate(
+                    """() => {
+                      const session = window.__browserMcpSessionForTest;
+                      window.__originalBrowserAnalyze = session.analyze.bind(session);
+                      window.__originalBrowserCaptureView = session.captureView.bind(session);
+                      window.__originalBrowserExecute = session.execute.bind(session);
+                      window.__visualCaptureCount = 0;
+                      session.analyze = async ({ url, goal }) => ({
+                        source: { kind: 'browser_mcp', url, title: 'Catalog example' },
+                        goal,
+                        summary: { controls: 2, buttons: 1, inputs: 1, candidates: 1, discoveredCandidates: 1, omittedCandidates: 0 },
+                        capabilities: [{
+                          id: 'mcp_button_inspect_catalog',
+                          kind: 'action',
+                          name: 'inspect_catalog',
+                          title: 'Inspect catalog',
+                          description: 'Inspect the visible catalog and return the current website state.',
+                          risk: 'read',
+                          inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+                          sampleArgs: {},
+                          evidence: [{ type: 'button', ref: 'e2', label: 'Search catalog' }],
+                          executor: { type: 'mcp-recipe', steps: [{ tool: 'browser_snapshot', arguments: {} }] },
+                        }],
+                        snapshot: '- searchbox "Catalog query" [ref=e1]\\n- button "Search catalog" [ref=e2]',
+                        warnings: [],
+                      });
+                      session.execute = async () => ({
+                        ok: true,
+                        result: '- heading "Updated catalog" [ref=e3]\\n- button "Search catalog" [ref=e4]',
+                        trace: [],
+                      });
+                      session.captureView = async () => {
+                        window.__visualCaptureCount += 1;
+                        return {
+                          imageUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+                          mimeType: 'image/png',
+                        };
+                      };
+                    }"""
+                )
+                page.locator('#goal').fill('Search the catalog.')
+                page.locator('#analyze-button').click()
+                expect(page.locator('#target-screenshot')).to_be_visible()
+                assert page.locator('#target-screenshot').get_attribute('src').startswith('data:image/png;base64,')
+                assert page.locator('#visual-view-tab').get_attribute('aria-selected') == "true"
+                page.locator('#accessibility-view-tab').click()
+                expect(page.locator('#snapshot-preview')).to_be_visible()
+                assert 'Catalog query' in page.locator('#snapshot-preview').inner_text()
+                page.locator('#visual-view-tab').click()
+                expect(page.locator('#target-screenshot')).to_be_visible()
+                page.evaluate(
+                    """async () => {
+                      await window.__callNative('meta_create_webmcp', {
+                        capability_ids: ['mcp_button_inspect_catalog'],
+                        overrides: [{
+                          capability_id: 'mcp_button_inspect_catalog',
+                          name: 'inspect_catalog',
+                          description: 'Inspect the visible catalog and return the current website state.',
+                        }],
+                      });
+                      await window.__callNative('meta_activate_webmcp', {});
+                      await window.__callNative('inspect_catalog', {});
+                    }"""
+                )
+                assert page.evaluate('window.__visualCaptureCount') == 2
+                expect(page.locator('#target-screenshot')).to_be_visible()
+                assert page.locator('#stage-state').text_content() == 'View refreshed'
+                page.locator('#accessibility-view-tab').click()
+                assert 'Updated catalog' in page.locator('#snapshot-preview').inner_text()
+                page.evaluate(
+                    """() => {
+                      const session = window.__browserMcpSessionForTest;
+                      session.analyze = window.__originalBrowserAnalyze;
+                      session.captureView = window.__originalBrowserCaptureView;
+                      session.execute = window.__originalBrowserExecute;
+                    }"""
+                )
+                page.evaluate("async () => window.__callNative('meta_reset_workspace', {})")
+                result["checks"].append("hosted inspection keeps the rendered page and accessibility model visible in the workspace")
 
                 consequential_analysis = page.evaluate(
                     """async () => window.__callNative('meta_analyze_site', {

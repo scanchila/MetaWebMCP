@@ -186,7 +186,7 @@ Recording rules:
 - Do not use copyrighted music or unlicensed third-party marks.
 - Keep zoom and text large enough for the tool count, tool names, target change,
   and verification result to be readable.
-- Remove pauses, setup, deployment details, and optional hosted-browser modes.
+- Remove pauses and deployment setup details.
 - Paste prompts or cut directly to their submission; do not type long text live.
 - Record short clips and use jump cuts instead of risking one continuous take.
 - Do not claim that deterministic checks evaluate model intent selection.

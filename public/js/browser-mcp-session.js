@@ -3,6 +3,23 @@ import { runMcpRecipe } from './mcp-recipe.js';
 import { isBlockedPublicHostname } from './network-policy.js';
 
 const REQUIRED_TOOLS = ['browser_navigate', 'browser_snapshot'];
+const SCREENSHOT_TOOL = 'browser_take_screenshot';
+const MAX_INLINE_IMAGE_CHARACTERS = 8_000_000;
+const INLINE_IMAGE_TYPES = new Set(['image/jpeg', 'image/png']);
+
+function inlineImageFromResult(result) {
+  const content = result?.content ?? result?.result?.content;
+  const image = Array.isArray(content) ? content.find((part) => part?.type === 'image') : null;
+  const mimeType = String(image?.mimeType || '');
+  const data = String(image?.data || '');
+  if (!image || !INLINE_IMAGE_TYPES.has(mimeType) || !data) {
+    throw new Error('Connected Browser MCP did not return a supported page image.');
+  }
+  if (data.length > MAX_INLINE_IMAGE_CHARACTERS || !/^[a-zA-Z0-9+/]+={0,2}$/.test(data)) {
+    throw new Error('Connected Browser MCP returned an invalid or oversized page image.');
+  }
+  return { imageUrl: `data:${mimeType};base64,${data}`, mimeType };
+}
 
 function normalizedTargetUrl(rawUrl) {
   let parsed;
@@ -142,6 +159,23 @@ export class BrowserMcpSession {
       callTool: (name, args) => client.callTool(name, args),
       resultText: flattenMcpText,
     });
+  }
+
+  async captureView(workspaceId) {
+    const client = await this.directClient();
+    if (!client) {
+      const payload = await this.json('/api/mcp/view', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ workspaceId }),
+      });
+      return { imageUrl: payload.imageUrl, mimeType: payload.mimeType };
+    }
+    const tools = await client.listTools();
+    if (!tools.some((tool) => tool.name === SCREENSHOT_TOOL)) {
+      throw new Error(`Connected MCP server does not expose ${SCREENSHOT_TOOL}.`);
+    }
+    return inlineImageFromResult(await client.callTool(SCREENSHOT_TOOL, {}));
   }
 
   async reset(workspaceId) {

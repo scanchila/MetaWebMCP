@@ -590,36 +590,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .run-steps li + li { margin-top: 3px; }
 .run-steps strong { color: var(--ink-soft); font-weight: 720; }
 
-.mode-switch {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border: 1px solid var(--line-strong);
-  border-radius: 8px;
-  background: var(--canvas-deep);
-  padding: 3px;
-  margin-bottom: 20px;
-}
-.mode-button {
-  min-height: 54px;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  display: grid;
-  place-content: center;
-  gap: 2px;
-  text-align: left;
-}
-.mode-button strong { font-size: 10px; font-weight: 750; }
-.mode-button small { font-size: 8px; }
-.mode-button[aria-pressed="true"] {
-  background: var(--paper-strong);
-  color: var(--ink);
-  box-shadow: 0 1px 4px rgba(31, 36, 33, .12);
-}
-.mode-button[aria-pressed="true"] small { color: var(--accent); }
-
 .field, .source-controls { display: grid; gap: 7px; margin-bottom: 14px; }
 .field-label {
   color: var(--ink-soft);
@@ -642,8 +612,22 @@ input:hover, textarea:hover, select:hover { border-color: var(--ink-soft); }
 input:focus, textarea:focus, select:focus { border-color: var(--accent); background: #fff; }
 textarea { resize: vertical; line-height: 1.48; }
 #goal { min-height: 94px; }
-#target-html, #target-snapshot, #lab-input { font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+#lab-input { font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .field-help { color: var(--muted); font-size: 10px; line-height: 1.45; }
+.url-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; }
+.sample-button {
+  min-width: 88px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--paper-strong);
+  color: var(--ink-soft);
+  padding: 0 11px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 740;
+}
+.sample-button:hover { border-color: var(--ink-soft); }
+.sample-button.selected { border-color: var(--green); color: var(--green); background: #f3f8f1; }
 select {
   appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
@@ -741,6 +725,31 @@ kbd {
 .stage-address span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stage-toolbar > span:last-child { color: #ffd18f; white-space: nowrap; }
 .target-stage iframe { display: block; width: 100%; height: 335px; border: 0; background: #eee9df; }
+.stage-view-switch {
+  min-height: 37px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--line-strong);
+  background: var(--paper-strong);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.stage-view-switch button {
+  min-height: 27px;
+  border: 0;
+  border-radius: 4px;
+  padding: 0 9px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 730;
+}
+.stage-view-switch button[aria-selected="true"] { background: var(--canvas-deep); color: var(--ink); }
+.stage-view-switch button:disabled { opacity: .36; }
+.stage-view-switch a { margin-left: auto; color: var(--accent); font-size: 9px; font-weight: 720; }
+.visual-view { width: 100%; height: 335px; position: relative; background: var(--paper-strong); }
+.target-screenshot { display: block; width: 100%; height: 100%; object-fit: contain; background: #fff; }
 .snapshot-preview {
   margin: 0;
   width: 100%;
@@ -1121,7 +1130,7 @@ body.busy .primary-button::after, body.busy .secondary-button::after {
   .build-actions { grid-template-columns: 1fr; }
   .action-dock-heading { display: grid; }
   .action-dock-heading small { text-align: left; }
-  .target-stage iframe, .snapshot-preview, .stage-placeholder { height: 460px; min-height: 460px; }
+  .target-stage iframe, .visual-view, .snapshot-preview, .stage-placeholder { height: 460px; min-height: 460px; }
   .tools-column .tool-list { max-height: 360px; }
 }
 
@@ -1154,7 +1163,8 @@ body.busy .primary-button::after, body.busy .secondary-button::after {
   .client-guide summary { display: grid; grid-template-columns: 1fr auto; gap: 7px 12px; }
   .client-guide summary > span:last-child { grid-column: 1; }
   .client-guide summary::after { grid-column: 2; grid-row: 1 / span 2; }
-  .mode-button { min-height: 51px; }
+  .url-entry { grid-template-columns: 1fr; }
+  .sample-button { min-height: 39px; }
   .trace-header { align-items: center; }
   .trace-header > span { max-width: 130px; }
   .trace { padding-inline: 12px; }

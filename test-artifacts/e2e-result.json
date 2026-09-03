@@ -1,5 +1,5 @@
 {
-  "baseUrl": "http://127.0.0.1:49221",
+  "baseUrl": "http://127.0.0.1:35495",
   "checks": [
     "server health endpoint",
     "landing explains incremental compatibility, opens the workspace, reveals it for tool activity, and remains responsive",
@@ -8,7 +8,8 @@
     "workspace remains usable when IndexedDB is unavailable",
     "workspace reset awaits browser cleanup without requiring a successful analysis",
     "calling-agent snapshot analysis and delegated browser recipe",
-    "mode controls expose pressed-button semantics and native keyboard activation",
+    "URL-first workspace removes human snapshot and source-mode inputs while retaining a visible sample",
+    "hosted inspection keeps the rendered page and accessibility model visible in the workspace",
     "fallback contains untrusted evidence, prevents risk downgrades, requires reviewed metadata, and keeps skipped verification incomplete after export",
     "seven native meta-tools; target has no WebMCP registry",
     "live target analysis, synchronized agent brief, and four evidence-backed candidates",
@@ -120,7 +121,7 @@
       {
         "tool": "find_sessions",
         "status": "passed",
-        "durationMs": 96,
+        "durationMs": 101,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -176,7 +177,7 @@
       {
         "tool": "add_session_to_itinerary",
         "status": "passed",
-        "durationMs": 74,
+        "durationMs": 76,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -314,7 +315,7 @@
       {
         "tool": "clear_itinerary",
         "status": "passed",
-        "durationMs": 75,
+        "durationMs": 77,
         "checks": [
           {
             "name": "registered in generated tool registry",

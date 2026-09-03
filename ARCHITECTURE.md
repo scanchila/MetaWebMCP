@@ -79,25 +79,25 @@ Static URL and pasted-HTML modes are export-oriented. A DOM adapter can only exe
 ## Any-site mode
 
 ```text
-Calling agent's browser
-    │ navigate + accessibility snapshot
+MetaWebMCP workspace
+    │ public URL
     ▼
-meta_analyze_site(source: agent_snapshot)
-    │ reviewed ToolSpecs
+Isolated hosted browser session
+    │ rendered screenshot + accessibility model
     ▼
 Generated semantic tool
-    │ bounded recipe, completed: false
+    │ bounded recipe
     ▼
-Calling agent executes and verifies in its retained target session
+Visible target state refreshes in the workspace
 ```
 
-Caller-browser mode is the public default. MetaWebMCP receives only a bounded accessibility snapshot and target URL; it does not allocate a browser or receive the caller's browser credentials. It parses interactive roles and references into candidate semantic tools. Active tools return only snapshot, type, click, select, and wait steps. They never claim completion until the calling agent performs and verifies the work. Recipes cannot navigate or open URL-bearing tabs.
+The hosted path is the public workspace default. One `BrowserMcpSession` in the top-level page retains the MCP session across analysis and every generated semantic tool call. Analysis navigates once, derives ToolSpecs from the accessibility model, and captures an inline screenshot. Generated actions use only snapshot, type, click, select, and wait steps; after execution the workspace refreshes both the visual page and accessibility result. Recipes cannot navigate or open URL-bearing tabs.
 
-The optional hosted path uses one `BrowserMcpSession` in the top-level page. It retains the MCP session identifier across analysis and every generated semantic tool call, automatically closes failed analyses, and is awaited on reset. Each Cloudflare Durable Object instance creates its own MCP protocol server so transports cannot share connection state.
+Caller-browser observation remains an agent-only alternative. A calling agent that already controls an authorized target session can pass a bounded accessibility snapshot and target URL directly to `meta_analyze_site(source: agent_snapshot)`. Active tools return `completed: false` recipes for that agent to execute and verify. The human workspace does not expose raw snapshot entry.
 
 The Node deployment remains compatible with a separate Playwright MCP service. In that layout, each open page receives a random workspace identifier and a distinct server-side client/session. Resetting or expiring one workspace closes only that session. Both layouts use the same MCP client and recipe interpreter. The supplied Compose Playwright container has only an internal network, and Chromium is configured to send HTTP and HTTPS through a proxy that validates all DNS answers and pins the socket to the selected public address. An external browser endpoint must provide an equivalent boundary before the Node bridge can be enabled.
 
-The public deployment mounts Cloudflare's Playwright MCP agent as a Durable Object alongside the static application, but its routes are disabled unless `HOSTED_BROWSER_ENABLED=1`. When enabled, the Browser Run binding creates an isolated, non-persistent browser context. A long-lived SSE connection ties that context to the page; failed analysis, reset, and page teardown issue `browser_close`. Same-origin checks and an edge rate-limit binding guard the transport route. The agent advertises only the eight operations used by the product and evidence capture. Transport validation checks explicit navigation targets, while browser-context routing blocks direct local, private, reserved, and common metadata destinations reached through redirects or page actions.
+The public deployment mounts Cloudflare's Playwright MCP agent as a Durable Object alongside the static application and sets `HOSTED_BROWSER_ENABLED=1`. The Browser Run binding creates an isolated, non-persistent browser context. A long-lived SSE connection ties that context to the page; failed analysis, reset, and page teardown issue `browser_close`. Same-origin checks and an edge rate-limit binding guard the transport route. The agent advertises only the eight operations used by the product, including inline viewport capture. Transport validation checks explicit navigation targets, while browser-context routing blocks direct local, private, reserved, and common metadata destinations reached through redirects or page actions. Operators can set the flag to `0` to disable this resource-intensive path without affecting the controlled sample or tool-only observation inputs.
 
 This is a virtual, session-scoped adapter. It does not modify the third-party origin or claim that the target itself is natively WebMCP-compatible.
 

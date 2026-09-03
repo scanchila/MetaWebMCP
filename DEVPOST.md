@@ -26,7 +26,7 @@ MetaWebMCP makes that process itself agent-operable.
 
 The application exposes seven permanent WebMCP tools: analyze a target, construct reviewed tool contracts, activate the generated tools, evaluate them, export a native repository, inspect state, and reset. When the agent activates a project, MetaWebMCP dynamically registers a second set of domain tools on the same top-level page. In the included demonstration, an ordinary conference planner starts with no WebMCP integration. The agent uses MetaWebMCP to derive and register `find_sessions`, `add_session_to_itinerary`, `inspect_itinerary`, and `clear_itinerary`, then uses those generated tools to operate the original interface.
 
-For a site owner, MetaWebMCP analyzes live or supplied HTML and produces a standalone integration pack containing direct imperative WebMCP registration, the tool manifest, evidence, installation instructions, and agent eval prompts. For a third-party site, the calling agent can supply an accessibility snapshot from its own browser and receive bounded semantic recipes to execute in its existing session. An opt-in Playwright MCP runtime can instead provide a hosted session. Both paths expose the same reviewed ToolSpecs; low-level browser operations never become the registered semantic interface. Compatibility remains limited to what the agent can legitimately access, observe, and operate safely.
+For a public site, a person enters a URL and MetaWebMCP opens it in an isolated browser, then keeps the rendered page, accessibility model, recipes, and resulting state visible in one workspace. For a site owner, the same reviewed ToolSpecs export as a standalone integration pack containing direct imperative WebMCP registration, evidence, installation instructions, and agent eval prompts. A calling agent that already controls an authorized target session can also submit its observation directly through the tool API—without asking a person to paste a snapshot into the page. Low-level browser operations never become the registered semantic interface. Compatibility remains limited to what the agent can legitimately access, observe, and operate safely.
 
 The project does not need a separate model API. The WebMCP client is the reasoning agent: it reviews the discovered evidence, chooses the capabilities, refines contracts when needed, activates the new surface, and asks MetaWebMCP to test and export it.
 
@@ -62,8 +62,8 @@ use a recipe from the agent’s browser, or integrate it into an owned site.
 
 “MetaWebMCP is a WebMCP application whose tools create other WebMCP tools.”
 
-Choose **Build a WebMCP recipe**. Show the uninstrumented Relay Sessions target
-and the seven discovered `meta_*` tools.
+Choose **Build a WebMCP recipe**, then **Use sample**. Show the uninstrumented
+Relay Sessions target and the seven discovered `meta_*` tools.
 
 ### 0:30–0:54 — Analyze
 
@@ -147,10 +147,10 @@ Run the generated WebMCP evaluation suite and export a repository named relay-se
 
 If native tools do not appear or the header reads **Preview registry**, use the in-page controls. They call the same implementations as the seven registered meta-tools.
 
-1. Keep **Owned page → Controlled legacy demo**, then select **Observe this interface** (1).
+1. Choose **Use sample**, then select **Inspect sample website** (1).
 2. Review the evidence-backed candidates and select **Shape selected tools** (2).
 3. Select **Activate tools** (3) and confirm the registry grows from seven to eleven tools.
 4. Select **Run live checks** (4) and confirm that all four generated-tool checks pass.
 5. Select **Export native repository** (5), download the ZIP, and compare it with the [retained production export](https://github.com/scanchila/MetaWebMCP/blob/main/evidence/relay-sessions-webmcp.zip) and its [validation record](https://github.com/scanchila/MetaWebMCP/blob/main/evidence/native-webmcp-result.json).
 
-The controlled demo requires no account, credentials, model API, or external service. The live **Any public site** path defaults to an accessibility snapshot supplied from the calling agent's browser; operators may explicitly enable the isolated hosted Browser MCP runtime.
+The controlled demo requires no account, credentials, model API, or external service. For any public site, enter its URL to use the isolated in-site viewer; the rendered page and accessibility model remain visible while recipes run. The agent-supplied snapshot path remains an advanced tool API for agents that already control an authorized browser session, not a human data-entry step.

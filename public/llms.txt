@@ -2,7 +2,7 @@
 
 > MetaWebMCP is a WebMCP application that observes website interfaces, creates narrow semantic tools, activates them in a browser-local workspace, verifies them against visible state, and exports the same contracts as native integration code.
 
-The root page explains how observable website workflows become reusable semantic recipes. The workspace is available at `/#workspace`. Seven permanent `meta_*` WebMCP tools register on the top-level page even while the overview is visible. A completed build adds reviewed, domain-specific tools to the same registry without adding WebMCP to the target page. The controlled Relay Sessions demo is deterministic. For any public site, the preferred path is for the calling agent to navigate with its own browser, capture an accessibility snapshot, and call `meta_analyze_site` with `source: "agent_snapshot"`; hosted Browser MCP is an optional deployment feature.
+The root page explains how observable website workflows become reusable semantic recipes. The workspace is available at `/#workspace`. Seven permanent `meta_*` WebMCP tools register on the top-level page even while the overview is visible. A completed build adds reviewed, domain-specific tools to the same registry without adding WebMCP to the target page. The controlled Relay Sessions demo is deterministic. For any public site, enter a URL in the workspace: its isolated browser session displays both the rendered page and accessibility model, and refreshes them after generated tools run. An agent that already controls an authorized browser may instead call `meta_analyze_site` with `source: "agent_snapshot"`; that is a tool API path, not a human paste workflow.
 
 The current workspace is saved in same-origin IndexedDB and restored after reload. `meta_reset_workspace` deletes that browser-local copy. Temporary export URLs and hosted browser sessions are not restored.
 
@@ -17,7 +17,7 @@ The current workspace is saved in same-origin IndexedDB and restored after reloa
 
 ## Core workflow
 
-1. Observe a controlled or owned target, or supply a public-site accessibility snapshot from the calling agent's browser.
+1. Open a public URL in the visible hosted inspector, use the controlled sample, or submit an existing authorized observation through the tool API.
 2. Review evidence-backed capability candidates.
 3. Shape and activate semantic WebMCP tools.
 4. Execute and verify the generated surface.

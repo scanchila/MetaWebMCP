@@ -1,6 +1,6 @@
 # Cloudflare deployment
 
-This deployment serves the MetaWebMCP application and its analysis/export APIs. Third-party analysis defaults to snapshots supplied by the calling agent, so the public service does not need to allocate a browser. An isolated Playwright MCP runtime remains available as an explicit opt-in.
+This deployment serves the MetaWebMCP application, its analysis/export APIs, and the isolated browser behind the URL-first website viewer. The page displays an inline target screenshot and accessibility model while generated recipes operate the same session. Agents that already control an authorized browser may still supply observations through the tool API.
 
 ## Deploy
 
@@ -27,8 +27,8 @@ Set `MCP_CAPABILITY_SECRET` to a randomly generated value of at least 32 bytes. 
 - The Worker handles `/health`, analysis, export, and expiring ZIP downloads.
 - `PlaywrightMCP` is a Durable Object backed by the Browser Run binding.
 - `ExportStore` is a SQLite-backed Durable Object that retains bounded, expiring ZIP archives with atomic owner claims.
-- When hosted browsing is enabled, the page uses the package's SSE endpoint so one control connection remains open for the life of the browser session.
-- `HOSTED_BROWSER_ENABLED=0` disables the MCP transport routes by default. Set it to `1` only when the account has suitable Browser Run capacity and abuse monitoring.
+- The page uses the package's SSE endpoint so one control connection remains open for the life of the browser session.
+- The showcase sets `HOSTED_BROWSER_ENABLED=1` for the in-site viewer. Set it to `0` when a deployment does not have suitable Browser Run capacity and abuse monitoring; the controlled sample and tool-only observation inputs continue to work.
 - Browser transport requests require a same-origin, short-lived signed capability stored in an HttpOnly SameSite cookie and are limited to 60 requests per source IP per minute.
 - Browser HTTP traffic is intercepted and fulfilled through the Worker's public-Internet `fetch()` path with manual redirects, a 20-second per-request deadline, a 2 MB request cap, and an 8 MB response cap. Worker contexts, service workers, and direct socket APIs are disabled rather than allowed to bypass that route.
 - Anonymous HTML and URL analysis is limited to 30 requests per source IP per minute. URL fetches share one 12-second deadline across redirects, and Worker fetches use public Internet routing rather than zone-origin routing.
@@ -51,6 +51,6 @@ curl https://metawebmcp.neuryta.com/health
 
 The healthy response includes `deploymentVersion`, `sourceCommit`, `deployedAt`, and `deploymentTag`. Evidence capture rejects the deployment if those live values do not match the expected source.
 
-Then open the site, choose **Any public site**, leave **Calling agent supplies snapshot** selected, and analyze a snapshot captured from a public target. This path should work while `/health` reports `browserMcpConfigured: false`.
+Then open the workspace, enter a public HTTP or HTTPS target, and select **Open and inspect website**. A healthy deployment reports the hosted website viewer as ready, shows **Page view** and **Accessibility** tabs after analysis, and refreshes the visual after generated-tool execution. `/health` should report `browserMcpConfigured: true`.
 
-To smoke-test the optional hosted runtime, deploy with `HOSTED_BROWSER_ENABLED=1`, select **Hosted Browser MCP**, and analyze a public HTTP or HTTPS target. A healthy enabled deployment reports the runtime as connected and preserves one isolated session through generated-tool execution and reset.
+Also choose **Use sample** once. The deterministic sample must remain usable even if Browser Run capacity is temporarily unavailable.

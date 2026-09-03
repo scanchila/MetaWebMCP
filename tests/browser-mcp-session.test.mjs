@@ -114,6 +114,54 @@ test('page-scoped Browser MCP session analyzes and executes through one transpor
   assert.equal(deleteCount, 1);
 });
 
+test('page-scoped Browser MCP session returns an inline visual for the current target', async () => {
+  const calls = [];
+  const screenshot = Buffer.from('visual target').toString('base64');
+  const tools = [
+    { name: 'browser_navigate', inputSchema: { type: 'object' } },
+    { name: 'browser_snapshot', inputSchema: { type: 'object' } },
+    { name: 'browser_take_screenshot', inputSchema: { type: 'object' } },
+  ];
+
+  const fetchMock = async (input, options = {}) => {
+    const url = new URL(input);
+    if (url.pathname === '/api/browser-session') return json({ ok: true, expiresInSeconds: 1200 }, { status: 201 });
+    if (url.pathname === '/api/config') {
+      return json({ ok: true, browserMcpConfigured: true, browserMcpEndpoint: '/mcp' });
+    }
+    const message = JSON.parse(options.body);
+    if (message.method === 'initialize') {
+      return json({
+        jsonrpc: '2.0',
+        id: message.id,
+        result: { protocolVersion: '2025-06-18', capabilities: {}, serverInfo: {} },
+      }, { headers: { 'mcp-session-id': 'visual-session' } });
+    }
+    if (message.method === 'notifications/initialized') return new Response(null, { status: 202 });
+    if (message.method === 'tools/list') {
+      return json({ jsonrpc: '2.0', id: message.id, result: { tools } });
+    }
+    if (message.method === 'tools/call') {
+      calls.push({ name: message.params.name, args: message.params.arguments });
+      return json({
+        jsonrpc: '2.0',
+        id: message.id,
+        result: { content: [{ type: 'image', data: screenshot, mimeType: 'image/jpeg' }] },
+      });
+    }
+    return json({ jsonrpc: '2.0', id: message.id, error: { code: -32601, message: 'Unexpected method' } });
+  };
+
+  const session = new BrowserMcpSession({ fetch: fetchMock, baseUrl: 'https://meta.example/' });
+  const view = await session.captureView('workspace_visual_123456');
+
+  assert.deepEqual(view, {
+    imageUrl: `data:image/jpeg;base64,${screenshot}`,
+    mimeType: 'image/jpeg',
+  });
+  assert.deepEqual(calls, [{ name: 'browser_take_screenshot', args: {} }]);
+});
+
 test('page-scoped Browser MCP session blocks local targets before navigation', async () => {
   const toolCalls = [];
   const fetchMock = async (input, options = {}) => {

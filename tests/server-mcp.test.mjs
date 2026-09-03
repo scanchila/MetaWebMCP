@@ -223,6 +223,7 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
   const contracts = {
     browser_navigate: { required: ['url'], allowed: ['url'] },
     browser_snapshot: { required: [], allowed: [] },
+    browser_take_screenshot: { required: [], allowed: [] },
     browser_type: { required: ['element', 'ref', 'text'], allowed: ['element', 'ref', 'text', 'submit', 'slowly'] },
     browser_select_option: { required: ['element', 'ref', 'values'], allowed: ['element', 'ref', 'values'] },
     browser_click: { required: ['element', 'ref'], allowed: ['element', 'ref', 'doubleClick'] },
@@ -310,6 +311,20 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
             markOversizedNavigationClosed();
           });
           timer = setTimeout(writeChunk, 2);
+          return;
+        }
+        if (name === 'browser_take_screenshot') {
+          json(res, 200, {
+            jsonrpc: '2.0',
+            id: message.id,
+            result: {
+              content: [{
+                type: 'image',
+                data: Buffer.from('website visual').toString('base64'),
+                mimeType: 'image/jpeg',
+              }],
+            },
+          });
           return;
         }
         const text = name === 'browser_snapshot'
@@ -427,6 +442,19 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
   assert.equal(executed.status, 200);
   const executedPayload = await executed.json();
   assert.equal(executedPayload.ok, true);
+
+  const view = await fetch(`${base}/api/mcp/view`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ workspaceId }),
+  });
+  assert.equal(view.status, 200);
+  const viewPayload = await view.json();
+  assert.equal(viewPayload.mimeType, 'image/jpeg');
+  assert.equal(
+    viewPayload.imageUrl,
+    `data:image/jpeg;base64,${Buffer.from('website visual').toString('base64')}`,
+  );
   assert.deepEqual(toolCalls, [
     { name: 'browser_navigate', args: { url: 'https://8.8.8.8/' } },
     { name: 'browser_snapshot', args: {} },
@@ -436,5 +464,6 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
     { name: 'browser_select_option', args: { element: 'Level', ref: 'e2', values: ['Advanced'] } },
     { name: 'browser_click', args: { element: 'Find sessions', ref: 'e3' } },
     { name: 'browser_snapshot', args: {} },
+    { name: 'browser_take_screenshot', args: {} },
   ]);
 });

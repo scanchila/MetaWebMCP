@@ -22,6 +22,7 @@ const PORT = Number(process.env.PORT || 8787);
 const HOST = process.env.HOST || '0.0.0.0';
 const BODY_LIMIT = 2_000_000;
 const MCP_SNAPSHOT_RESPONSE_LIMIT_BYTES = 2_000_000;
+const MCP_SCREENSHOT_RESPONSE_LIMIT_BYTES = 8_000_000;
 const BROWSER_MCP_URL = process.env.BROWSER_MCP_URL || '';
 const BROWSER_MCP_EGRESS_ISOLATED = process.env.BROWSER_MCP_EGRESS_ISOLATED === '1';
 if (BROWSER_MCP_URL && !BROWSER_MCP_EGRESS_ISOLATED) {
@@ -246,6 +247,31 @@ async function executeMcpRecipe(body, capabilityId) {
   });
 }
 
+async function captureBrowserView(body, capabilityId) {
+  const client = getMcpClient(body.workspaceId, capabilityId);
+  const tools = await client.listTools();
+  if (!tools.some((tool) => tool.name === 'browser_take_screenshot')) {
+    throw new Error('Connected MCP server does not expose browser_take_screenshot.');
+  }
+  const result = await client.callTool('browser_take_screenshot', {}, {
+    maxResponseBytes: MCP_SCREENSHOT_RESPONSE_LIMIT_BYTES,
+  });
+  const image = result?.content?.find((part) => part?.type === 'image');
+  if (!image
+    || !['image/jpeg', 'image/png'].includes(image.mimeType)
+    || typeof image.data !== 'string'
+    || !image.data
+    || image.data.length > MCP_SCREENSHOT_RESPONSE_LIMIT_BYTES
+    || !/^[a-zA-Z0-9+/]+={0,2}$/.test(image.data)) {
+    throw new Error('Connected Browser MCP did not return a supported page image.');
+  }
+  return {
+    ok: true,
+    imageUrl: `data:${image.mimeType};base64,${image.data}`,
+    mimeType: image.mimeType,
+  };
+}
+
 function pruneDownloads() {
   const now = Date.now();
   for (const [id, item] of downloads) {
@@ -423,6 +449,11 @@ async function handleApi(req, res, pathname, searchParams) {
   if (pathname === '/api/mcp/execute' && req.method === 'POST') {
     const body = await readJson(req);
     return sendJson(res, 200, await executeMcpRecipe(body, browserCapability.id));
+  }
+
+  if (pathname === '/api/mcp/view' && req.method === 'POST') {
+    const body = await readJson(req);
+    return sendJson(res, 200, await captureBrowserView(body, browserCapability.id));
   }
 
   if (pathname === '/api/mcp/reset' && req.method === 'POST') {

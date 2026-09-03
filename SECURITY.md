@@ -19,7 +19,9 @@ The supplied Node path therefore does not perform a second hostname resolution b
 
 ### Browser MCP bridge
 
-- Caller-browser mode is the default for third-party targets. The service receives an accessibility snapshot but never receives the caller's browser session, cookies, or credentials.
+- The public workspace opens third-party targets in a fresh, isolated hosted browser. It does not receive or reuse the person's normal browser profile, cookies, or credentials.
+- The rendered viewport is returned as a bounded inline JPEG or PNG for display beside the accessibility model; it is not persisted in the browser-local workspace record.
+- Caller-browser observation remains a tool-only alternative. The service receives a bounded accessibility snapshot but never receives the caller's browser session, cookies, or credentials, and the human UI does not expose snapshot entry.
 - Caller-browser generated tools return bounded action data with `completed: false`; they cannot invoke the caller's other tools or claim that an external action occurred.
 - The MCP endpoint is deployment configuration, not a user-provided URL.
 - A same-origin deployment gives each open page its own MCP transport session and closes it on reset. The Node fallback keys distinct server-side sessions by unguessable workspace identifiers and expires inactive clients.
@@ -43,7 +45,7 @@ The supplied Node path therefore does not perform a second hostname resolution b
 
 Playwright MCP origin filters and application-layer hostname checks are not complete network boundaries. The supplied Cloudflare and Compose paths add lower network controls covering redirects and subresources. Other Browser MCP endpoints must independently enforce equivalent private-network egress before `BROWSER_MCP_EGRESS_ISOLATED=1` is set. Keep browser runtimes isolated, without host filesystem mounts or persistent authenticated profiles.
 
-A public same-origin MCP route is a powerful resource even when the product UI exposes only semantic generated tools. It is therefore opt-in on Cloudflare. When enabled, the deployment rejects cross-origin browser transport requests, limits them to 60 requests per source IP per minute, uses the account's browser quotas, isolates each Durable Object's protocol server, and closes browser contexts after failed analysis, reset, or page teardown. Production operators should also monitor abuse and account-level consumption.
+A public same-origin MCP route is a powerful resource even when the product UI exposes only semantic generated tools. It remains guarded by the explicit `HOSTED_BROWSER_ENABLED` deployment setting; the showcase enables it for the in-site viewer. The deployment rejects cross-origin browser transport requests, limits them to 60 requests per source IP per minute, uses the account's browser quotas, isolates each Durable Object's protocol server, and closes browser contexts after failed analysis, reset, or page teardown. Production operators should also monitor abuse and account-level consumption.
 
 ### Generated tool execution
 
@@ -65,7 +67,7 @@ A public same-origin MCP route is a powerful resource even when the product UI e
 - A restrictive Content Security Policy allows only same-origin scripts, styles, frames, and network connections.
 - The top-level page has no inline script or external CDN dependency.
 - Generated target labels are inserted with `textContent`, not HTML.
-- One versioned workspace is stored in same-origin IndexedDB. It can include pasted HTML, accessibility snapshots, reviewed metadata, recipes, and evaluation results; users must not include credentials or secrets in those inputs.
+- One versioned workspace is stored in same-origin IndexedDB. It can include tool-supplied HTML or accessibility observations, reviewed metadata, recipes, and evaluation results; callers must not include credentials or secrets in those inputs. Hosted page images are transient and excluded from the record.
 - Restored records are shape-checked before use, restored generated ToolSpecs pass through the normal registry validation, and control-plane name collisions or duplicate tool names fail closed.
 - Reset deletes the browser-local workspace. IndexedDB is not synchronized server-side, and storage failure falls back to the in-memory workflow.
 - Temporary export URLs and hosted browser sessions are never restored from IndexedDB.

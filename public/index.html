@@ -32,7 +32,7 @@
           <a id="landing-open-workspace" class="landing-button primary" href="#workspace">Build a WebMCP recipe <span aria-hidden="true">→</span></a>
           <a class="landing-button secondary" href="#how-it-works">See how it works</a>
         </div>
-        <p class="landing-note">Use a recipe immediately from the agent’s browser, or export and integrate it into a site you own.</p>
+        <p class="landing-note">Open a public site in the workspace, watch the recipe run, or export and integrate it into a site you own.</p>
       </div>
 
       <figure class="compatibility-figure" aria-labelledby="compatibility-caption">
@@ -67,7 +67,7 @@
     <dl class="landing-principles" aria-label="MetaWebMCP principles">
       <div><dt>Any observable site</dt><dd>Compatibility grows from the stable controls and state an agent can legitimately access.</dd></div>
       <div><dt>Recipes, not raw browsing</dt><dd>Meaningful operations hide repetitive click-and-type mechanics behind a narrow contract.</dd></div>
-      <div><dt>Use now or own it</dt><dd>Run recipes from the current browser session or export the same contracts as native WebMCP.</dd></div>
+      <div><dt>Use now or own it</dt><dd>Run recipes in the visible website session or export the same contracts as native WebMCP.</dd></div>
       <div><dt>Existing boundaries stay</dt><dd>Authentication, authorization, validation, and confirmation remain in force.</dd></div>
     </dl>
 
@@ -80,7 +80,7 @@
       <ol class="landing-steps">
         <li>
           <span>01</span>
-          <div><strong>Observe the real interface</strong><p>Use an owned page, supplied HTML, or an accessibility snapshot from the calling agent’s existing browser session.</p></div>
+          <div><strong>Open the real interface</strong><p>Enter a public URL. The workspace shows both the rendered page and the accessibility model used to derive tools.</p></div>
         </li>
         <li>
           <span>02</span>
@@ -104,7 +104,7 @@
           <div>
             <span class="destination-label">Agent-side compatibility</span>
             <h3>Operate the website as it exists.</h3>
-            <p>The calling agent keeps its current page and authenticated session. A generated WebMCP tool gives it a validated recipe with the accessible targets, inputs, and expected result needed to complete the workflow.</p>
+            <p>Use the workspace’s visible isolated session, or let a calling agent retain an authorized browser session. Either way, the generated tool provides a validated recipe with bounded targets, inputs, and expected results.</p>
             <ul><li>No change to the target site</li><li>No unrestricted JavaScript</li><li>Reusable semantic invocation</li></ul>
           </div>
         </article>
@@ -153,74 +153,53 @@
     <main id="workspace" class="workspace" tabindex="-1">
       <section class="target-column" aria-labelledby="target-title">
         <div class="section-heading target-heading">
-          <span class="eyebrow">Build brief</span>
-          <h2 id="target-title">Choose a surface.</h2>
-          <p>Start with a page you own, or bring an observation from the calling agent’s browser.</p>
+          <span class="eyebrow">Website inspector</span>
+          <h2 id="target-title">Open a website.</h2>
+          <p>Enter a public URL. MetaWebMCP opens it in an isolated browser and keeps the page, accessibility model, recipes, and results together here.</p>
         </div>
 
-        <div class="mode-switch" role="group" aria-label="MetaWebMCP mode">
-          <button id="owner-mode" class="mode-button" type="button" aria-pressed="true"><strong>Owned page</strong><small>Native export</small></button>
-          <button id="adapter-mode" class="mode-button" type="button" aria-pressed="false"><strong>Any public site</strong><small>Caller browser</small></button>
-        </div>
-
-        <div id="owner-source-controls" class="source-controls">
-          <label class="field-label" for="source-kind">Page source</label>
-          <select id="source-kind">
-            <option value="demo">Controlled legacy demo</option>
-            <option value="url">Public URL · static HTML scan</option>
-            <option value="html">Paste HTML</option>
-          </select>
-        </div>
-
-        <div id="adapter-source-controls" class="source-controls hidden">
-          <label class="field-label" for="adapter-source-kind">Browser responsibility</label>
-          <select id="adapter-source-kind">
-            <option value="agent_snapshot">Calling agent supplies snapshot</option>
-            <option value="browser_mcp">Hosted Browser MCP · opt-in</option>
-          </select>
-        </div>
-
-        <div id="url-field" class="field hidden">
-          <label class="field-label" for="target-url">Target URL</label>
-          <input id="target-url" type="url" placeholder="https://example.com" autocomplete="url">
-        </div>
-
-        <div id="html-field" class="field hidden">
-          <label class="field-label" for="target-html">Target HTML</label>
-          <textarea id="target-html" rows="7" spellcheck="false" placeholder="Paste the page HTML here…"></textarea>
-        </div>
-
-        <div id="snapshot-field" class="field hidden">
-          <label class="field-label" for="target-snapshot">Accessibility snapshot</label>
-          <textarea id="target-snapshot" rows="7" spellcheck="false" placeholder="Have the calling agent navigate to the target, capture its accessibility snapshot, and pass or paste it here…"></textarea>
-          <small class="field-help">The target stays in the caller’s browser. This observation and its generated recipes are saved only in this browser until Reset.</small>
+        <div id="url-field" class="field">
+          <label class="field-label" for="target-url">Website URL</label>
+          <div class="url-entry">
+            <input id="target-url" type="url" placeholder="https://example.com" autocomplete="url" required>
+            <button id="use-demo-button" class="sample-button" type="button">Use sample</button>
+          </div>
+          <small class="field-help">Public HTTP(S) pages only. Private networks and credential-bearing URLs are blocked.</small>
         </div>
 
         <div class="field">
-          <label class="field-label" for="goal">Desired outcome</label>
-          <textarea id="goal" rows="3">Find conference sessions, add the useful ones to an itinerary, and inspect the resulting plan.</textarea>
+          <label class="field-label" for="goal">What should an agent be able to do?</label>
+          <textarea id="goal" rows="3">Find the primary actions on this website and turn the useful ones into simple tools.</textarea>
         </div>
 
         <button id="analyze-button" class="primary-button" type="button">
-          <span>Observe this interface</span><kbd>1</kbd>
+          <span>Open and inspect website</span><kbd>1</kbd>
         </button>
 
-        <div id="mcp-notice" class="mcp-notice hidden">
-          <div><span class="notice-dot"></span><strong id="mcp-title">Browser MCP</strong></div>
-          <p id="mcp-copy">Checking the configured Streamable HTTP endpoint.</p>
+        <div id="mcp-notice" class="mcp-notice">
+          <div><span class="notice-dot"></span><strong id="mcp-title">Hosted website viewer</strong></div>
+          <p id="mcp-copy">Checking the isolated browser runtime.</p>
         </div>
 
         <div class="target-stage">
           <div class="stage-toolbar">
-            <span class="stage-address"><i aria-hidden="true"></i><span id="stage-label">Uninstrumented target</span></span>
-            <span id="stage-state">No WebMCP</span>
+            <span class="stage-address"><i aria-hidden="true"></i><span id="stage-label">Website preview</span></span>
+            <span id="stage-state">Waiting for URL</span>
           </div>
-          <iframe id="target-frame" title="Uninstrumented conference planner" src="/demo/"></iframe>
-          <pre id="snapshot-preview" class="snapshot-preview hidden" aria-label="Browser MCP snapshot"></pre>
-          <div id="stage-placeholder" class="stage-placeholder hidden">
-            <strong>Static integration analysis</strong>
-            <p>MetaWebMCP can inspect supplied evidence and export native code. Third-party actions stay with the calling agent unless a hosted browser is explicitly enabled.</p>
+          <div id="stage-view-switch" class="stage-view-switch hidden" role="tablist" aria-label="Target website views">
+            <button id="visual-view-tab" type="button" role="tab" aria-selected="true" aria-controls="visual-view">Page view</button>
+            <button id="accessibility-view-tab" type="button" role="tab" aria-selected="false" aria-controls="snapshot-preview">Accessibility</button>
+            <a id="stage-open-target" href="#" target="_blank" rel="noreferrer" class="hidden">Open original ↗</a>
           </div>
+          <iframe id="target-frame" class="hidden" title="Uninstrumented conference planner" src="/demo/"></iframe>
+          <div id="visual-view" class="visual-view" role="tabpanel" aria-labelledby="visual-view-tab">
+            <img id="target-screenshot" class="target-screenshot hidden" alt="Current website view captured by the isolated browser">
+            <div id="stage-placeholder" class="stage-placeholder">
+              <strong id="stage-placeholder-title">Your website view will appear here</strong>
+              <p id="stage-placeholder-copy">Enter a public URL and inspect it. You will be able to see the rendered page and the accessibility model used to derive tools.</p>
+            </div>
+          </div>
+          <pre id="snapshot-preview" class="snapshot-preview hidden" role="tabpanel" aria-labelledby="accessibility-view-tab"></pre>
         </div>
       </section>
 
@@ -247,7 +226,7 @@
               <h2>If native tools do not appear</h2>
               <p>The numbered controls call the same implementations as the seven registered meta-tools.</p>
               <ol class="run-steps">
-                <li>Keep <strong>Owned page → Controlled legacy demo</strong>, then choose <strong>Observe this interface</strong>.</li>
+                <li>Enter a public URL, or choose <strong>Use sample</strong>, then select <strong>Open and inspect website</strong>.</li>
                 <li>Review the candidates and choose <strong>Shape selected tools</strong>.</li>
                 <li>Choose <strong>Activate tools</strong>.</li>
                 <li>Choose <strong>Run live checks</strong>.</li>
