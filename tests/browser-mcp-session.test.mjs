@@ -28,6 +28,10 @@ test('page-scoped Browser MCP session analyzes and executes through one transpor
   const fetchMock = async (input, options = {}) => {
     const url = new URL(input);
     requests.push({ pathname: url.pathname, method: options.method || 'GET' });
+    assert.equal(options.credentials, 'same-origin');
+    if (url.pathname === '/api/browser-session') {
+      return json({ ok: true, expiresInSeconds: 1200 }, { status: 201 });
+    }
     if (url.pathname === '/api/config') {
       return json({ ok: true, browserMcpConfigured: true, browserMcpEndpoint: '/mcp' });
     }
@@ -91,6 +95,7 @@ test('page-scoped Browser MCP session analyzes and executes through one transpor
   assert.equal(result.trace.length, 4);
   await session.reset('workspace_page_1234567');
 
+  assert.equal(requests.filter((request) => request.pathname === '/api/browser-session').length, 1);
   assert.equal(requests.filter((request) => request.pathname === '/api/config').length, 1);
   assert.equal(requests.filter((request) => request.pathname === '/api/mcp/analyze-snapshot').length, 1);
   assert.equal(requests.some((request) => request.pathname === '/api/mcp/analyze'), false);
@@ -111,6 +116,7 @@ test('page-scoped Browser MCP session blocks local targets before navigation', a
   const toolCalls = [];
   const fetchMock = async (input, options = {}) => {
     const url = new URL(input);
+    if (url.pathname === '/api/browser-session') return json({ ok: true, expiresInSeconds: 1200 }, { status: 201 });
     if (url.pathname === '/api/config') return json({ ok: true, browserMcpConfigured: true, browserMcpEndpoint: '/mcp' });
     const message = JSON.parse(options.body);
     if (message.method === 'initialize') {

@@ -47,6 +47,8 @@ export class BrowserMcpSession {
     this.fetch = options.fetch ?? globalThis.fetch.bind(globalThis);
     this.baseUrl = options.baseUrl ?? globalThis.location?.href ?? 'http://localhost/';
     this.configPath = options.configPath ?? '/api/config';
+    this.capabilityPath = options.capabilityPath ?? '/api/browser-session';
+    this.capabilityPromise = null;
     this.configurationPromise = null;
     this.client = null;
   }
@@ -56,15 +58,25 @@ export class BrowserMcpSession {
   }
 
   async json(path, options = {}) {
-    const response = await this.fetch(this.url(path), options);
+    const response = await this.fetch(this.url(path), { credentials: 'same-origin', ...options });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok || payload.ok === false) throw new Error(payload.error || `Request failed with HTTP ${response.status}.`);
     return payload;
   }
 
+  async ensureCapability() {
+    if (!this.capabilityPromise) {
+      this.capabilityPromise = this.json(this.capabilityPath, { method: 'POST' }).catch((error) => {
+        this.capabilityPromise = null;
+        throw error;
+      });
+    }
+    return this.capabilityPromise;
+  }
+
   async configuration() {
     if (!this.configurationPromise) {
-      this.configurationPromise = this.json(this.configPath).catch((error) => {
+      this.configurationPromise = this.ensureCapability().then(() => this.json(this.configPath)).catch((error) => {
         this.configurationPromise = null;
         throw error;
       });
@@ -79,7 +91,7 @@ export class BrowserMcpSession {
       const Client = configuration.browserMcpTransport === 'sse' ? McpSseClient : McpHttpClient;
       this.client = new Client(configuration.browserMcpEndpoint, {
         baseUrl: this.baseUrl,
-        fetch: this.fetch,
+        fetch: (input, options = {}) => this.fetch(input, { credentials: 'same-origin', ...options }),
       });
     }
     return this.client;

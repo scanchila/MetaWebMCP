@@ -14,10 +14,11 @@ Requirements:
 cd deploy/cloudflare
 npm ci
 npm run check
+npx wrangler secret put MCP_CAPABILITY_SECRET
 npm run deploy
 ```
 
-The checked-in configuration publishes `metawebmcp.neuryta.com`. Change `routes` and the Worker name before deploying a fork.
+Set `MCP_CAPABILITY_SECRET` to a randomly generated value of at least 32 bytes. The checked-in configuration publishes `metawebmcp.neuryta.com`. Change `routes` and the Worker name before deploying a fork.
 
 ## Runtime layout
 
@@ -25,7 +26,7 @@ The checked-in configuration publishes `metawebmcp.neuryta.com`. Change `routes`
 - The Worker handles `/health`, analysis, export, and expiring ZIP downloads.
 - `PlaywrightMCP` is a Durable Object backed by the Browser Run binding.
 - The page uses the package's SSE endpoint so one control connection remains open for the life of the browser session.
-- Browser transport requests require a same-origin browser request and are limited to 60 requests per source IP per minute.
+- Browser transport requests require a same-origin, short-lived signed capability stored in an HttpOnly SameSite cookie and are limited to 60 requests per source IP per minute.
 - Generated recipes still pass through MetaWebMCP's narrow tool allowlist; the raw browser tool surface is not registered with WebMCP.
 
 ## Compatibility pins

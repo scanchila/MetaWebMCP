@@ -153,7 +153,7 @@ npx @playwright/mcp@latest \
 BROWSER_MCP_URL=http://127.0.0.1:8931/mcp npm start
 ```
 
-The Node bridge validates initial URLs, blocks private/reserved networks by default, and can restrict initial browser targets with `BROWSER_ALLOWED_ORIGINS`. Generated recipes cannot issue new navigation calls. The hosted Browser MCP endpoint narrows its advertised operations, validates explicit navigation, and blocks direct local, private, reserved, and common metadata destinations inside the browser context. Application checks do not replace network egress policy or defend completely against DNS rebinding; keep the browser isolated and unauthenticated.
+The Node bridge validates initial URLs, blocks private/reserved networks by default, and can restrict initial browser targets with `BROWSER_ALLOWED_ORIGINS`. Browser operations require a short-lived, signed, HttpOnly page capability, and server-side browser clients are keyed by both that capability and the page workspace. Generated recipes cannot issue new navigation calls. The hosted Browser MCP endpoint narrows its advertised operations, validates explicit navigation, and blocks direct local, private, reserved, and common metadata destinations inside the browser context. Application checks do not replace network egress policy or defend completely against DNS rebinding; keep the browser isolated and unauthenticated.
 
 ## Configuration
 
@@ -162,6 +162,7 @@ The Node bridge validates initial URLs, blocks private/reserved networks by defa
 | `PORT` | `8787` | HTTP port |
 | `HOST` | `0.0.0.0` | Bind address |
 | `BROWSER_MCP_URL` | empty | Streamable HTTP endpoint, normally `http://127.0.0.1:8931/mcp` |
+| `MCP_CAPABILITY_SECRET` | random per process | Secret of at least 32 bytes used to sign page-issued Browser MCP capabilities; set explicitly when running multiple instances |
 | `MCP_SESSION_TTL_MS` | `1200000` | Inactivity timeout for each page-scoped Browser MCP client |
 | `ALLOW_PRIVATE_TARGETS` | `0` | Local development override; never enable on a public deployment |
 | `BROWSER_ALLOWED_ORIGINS` | empty | Optional comma-separated initial target origin allowlist |

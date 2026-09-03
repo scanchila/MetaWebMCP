@@ -32,6 +32,20 @@ async function waitForHealth(url, child) {
   throw lastError || new Error('MetaWebMCP did not become healthy.');
 }
 
+async function pageCapabilityCookie(base) {
+  const response = await fetch(`${base}/api/browser-session`, {
+    method: 'POST',
+    headers: { origin: base },
+  });
+  assert.equal(response.status, 201);
+  assert.equal((await response.json()).expiresInSeconds, 1200);
+  const setCookie = response.headers.get('set-cookie') || '';
+  assert.match(setCookie, /metawebmcp_browser_capability=/);
+  assert.match(setCookie, /HttpOnly/);
+  assert.match(setCookie, /SameSite=Strict/);
+  return setCookie.split(';', 1)[0];
+}
+
 test('Browser MCP transport sessions are isolated by MetaWebMCP workspace', { timeout: 20_000 }, async (t) => {
   let nextSession = 1;
   const initializedSessions = [];
@@ -126,9 +140,28 @@ test('Browser MCP transport sessions are isolated by MetaWebMCP workspace', { ti
   await waitForHealth(`${base}/health`, child);
   const alpha = 'workspace_alpha_123456';
   const beta = 'workspace_beta_1234567';
+  const unauthorized = await fetch(`${base}/api/mcp/status?workspace_id=${alpha}`);
+  assert.equal(unauthorized.status, 401);
+  assert.deepEqual(initializedSessions, []);
+  const crossOrigin = await fetch(`${base}/api/browser-session`, {
+    method: 'POST',
+    headers: { origin: 'https://attacker.example' },
+  });
+  assert.equal(crossOrigin.status, 403);
+  const cookie = await pageCapabilityCookie(base);
+  const reused = await fetch(`${base}/api/browser-session`, {
+    method: 'POST',
+    headers: { origin: base, cookie },
+  });
+  assert.equal(reused.status, 201);
+  assert.equal(reused.headers.get('set-cookie'), null);
+  assert.ok((await reused.json()).expiresInSeconds > 0);
+  const otherCookie = await pageCapabilityCookie(base);
 
   for (const workspace of [alpha, beta, alpha]) {
-    const response = await fetch(`${base}/api/mcp/status?workspace_id=${workspace}`);
+    const response = await fetch(`${base}/api/mcp/status?workspace_id=${workspace}`, {
+      headers: { cookie },
+    });
     assert.equal(response.status, 200);
     const payload = await response.json();
     assert.equal(payload.configured, true);
@@ -139,22 +172,30 @@ test('Browser MCP transport sessions are isolated by MetaWebMCP workspace', { ti
   const listSessions = requestSessions.filter((item) => item.method === 'tools/list').map((item) => item.session);
   assert.deepEqual(listSessions, ['mock-session-1', 'mock-session-2', 'mock-session-1']);
 
+  const isolatedCapability = await fetch(`${base}/api/mcp/status?workspace_id=${alpha}`, {
+    headers: { cookie: otherCookie },
+  });
+  assert.equal(isolatedCapability.status, 200);
+  assert.deepEqual(initializedSessions, ['mock-session-1', 'mock-session-2', 'mock-session-3']);
+
   const reset = await fetch(`${base}/api/mcp/reset`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', cookie },
     body: JSON.stringify({ workspaceId: alpha }),
   });
   assert.equal(reset.status, 200);
   assert.deepEqual(deletedSessions, ['mock-session-1']);
 
-  const restarted = await fetch(`${base}/api/mcp/status?workspace_id=${alpha}`);
+  const restarted = await fetch(`${base}/api/mcp/status?workspace_id=${alpha}`, {
+    headers: { cookie },
+  });
   assert.equal(restarted.status, 200);
-  assert.deepEqual(initializedSessions, ['mock-session-1', 'mock-session-2', 'mock-session-3']);
+  assert.deepEqual(initializedSessions, ['mock-session-1', 'mock-session-2', 'mock-session-3', 'mock-session-4']);
 
   const callsBeforeRejectedRecipe = requestSessions.filter((item) => item.method === 'tools/call').length;
   const rejectedRecipe = await fetch(`${base}/api/mcp/execute`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', cookie },
     body: JSON.stringify({
       workspaceId: alpha,
       executor: {
@@ -280,10 +321,11 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
 
   const base = `http://127.0.0.1:${appPort}`;
   await waitForHealth(`${base}/health`, child);
+  const cookie = await pageCapabilityCookie(base);
   const workspaceId = 'workspace_contract_123456';
   const analyzed = await fetch(`${base}/api/mcp/analyze`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', cookie },
     body: JSON.stringify({ workspaceId, url: 'https://shop.example/', goal: 'Find sessions.' }),
   });
   assert.equal(analyzed.status, 200);
@@ -293,7 +335,7 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
 
   const snapshotAnalyzed = await fetch(`${base}/api/mcp/analyze-snapshot`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', cookie },
     body: JSON.stringify({
       snapshot: '- textbox "Query" [ref=s1]\n- button "Search" [ref=s2]',
       url: 'https://shop.example/',
@@ -306,7 +348,7 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
 
   const executed = await fetch(`${base}/api/mcp/execute`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', cookie },
     body: JSON.stringify({
       workspaceId,
       executor: capability.executor,
