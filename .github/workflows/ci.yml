@@ -20,5 +20,7 @@ jobs:
       - run: npm test
       - run: npm ci
         working-directory: deploy/cloudflare
+      - run: npm run audit
+        working-directory: deploy/cloudflare
       - run: npm run check
         working-directory: deploy/cloudflare
