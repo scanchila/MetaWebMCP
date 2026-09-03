@@ -25,6 +25,8 @@ const elements = {
   stagePlaceholder: $('#stage-placeholder'),
   stageLabel: $('#stage-label'),
   stageState: $('#stage-state'),
+  clientGuide: $('#client-guide'),
+  clientStatusCopy: $('#client-status-copy'),
   progressSummary: $('#progress-summary'),
   trace: $('#trace'),
   capabilitySection: $('#capability-section'),
@@ -298,12 +300,19 @@ function renderRegistry() {
   if (registry.nativeSupported && nativeCount === tools.length && tools.length) {
     elements.nativeStatus.className = 'status-pill native';
     elements.nativeStatus.innerHTML = '<i></i>WebMCP active';
+    elements.clientStatusCopy.textContent = `${nativeCount} tools are registered through this browser’s native WebMCP client.`;
   } else if (registry.nativeSupported) {
     elements.nativeStatus.className = 'status-pill preview';
     elements.nativeStatus.innerHTML = '<i></i>WebMCP partial';
+    elements.clientStatusCopy.textContent = 'Native WebMCP is present, but not every tool registered. Use the numbered fallback if tools are missing.';
   } else {
     elements.nativeStatus.className = 'status-pill preview';
     elements.nativeStatus.innerHTML = '<i></i>Preview registry';
+    elements.clientStatusCopy.textContent = 'This browser has no native WebMCP client. The numbered controls run the same complete workflow.';
+    if (!elements.clientGuide.dataset.autoOpened) {
+      elements.clientGuide.open = true;
+      elements.clientGuide.dataset.autoOpened = 'true';
+    }
   }
 }
 

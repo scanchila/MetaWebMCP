@@ -33,6 +33,20 @@ The deployed build has been exercised through a real browser `document.modelCont
 
 Screenshots and redacted machine-readable results are retained in [`evidence/`](evidence/). The production workspace scored 96 for Lighthouse performance and 100 for accessibility, best practices, SEO, and agentic browsing; the independently served native export scored 100 in all five categories.
 
+## Run it in ChatGPT
+
+The native Site Tools path currently requires the latest ChatGPT desktop app's built-in browser, opened to MetaWebMCP as a top-level page. Use ChatGPT Work or Codex with GPT‑5.6 Sol or Terra. Site Tools are disabled on Luna, unavailable in ChatGPT Enterprise and Edu, and still rolling out, so an otherwise eligible workspace may not expose them yet. See the current [Site Tools setup reference](https://learn.chatgpt.com/docs/webmcp).
+
+When native discovery is available, the header reads **WebMCP active** and the seven `meta_*` tools appear in the client. If the header reads **Preview registry**, the ordinary browser fallback exercises the same implementations without native tool discovery:
+
+1. Keep **Owned page → Controlled legacy demo**, then select **Observe this interface** (1).
+2. Review the evidence-backed candidates and select **Shape selected tools** (2).
+3. Select **Activate tools** (3).
+4. Select **Run live checks** (4).
+5. Select **Export native repository** (5), download the ZIP, and compare it with the retained production evidence.
+
+The controlled fallback needs no account, credentials, model API, or external service. It demonstrates the same analysis, contract creation, dynamic registry, deterministic checks, and native export; only client-driven intent selection is replaced by explicit button presses.
+
 ## What is included
 
 - A polished, top-level MetaWebMCP workspace.

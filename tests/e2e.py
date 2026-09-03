@@ -186,6 +186,42 @@ def main() -> int:
             )
             try:
                 context = browser.new_context(viewport={"width": 1840, "height": 1120}, device_scale_factor=1)
+
+                preview_page = context.new_page()
+                preview_page.set_default_timeout(12_000)
+                preview_page.on(
+                    "console",
+                    lambda message: console_errors.append(f"preview: {message.text}")
+                    if message.type == "error"
+                    else None,
+                )
+                preview_page.on("pageerror", lambda error: console_errors.append(f"preview: {error}"))
+                preview_page.set_content(index_html, wait_until="domcontentloaded")
+                preview_page.add_style_tag(content=styles)
+                preview_page.add_script_tag(content=app_source, type="module")
+                preview_page.wait_for_function("window.MetaWebMCP")
+                assert preview_page.locator("#native-status").inner_text() == "Preview registry"
+                assert preview_page.locator("#client-guide").evaluate("element => element.open") is True
+                assert "no native WebMCP client" in preview_page.locator("#client-status-copy").inner_text()
+                assert preview_page.locator("#client-guide .run-steps li").count() == 5
+                guide_text = preview_page.locator("#client-guide").inner_text()
+                for expected in [
+                    "latest ChatGPT desktop app",
+                    "ChatGPT Work or Codex",
+                    "GPT‑5.6 Sol or Terra",
+                    "disabled on Luna",
+                    "Enterprise and Edu",
+                    "every eligible workspace",
+                ]:
+                    assert expected in guide_text, expected
+                for width in [900, 390]:
+                    preview_page.set_viewport_size({"width": width, "height": 844})
+                    assert preview_page.evaluate("document.documentElement.scrollWidth <= window.innerWidth") is True
+                preview_page.close()
+                result["checks"].append(
+                    "client prerequisites and responsive five-step non-native fallback"
+                )
+
                 page = context.new_page()
                 page.set_default_timeout(12_000)
                 progress("Chromium page created")
@@ -254,6 +290,8 @@ def main() -> int:
                 progress("loading production browser modules")
                 page.add_script_tag(content=app_source, type="module")
                 page.wait_for_function("window.MetaWebMCP && Object.keys(window.__nativeTools || {}).length === 7")
+                assert page.locator("#native-status").inner_text() == "WebMCP active"
+                assert "7 tools are registered" in page.locator("#client-status-copy").inner_text()
 
                 assert page.locator('[role="tablist"], [role="tab"], [aria-selected]').count() == 0
                 assert page.locator('#owner-mode[aria-pressed="true"]').count() == 1
