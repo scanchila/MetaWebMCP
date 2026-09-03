@@ -45,6 +45,7 @@ if not DEPLOYMENT_VERSION:
     raise RuntimeError('Set META_WEBMCP_DEPLOYMENT_VERSION to the deployed Worker version.')
 
 CHROME = chrome_executable()
+CAPTURE_SCRIPT_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def native_execute(page, name, arguments):
@@ -335,6 +336,8 @@ def main():
                 },
                 'evaluation': {
                     'ok': evaluation.get('ok'),
+                    'complete': evaluation.get('complete'),
+                    'coverage': evaluation.get('coverage'),
                     'results': [
                         {
                             'tool': item.get('tool'),
@@ -367,6 +370,8 @@ def main():
                 'deployment': APP_URL,
                 'deploymentVersion': DEPLOYMENT_VERSION,
                 'sourceCommit': SOURCE_COMMIT,
+                'captureScript': Path(__file__).name,
+                'captureScriptSha256': CAPTURE_SCRIPT_SHA256,
                 'browser': f'Google Chrome {browser.version} beta',
                 'browserLaunch': {
                     'executable': Path(CHROME).name,

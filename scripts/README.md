@@ -1,6 +1,6 @@
 # Release evidence scripts
 
-The capture scripts reproduce the native WebMCP and hosted public-site records in `evidence/`. They require Python Playwright and a Chrome build that supports the `WebMCPTesting` feature.
+The capture scripts reproduce the native WebMCP and hosted public-site records in `evidence/`. They require Python Playwright and a Chrome build that supports the `WebMCPTesting` feature. Each retained result records the capture script's SHA-256 digest, the exact deployed source commit and Worker version, the browser launch configuration, and deployed asset digests so a rerun can be tied to its inputs.
 
 Set the exact deployed Worker version and source commit before capture:
 
@@ -28,4 +28,4 @@ node scripts/summarize-lighthouse.mjs \
   evidence/lighthouse-production-summary.json
 ```
 
-For the native-export Lighthouse record, extract `evidence/relay-sessions-webmcp.zip`, run its `node serve.mjs`, capture `http://127.0.0.1:4173` to `evidence/lighthouse-native-export-report.json`, and pass that report through the same summarizer. Each summary records the raw report hash, source commit, Worker version, browser, and form factor.
+For repeated production samples, retain every complete report under a distinct filename and record the sample set in `evidence/lighthouse-production-samples.json`; do not replace a slower valid sample with only the best run. For the native-export Lighthouse record, extract the exact retained `evidence/relay-sessions-webmcp.zip`, run its `node serve.mjs`, capture `http://127.0.0.1:4173` to `evidence/lighthouse-native-export-report.json`, and pass that report through the same summarizer. Each summary records the raw report hash, source commit, Worker version, browser, and form factor.

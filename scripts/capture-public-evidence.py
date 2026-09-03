@@ -47,6 +47,7 @@ if not DEPLOYMENT_VERSION:
     raise RuntimeError('Set META_WEBMCP_DEPLOYMENT_VERSION to the deployed Worker version.')
 
 CHROME = chrome_executable()
+CAPTURE_SCRIPT_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 CASES = [
     {
@@ -198,6 +199,8 @@ def main():
         'deployment': APP_URL,
         'deploymentVersion': DEPLOYMENT_VERSION,
         'sourceCommit': SOURCE_COMMIT,
+        'captureScript': Path(__file__).name,
+        'captureScriptSha256': CAPTURE_SCRIPT_SHA256,
         'runtime': 'Cloudflare Browser Run with Playwright MCP',
         'entrypoint': 'native document.modelContext',
         'feature': 'WebMCPTesting',
@@ -208,6 +211,8 @@ def main():
         raise RuntimeError('Existing evidence belongs to a different deployment version.')
     if report.get('sourceCommit') != SOURCE_COMMIT:
         raise RuntimeError('Existing evidence belongs to a different source commit.')
+    report['captureScript'] = Path(__file__).name
+    report['captureScriptSha256'] = CAPTURE_SCRIPT_SHA256
     selected_cases = [case for case in CASES if CASE_SLUG in (None, case['slug'])]
     if not selected_cases:
         raise RuntimeError(f'Unknown evidence case: {CASE_SLUG}')
@@ -258,15 +263,22 @@ def main():
                           const executeNative = async (name, args) => {
                             const tool = (await document.modelContext.getTools()).find(candidate => candidate.name === name);
                             if (!tool) throw new Error(`Native WebMCP tool not found: ${name}`);
-                            const raw = await document.modelContext.executeTool(tool, JSON.stringify(args));
-                            if (raw === null || typeof raw !== 'string') return raw;
-                            try { return JSON.parse(raw); } catch { return raw; }
+                            try {
+                              const raw = await document.modelContext.executeTool(tool, JSON.stringify(args));
+                              if (raw === null || typeof raw !== 'string') return raw;
+                              try { return JSON.parse(raw); } catch { return raw; }
+                            } catch (error) {
+                              const trace = window.MetaWebMCP?.getState?.().recentTrace?.slice(-4) || [];
+                              throw new Error(`${name} failed: ${error?.message || error}; trace=${JSON.stringify(trace)}`);
+                            }
                           };
                           const analysis = await executeNative('meta_analyze_site', {
                             source: 'browser_mcp', url: stageInfo.url, goal: stageInfo.goal,
                           });
                           const { browserMcpSession } = await import('/js/browser-mcp-session.js');
                           const client = await browserMcpSession.directClient();
+                          if (!client) throw new Error('Page-owned Browser MCP client was unavailable.');
+                          const availableMcpTools = (await client.listTools()).map(tool => tool.name).sort();
                           const sessionIdAfterAnalysis = client?.sessionId || client?.messageEndpoint || null;
                           const candidate = analysis.capabilities.find(tool => tool.name === stageInfo.tool);
                           if (!candidate) {
@@ -306,8 +318,9 @@ def main():
                               summary: analysis.summary,
                               warnings: analysis.warnings,
                               runtime: {
-                                transport: analysis.mcp?.transport,
-                                availableToolCount: analysis.mcp?.availableTools?.length || 0,
+                                transport: 'page',
+                                availableToolCount: availableMcpTools.length,
+                                availableTools: availableMcpTools,
                                 sessionEstablished: Boolean(sessionIdAfterAnalysis),
                                 sessionReused: Boolean(sessionIdAfterAnalysis && sessionIdAfterAnalysis === sessionIdAfterExecution),
                               },
