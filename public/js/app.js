@@ -759,7 +759,6 @@ async function exportWebMcp(input = {}) {
 function getMetaState() {
   return {
     mode: state.mode,
-    workspaceId,
     phase: state.phase,
     source: clone(state.analysis?.source || null),
     goal: state.analysis?.goal || elements.goal.value,

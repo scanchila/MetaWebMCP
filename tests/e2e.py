@@ -104,7 +104,10 @@ def build_browser_sources() -> tuple[str, str, str, str]:
 
 
 def make_api_bridge(base_url: str):
+    cookie = ""
+
     def api_bridge(request: dict[str, Any]) -> dict[str, Any]:
+        nonlocal cookie
         path = str(request.get("path", "/"))
         if not path.startswith("/"):
             raise ValueError("Test bridge accepts only same-origin paths")
@@ -112,12 +115,19 @@ def make_api_bridge(base_url: str):
         body = request.get("body")
         data = None if body is None else str(body).encode("utf-8")
         headers = {str(k): str(v) for k, v in (request.get("headers") or {}).items()}
+        if cookie:
+            headers["Cookie"] = cookie
+        if path == "/api/browser-session":
+            headers["Sec-Fetch-Site"] = "same-origin"
         outgoing = urllib.request.Request(f"{base_url}{path}", data=data, headers=headers, method=method)
         try:
             with urllib.request.urlopen(outgoing, timeout=12) as response:
+                response_headers = dict(response.headers.items())
+                if response.headers.get("Set-Cookie"):
+                    cookie = response.headers["Set-Cookie"].split(";", 1)[0]
                 return {
                     "status": response.status,
-                    "headers": dict(response.headers.items()),
+                    "headers": response_headers,
                     "body": response.read().decode("utf-8"),
                 }
         except urllib.error.HTTPError as error:
@@ -390,6 +400,7 @@ def main() -> int:
                     "meta_test_webmcp",
                 ]
                 assert native_names == expected_meta, native_names
+                assert "workspaceId" not in page.evaluate("window.MetaWebMCP.getState()")
                 assert page.locator("#target-frame").evaluate("frame => frame.contentDocument.modelContext === undefined") is True
                 result["checks"].append("seven native meta-tools; target has no WebMCP registry")
 

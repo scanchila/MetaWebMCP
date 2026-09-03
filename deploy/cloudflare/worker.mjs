@@ -2,6 +2,12 @@ import { env as runtimeEnv } from 'cloudflare:workers';
 import { createMcpAgent } from '@cloudflare/playwright-mcp';
 
 import { analyzeAccessibilitySnapshot, analyzeHtml } from '../../lib/analyzer.mjs';
+import {
+  BROWSER_CAPABILITY_TTL_SECONDS,
+  browserCapabilityCookie,
+  issueBrowserCapability,
+  verifyBrowserCapabilityCookie,
+} from '../../lib/browser-capability.mjs';
 import { generateProjectZip } from '../../lib/generator.mjs';
 import {
   BROWSER_MCP_TOOL_NAMES,
@@ -53,11 +59,12 @@ function json(value, init = {}) {
 
 function errorResponse(error) {
   const message = error instanceof Error ? error.message : String(error);
-  const status = /exceeds|too large/i.test(message)
-    ? 413
-    : /blocked|valid|invalid|empty|must|only|requires|unsupported|not found/i.test(message)
-      ? 400
-      : 500;
+  const status = error?.statusCode
+    || (/exceeds|too large/i.test(message)
+      ? 413
+      : /blocked|valid|invalid|empty|must|only|requires|unsupported|not found/i.test(message)
+        ? 400
+        : 500);
   return json({ ok: false, error: message }, { status });
 }
 
@@ -131,6 +138,28 @@ async function browserRequestWithinLimit(request, bindings) {
   const key = request.headers.get('cf-connecting-ip') || 'local';
   const result = await bindings.BROWSER_RATE_LIMITER.limit({ key });
   return result.success;
+}
+
+function browserCapabilitySecret(bindings) {
+  if (typeof bindings.MCP_CAPABILITY_SECRET !== 'string' || bindings.MCP_CAPABILITY_SECRET.length < 32) {
+    const error = new Error('Browser capability secret is not configured.');
+    error.statusCode = 503;
+    throw error;
+  }
+  return bindings.MCP_CAPABILITY_SECRET;
+}
+
+async function requireBrowserCapability(request, bindings) {
+  const capability = await verifyBrowserCapabilityCookie(
+    request.headers.get('cookie'),
+    browserCapabilitySecret(bindings),
+  );
+  if (!capability) {
+    const error = new Error('A valid page-issued browser capability is required.');
+    error.statusCode = 401;
+    throw error;
+  }
+  return capability;
 }
 
 async function validateBrowserTransportRequest(request) {
@@ -230,6 +259,35 @@ export default {
   async fetch(request, bindings, context) {
     const { pathname } = new URL(request.url);
     try {
+      if (pathname === '/api/browser-session') {
+        if (request.method !== 'POST') return json({ ok: false, error: 'Method not allowed.' }, { status: 405 });
+        if (!sameOrigin(request)) return json({ ok: false, error: 'Same-origin page session required.' }, { status: 403 });
+        if (!await browserRequestWithinLimit(request, bindings)) return json({ ok: false, error: 'Browser request limit reached.' }, { status: 429 });
+        const secret = browserCapabilitySecret(bindings);
+        const existing = await verifyBrowserCapabilityCookie(request.headers.get('cookie'), secret);
+        const capability = existing || await issueBrowserCapability(secret);
+        const expiresInSeconds = existing
+          ? Math.max(1, existing.expiresAt - Math.floor(Date.now() / 1000))
+          : BROWSER_CAPABILITY_TTL_SECONDS;
+        return json({
+          ok: true,
+          expiresInSeconds,
+        }, {
+          status: 201,
+          headers: {
+            'cache-control': 'no-store',
+            vary: 'Origin',
+            ...(!existing ? {
+              'set-cookie': browserCapabilityCookie(capability.token, {
+                ttlSeconds: BROWSER_CAPABILITY_TTL_SECONDS,
+              }),
+            } : {}),
+          },
+        });
+      }
+      if (pathname === '/mcp' || pathname === '/sse' || pathname === '/sse/message' || pathname.startsWith('/api/mcp/')) {
+        await requireBrowserCapability(request, bindings);
+      }
       if (pathname === '/mcp') {
         if (!sameOrigin(request)) return json({ ok: false, error: 'Same-origin browser session required.' }, { status: 403 });
         if (!await browserRequestWithinLimit(request, bindings)) return json({ ok: false, error: 'Browser request limit reached.' }, { status: 429 });

@@ -5,6 +5,12 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 import { analyzeAccessibilitySnapshot, analyzeHtml } from './lib/analyzer.mjs';
+import {
+  BROWSER_CAPABILITY_TTL_SECONDS,
+  browserCapabilityCookie,
+  issueBrowserCapability,
+  verifyBrowserCapabilityCookie,
+} from './lib/browser-capability.mjs';
 import { generateProjectZip } from './lib/generator.mjs';
 import { McpHttpClient, flattenMcpText } from './lib/mcp-http-client.mjs';
 import { fetchTargetHtml, validateBrowserTarget } from './lib/security.mjs';
@@ -16,6 +22,7 @@ const PORT = Number(process.env.PORT || 8787);
 const HOST = process.env.HOST || '0.0.0.0';
 const BODY_LIMIT = 2_000_000;
 const BROWSER_MCP_URL = process.env.BROWSER_MCP_URL || '';
+const MCP_CAPABILITY_SECRET = process.env.MCP_CAPABILITY_SECRET || crypto.randomBytes(48).toString('base64url');
 const DOWNLOAD_TTL_MS = 20 * 60 * 1000;
 const MCP_SESSION_TTL_MS = Math.max(60_000, Number(process.env.MCP_SESSION_TTL_MS) || 20 * 60 * 1000);
 
@@ -92,12 +99,43 @@ async function readJson(req) {
   }
 }
 
-function workspaceKey(value) {
+function requestOrigin(req) {
+  const forwardedProtocol = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim();
+  const protocol = forwardedProtocol || (req.socket.encrypted ? 'https' : 'http');
+  return `${protocol}://${req.headers.host || 'localhost'}`;
+}
+
+function sameOriginPageRequest(req) {
+  const origin = req.headers.origin;
+  if (!origin) return req.headers['sec-fetch-site'] === 'same-origin';
+  try {
+    return new URL(origin).origin === new URL(requestOrigin(req)).origin;
+  } catch {
+    return false;
+  }
+}
+
+function secureRequest(req) {
+  return req.socket.encrypted
+    || String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https';
+}
+
+async function requireBrowserCapability(req) {
+  const capability = await verifyBrowserCapabilityCookie(req.headers.cookie, MCP_CAPABILITY_SECRET);
+  if (!capability) {
+    const error = new Error('A valid page-issued browser capability is required.');
+    error.statusCode = 401;
+    throw error;
+  }
+  return capability;
+}
+
+function workspaceKey(value, capabilityId) {
   const key = String(value || '');
   if (!/^[a-zA-Z0-9_-]{16,128}$/.test(key)) {
     throw new Error('A valid workspaceId is required for Browser MCP operations.');
   }
-  return key;
+  return `${capabilityId}:${key}`;
 }
 
 function pruneMcpClients() {
@@ -109,9 +147,9 @@ function pruneMcpClients() {
   }
 }
 
-function getMcpClient(workspaceId) {
+function getMcpClient(workspaceId, capabilityId) {
   if (!BROWSER_MCP_URL) throw new Error('BROWSER_MCP_URL is not configured. Start the Playwright MCP service or use the built-in demo.');
-  const key = workspaceKey(workspaceId);
+  const key = workspaceKey(workspaceId, capabilityId);
   pruneMcpClients();
   let entry = mcpClients.get(key);
   if (!entry) {
@@ -122,8 +160,8 @@ function getMcpClient(workspaceId) {
   return entry.client;
 }
 
-async function closeMcpClient(workspaceId) {
-  const key = workspaceKey(workspaceId);
+async function closeMcpClient(workspaceId, capabilityId) {
+  const key = workspaceKey(workspaceId, capabilityId);
   const entry = mcpClients.get(key);
   if (!entry) return;
   mcpClients.delete(key);
@@ -138,9 +176,9 @@ async function closeMcpClient(workspaceId) {
 const mcpPruneTimer = setInterval(pruneMcpClients, Math.min(MCP_SESSION_TTL_MS, 60_000));
 mcpPruneTimer.unref?.();
 
-async function analyzeWithBrowserMcp(body) {
+async function analyzeWithBrowserMcp(body, capabilityId) {
   const parsed = await validateBrowserTarget(body.url);
-  const client = getMcpClient(body.workspaceId);
+  const client = getMcpClient(body.workspaceId, capabilityId);
   const tools = await client.listTools();
   const names = new Set(tools.map((tool) => tool.name));
   for (const required of ['browser_navigate', 'browser_snapshot']) {
@@ -153,8 +191,8 @@ async function analyzeWithBrowserMcp(body) {
   return { ...analysis, mcp: { endpointConfigured: true, availableTools: [...names].sort() } };
 }
 
-async function executeMcpRecipe(body) {
-  const client = getMcpClient(body.workspaceId);
+async function executeMcpRecipe(body, capabilityId) {
+  const client = getMcpClient(body.workspaceId, capabilityId);
   const tools = await client.listTools();
   return runMcpRecipe({
     executor: body.executor,
@@ -174,6 +212,32 @@ async function handleApi(req, res, pathname, searchParams) {
   if (pathname === '/health' && req.method === 'GET') {
     return sendJson(res, 200, { ok: true, service: 'MetaWebMCP', browserMcpConfigured: Boolean(BROWSER_MCP_URL) });
   }
+
+  if (pathname === '/api/browser-session' && req.method === 'POST') {
+    if (!sameOriginPageRequest(req)) return sendError(res, 403, new Error('Same-origin page session required.'));
+    const existing = await verifyBrowserCapabilityCookie(req.headers.cookie, MCP_CAPABILITY_SECRET);
+    const capability = existing || await issueBrowserCapability(MCP_CAPABILITY_SECRET);
+    const expiresInSeconds = existing
+      ? Math.max(1, existing.expiresAt - Math.floor(Date.now() / 1000))
+      : BROWSER_CAPABILITY_TTL_SECONDS;
+    return sendJson(res, 201, {
+      ok: true,
+      expiresInSeconds,
+    }, {
+      'cache-control': 'no-store',
+      vary: 'Origin',
+      ...(!existing ? {
+        'set-cookie': browserCapabilityCookie(capability.token, {
+          ttlSeconds: BROWSER_CAPABILITY_TTL_SECONDS,
+          secure: secureRequest(req),
+        }),
+      } : {}),
+    });
+  }
+
+  const browserCapability = pathname.startsWith('/api/mcp/')
+    ? await requireBrowserCapability(req)
+    : null;
 
   if (pathname === '/api/config' && req.method === 'GET') {
     return sendJson(res, 200, {
@@ -202,13 +266,13 @@ async function handleApi(req, res, pathname, searchParams) {
 
   if (pathname === '/api/mcp/status' && req.method === 'GET') {
     if (!BROWSER_MCP_URL) return sendJson(res, 200, { ok: true, configured: false, tools: [] });
-    const tools = await getMcpClient(searchParams.get('workspace_id')).listTools();
+    const tools = await getMcpClient(searchParams.get('workspace_id'), browserCapability.id).listTools();
     return sendJson(res, 200, { ok: true, configured: true, tools: tools.map((tool) => tool.name).sort() });
   }
 
   if (pathname === '/api/mcp/analyze' && req.method === 'POST') {
     const body = await readJson(req);
-    const analysis = await analyzeWithBrowserMcp(body);
+    const analysis = await analyzeWithBrowserMcp(body, browserCapability.id);
     return sendJson(res, 200, { ok: true, analysis });
   }
 
@@ -225,12 +289,12 @@ async function handleApi(req, res, pathname, searchParams) {
 
   if (pathname === '/api/mcp/execute' && req.method === 'POST') {
     const body = await readJson(req);
-    return sendJson(res, 200, await executeMcpRecipe(body));
+    return sendJson(res, 200, await executeMcpRecipe(body, browserCapability.id));
   }
 
   if (pathname === '/api/mcp/reset' && req.method === 'POST') {
     const body = await readJson(req);
-    await closeMcpClient(body.workspaceId);
+    await closeMcpClient(body.workspaceId, browserCapability.id);
     return sendJson(res, 200, { ok: true });
   }
 
@@ -316,7 +380,8 @@ const server = http.createServer(async (req, res) => {
     if (!['GET', 'HEAD'].includes(req.method || '')) return sendError(res, 405, new Error('Method not allowed.'));
     await serveStatic(req, res, pathname);
   } catch (error) {
-    const status = /blocked|not allowed|not configured|valid|empty|requires|must|exceeds|invalid/i.test(error?.message || '') ? 400 : 500;
+    const status = error?.statusCode
+      || (/blocked|not allowed|not configured|valid|empty|requires|must|exceeds|invalid/i.test(error?.message || '') ? 400 : 500);
     if (!res.headersSent) sendError(res, status, error);
     else res.destroy(error);
   } finally {
