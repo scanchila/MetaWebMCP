@@ -19,5 +19,6 @@ test('Cloudflare runtime dependencies stay on audited compatibility pins', async
   );
   assert.equal(packageLock.packages['node_modules/@modelcontextprotocol/sdk'].version, '1.30.0');
   assert.match(compatibilityPatch, /layoutMetrics\.cssVisualViewport \?\? layoutMetrics\.visualViewport/);
+  assert.match(compatibilityPatch, /if \(!visualViewport\) \{[\s\S]*Page\.captureScreenshot/);
   assert.match(workflow, /- run: npm run audit\n        working-directory: deploy\/cloudflare/);
 });

@@ -158,6 +158,11 @@ assert.match(
   /layoutMetrics\.cssVisualViewport \?\? layoutMetrics\.visualViewport/,
   'Kitesurf screenshots should accept the current CSS visual viewport response shape',
 );
+assert.match(
+  chromiumPageSource,
+  /if \(!visualViewport\) \{[\s\S]*Page\.captureScreenshot[\s\S]*return Buffer\.from\(result\.data, "base64"\)/,
+  'Kitesurf viewport screenshots should fall back to its protocol-level capture response',
+);
 
 const commonJsPatch = await readFile(
   './node_modules/@cloudflare/playwright-mcp/lib/cjs/src/tools/utils.js',

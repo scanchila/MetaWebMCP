@@ -145,8 +145,12 @@ const chromiumPageFile = 'node_modules/@cloudflare/playwright/lib/playwright-cor
 const originalViewportMetrics = '    const { visualViewport } = await progress.race(this._mainFrameSession._client.send("Page.getLayoutMetrics"));';
 const compatibleViewportMetrics = `    const layoutMetrics = await progress.race(this._mainFrameSession._client.send("Page.getLayoutMetrics"));
     const visualViewport = layoutMetrics.cssVisualViewport ?? layoutMetrics.visualViewport;
-    if (!visualViewport)
-      throw new Error("Browser did not return viewport metrics for screenshot.");`;
+    if (!visualViewport) {
+      if (documentRect)
+        throw new Error("Browser did not return viewport metrics required for a clipped screenshot.");
+      const result = await progress.race(this._mainFrameSession._client.send("Page.captureScreenshot", { format, quality }));
+      return Buffer.from(result.data, "base64");
+    }`;
 
 {
   const source = await readFile(chromiumPageFile, 'utf8');
