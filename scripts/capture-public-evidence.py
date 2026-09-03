@@ -17,7 +17,7 @@ from evidence_append_provenance import (
     apply_browser_capture_provenance,
     apply_static_capture_provenance,
 )
-from evidence_provenance import browser_identity, configured_source_commit, verified_deployment_identity
+from evidence_provenance import browser_identity, capture_runtime, configured_source_commit, verified_deployment_identity
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,6 +50,7 @@ CHROME = chrome_executable()
 CAPTURE_SCRIPT_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 PROVENANCE_HELPER_SHA256 = hashlib.sha256(PROVENANCE_HELPER.read_bytes()).hexdigest()
 APPEND_PROVENANCE_HELPER_SHA256 = hashlib.sha256(APPEND_PROVENANCE_HELPER.read_bytes()).hexdigest()
+CAPTURE_RUNTIME = capture_runtime()
 
 CASES = [
     {
@@ -245,6 +246,7 @@ def main():
         try:
             apply_browser_capture_provenance(report, {
                 'browser': browser_identity(CHROME, browser.version),
+                'captureRuntime': CAPTURE_RUNTIME,
                 'browserLaunch': {
                     'executable': Path(CHROME).name,
                     'headless': True,

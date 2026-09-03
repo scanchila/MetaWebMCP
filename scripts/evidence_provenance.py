@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import re
 import subprocess
+from importlib.metadata import version as distribution_version
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlsplit
 from urllib.request import Request, urlopen
@@ -11,6 +13,13 @@ from urllib.request import Request, urlopen
 
 SOURCE_COMMIT_PATTERN = re.compile(r'^[0-9a-f]{40,64}$')
 MAX_HEALTH_BYTES = 64 * 1024
+
+
+def capture_runtime(*, python_version=platform.python_version, package_version=distribution_version):
+    return {
+        'python': python_version(),
+        'playwright': package_version('playwright'),
+    }
 
 
 def browser_identity(executable, runtime_version, *, runner=subprocess.run):

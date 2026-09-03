@@ -1,6 +1,6 @@
 # Release evidence scripts
 
-The capture scripts reproduce the native WebMCP, hosted public-site, and deployment-security records in `evidence/`. The browser journeys require Python Playwright and Chrome 152 or newer for headless `WebMCPTesting` support. Each script queries `/health` before capture and rejects a source or optional Worker-version mismatch. Retained results record the live Worker identity, capture script and helper SHA-256 digests, browser launch configuration, and deployed asset digests so a rerun can be tied to its inputs.
+The capture scripts reproduce the native WebMCP, hosted public-site, and deployment-security records in `evidence/`. The browser journeys require Python Playwright and Chrome 152 or newer for headless `WebMCPTesting` support. Each script queries `/health` before capture and rejects a source or optional Worker-version mismatch. Retained results record the live Worker identity, capture script and helper SHA-256 digests, Python and Playwright versions, browser identity and launch configuration, and deployed asset digests so a rerun can be tied to its inputs.
 
 Set the exact deployed source commit before capture. `META_WEBMCP_DEPLOYMENT_VERSION` is an optional additional assertion; the retained value always comes from the live Worker:
 
@@ -14,7 +14,7 @@ python scripts/capture-native-evidence.py
 python scripts/capture-public-evidence.py
 ```
 
-`capture-public-evidence.py` contacts Wikipedia, SauceDemo, and The Internet. It uses SauceDemo's published test account and redacts the password from retained results. Set `META_WEBMCP_EVIDENCE_CASE` to one case slug and `META_WEBMCP_EVIDENCE_APPEND=1` to rerun a single target without discarding the other target records. Append mode requires the retained capture script and helper hashes, browser identity, and browser launch configuration to match the current run; after any of those inputs changes, run a full capture with `META_WEBMCP_EVIDENCE_APPEND` unset.
+`capture-public-evidence.py` contacts Wikipedia, SauceDemo, and The Internet. It uses SauceDemo's published test account and redacts the password from retained results. Set `META_WEBMCP_EVIDENCE_CASE` to one case slug and `META_WEBMCP_EVIDENCE_APPEND=1` to rerun a single target without discarding the other target records. Append mode requires the retained capture script and helper hashes, Python and Playwright versions, browser identity, and browser launch configuration to match the current run; after any of those inputs changes, run a full capture with `META_WEBMCP_EVIDENCE_APPEND` unset.
 
 `capture-deployment-security-gates.py` verifies unauthenticated, cross-origin, authorized, and tampered-capability behavior. It also creates one bounded export, confirms capability ownership and single-use download semantics, and deletes the cached archive by consuming it. Cookie and capability values are never written to the result.
 

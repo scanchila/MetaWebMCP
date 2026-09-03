@@ -2,7 +2,7 @@ from __future__ import annotations
 
 
 STATIC_CAPTURE_FIELDS = ('captureScript', 'captureScriptSha256', 'captureDependencies')
-BROWSER_CAPTURE_FIELDS = ('browser', 'browserLaunch')
+BROWSER_CAPTURE_FIELDS = ('browser', 'browserLaunch', 'captureRuntime')
 
 
 def _apply_provenance(report, current, fields, label, *, append):
