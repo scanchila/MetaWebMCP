@@ -11,6 +11,7 @@ const required = [
   'public/index.html',
   'public/js/app.js',
   'public/js/webmcp-runtime.js',
+  'public/js/workspace-store.js',
   'public/js/network-policy.js',
   'public/demo/index.html',
   'README.md',

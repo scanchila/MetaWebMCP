@@ -11,6 +11,8 @@ The application therefore maintains two registries on one top-level page:
 
 Both planes use one `ToolRegistry`. The registry always stores an internal executable copy for deterministic development and, when the browser implements the imperative API, also calls `document.modelContext.registerTool`. Generated entries carry their own `AbortController`, so rebuilding or resetting aborts and unregisters only the generated plane.
 
+The top-level application also keeps one versioned workspace record in same-origin IndexedDB. It saves drafts, analysis evidence, reviewed ToolSpecs and recipes, evaluation and trace state, and whether generated tools were active. On reload, validated contracts are registered through the same `ToolRegistry`; malformed or incompatible records are discarded. Reset deletes the record. IndexedDB failure is non-fatal and leaves the existing in-memory flow intact.
+
 ## Recursive sequence
 
 ```text
@@ -99,6 +101,8 @@ The public deployment mounts Cloudflare's Playwright MCP agent as a Durable Obje
 
 This is a virtual, session-scoped adapter. It does not modify the third-party origin or claim that the target itself is natively WebMCP-compatible.
 
+Caller-browser contracts can be restored after a MetaWebMCP reload because execution remains with the caller and stale references must already be resolved by accessible name. A hosted Browser MCP session is intentionally not restorable: its contracts remain saved for review, while activation, evaluations, and target state are cleared until a fresh analysis establishes a new isolated browser session.
+
 Export is a separate, source-owner path: the generated module interprets the reviewed recipe against the owned page's normal controls. It does not include MetaWebMCP and does not need a browser MCP service. Item-scoped actions resolve within the matching visible item's container and fail closed if that item is no longer present.
 
 ## Generated repository
@@ -115,6 +119,8 @@ Export is a separate, source-owner path: the generated module interprets the rev
 - Documents where source owners should replace selectors with application functions.
 
 The dependency-free ZIP implementation uses stored entries, UTF-8 filenames, CRC32, central directory records, and safe relative paths.
+
+Export response metadata is not part of the IndexedDB record. The server-side archive remains capability-bound, single-use, and short-lived, so a restored workspace must create a fresh export.
 
 ## Why the core has no dependencies
 

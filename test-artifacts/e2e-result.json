@@ -1,8 +1,10 @@
 {
-  "baseUrl": "http://127.0.0.1:33719",
+  "baseUrl": "http://127.0.0.1:53063",
   "checks": [
     "server health endpoint",
     "native client prerequisites, readable judge guidance, and responsive five-step fallback",
+    "browser-local workspace survives reload without reviving an export link and Reset clears it",
+    "workspace remains usable when IndexedDB is unavailable",
     "workspace reset awaits browser cleanup without requiring a successful analysis",
     "calling-agent snapshot analysis and delegated browser recipe",
     "mode controls expose pressed-button semantics and native keyboard activation",
@@ -96,7 +98,7 @@
       {
         "tool": "find_sessions",
         "status": "passed",
-        "durationMs": 93,
+        "durationMs": 100,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -152,7 +154,7 @@
       {
         "tool": "add_session_to_itinerary",
         "status": "passed",
-        "durationMs": 75,
+        "durationMs": 74,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -290,7 +292,7 @@
       {
         "tool": "clear_itinerary",
         "status": "passed",
-        "durationMs": 75,
+        "durationMs": 74,
         "checks": [
           {
             "name": "registered in generated tool registry",

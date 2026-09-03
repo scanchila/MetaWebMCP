@@ -19,8 +19,9 @@
       <p class="topbar-thesis"><span>Live workspace</span> WebMCP builds WebMCP</p>
       <div class="topbar-status">
         <span id="native-status" class="status-pill"><i></i>Checking WebMCP</span>
+        <span id="storage-status" class="storage-status" aria-live="polite" title="Workspace drafts and recipes are saved only in this browser.">Local save…</span>
         <span id="tool-count" class="tool-count">0 tools</span>
-        <button id="reset-button" class="ghost-button" type="button">Reset</button>
+        <button id="reset-button" class="ghost-button" type="button" title="Clear the current workspace and its browser-local saved copy.">Reset</button>
       </div>
     </header>
 
@@ -67,7 +68,7 @@
         <div id="snapshot-field" class="field hidden">
           <label class="field-label" for="target-snapshot">Accessibility snapshot</label>
           <textarea id="target-snapshot" rows="7" spellcheck="false" placeholder="Have the calling agent navigate to the target, capture its accessibility snapshot, and pass or paste it here…"></textarea>
-          <small class="field-help">The target stays in the caller’s browser. MetaWebMCP receives only this bounded observation.</small>
+          <small class="field-help">The target stays in the caller’s browser. This observation and its generated recipes are saved only in this browser until Reset.</small>
         </div>
 
         <div class="field">
@@ -183,7 +184,7 @@
         <div class="section-heading compact">
           <span class="eyebrow">Live context</span>
           <h2 id="tools-title">What the agent sees.</h2>
-          <p>The permanent foundry tools stay put. Generated tools join this registry for the current session.</p>
+          <p>The permanent foundry tools stay put. Generated tools rejoin this registry when a browser-local workspace is restored.</p>
         </div>
 
         <div class="registry-summary">

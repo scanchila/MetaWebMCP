@@ -67,6 +67,7 @@ The controlled fallback needs no account, credentials, model API, or external se
 - A dependency-free native integration ZIP generator. Controlled and browser-derived ToolSpecs both execute on an owned page without MetaWebMCP; bundled targets are tested as standalone WebMCP sites.
 - URL and pasted-HTML analysis for site owners.
 - A quota-free caller-browser path for third-party sites: the agent navigates with its own browser, supplies an accessibility snapshot, and receives bounded recipes to execute itself.
+- Browser-local IndexedDB autosave for drafts, analysis, reviewed contracts, recipes, evaluation state, and active generated tools.
 - An optional Streamable HTTP client for the official Playwright MCP server. A same-origin deployment can keep the transport session in the open page; the local Node service provides an isolated server-side fallback.
 - SSRF defenses, an allowlisted browser recipe executor, risk annotations, and disabled consequential actions.
 - Node unit tests and a Chromium end-to-end test that drives the full recursive sequence through a WebMCP-shaped browser mock.
@@ -151,6 +152,14 @@ The recipe runtime reads the connected tool schemas and supports both the curren
 
 Exporting this mode produces the same reviewed ToolSpecs with an owned-page runtime based on accessible names and bounded item context. Developers can install the generated module directly in the target application without shipping MetaWebMCP or a browser service, then replace compatibility lookups with stable application functions as they harden the integration.
 
+## Browser-local persistence
+
+MetaWebMCP automatically saves one workspace in IndexedDB for its current origin and browser profile. A reload restores input drafts, supplied HTML or accessibility snapshots, analysis, capability selection and review drafts, generated ToolSpecs and recipes, evaluation history, trace history, and active generated tools. Nothing is synchronized between browsers or sent to a project database.
+
+Temporary export download links are deliberately not restored because their server-side archives are single-use and expire within twenty minutes. Hosted Browser MCP sessions are also not resumed; their saved contracts remain visible, but the target must be analyzed again before execution. **Reset** removes the browser-local record as well as the active generated tools. Clearing site data in the browser has the same effect. If IndexedDB is unavailable, the studio remains functional with in-memory state only.
+
+Snapshots and pasted HTML can contain sensitive visible text. Do not supply credentials or secrets; browser-local persistence is accessible to scripts running on the same origin.
+
 Start the application, isolated browser, and guarded egress proxy with Docker Compose:
 
 ```bash
@@ -203,7 +212,8 @@ The end-to-end test launches the included server and an available Chromium build
 6. Deterministic evals pass.
 7. The exported ZIP opens and contains directly registered WebMCP source.
 8. The extracted repository registers and executes its four generated WebMCP tools against the bundled target UI.
-9. The completed workspace remains usable from desktop down to a 390 px mobile viewport without horizontal overflow.
+9. A reviewed caller-browser workspace, including its generated recipe, survives a real page reload; temporary export links do not, and Reset removes the saved record.
+10. The completed workspace remains usable from desktop down to a 390 px mobile viewport without horizontal overflow.
 
 The unit/integration suite verifies caller-supplied snapshot analysis and recipe handoff plus both optional hosted transport layouts: isolated server-side workspaces and one Streamable HTTP session owned by the open page from analysis through generated-tool execution.
 
@@ -243,6 +253,7 @@ public/js/mcp-http-client.js shared dependency-free Streamable HTTP MCP client
 public/js/browser-mcp-session.js page-scoped browser session with Node fallback
 public/js/network-policy.js  shared private/reserved address and hostname policy
 public/js/mcp-recipe.js      shared allowlisted recipe interpreter
+public/js/workspace-store.js browser-local IndexedDB workspace record
 lib/security.mjs             URL, DNS, redirect, and network validation
 lib/zip.mjs                  dependency-free ZIP writer
 public/js/app.js             meta-tool control plane and UI state machine

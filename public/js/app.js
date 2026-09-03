@@ -1,10 +1,12 @@
 import { analyzeAgentSnapshot, analyzeControlledDemo, analyzeStaticSource, analyzeThroughBrowserMcp } from './demo-analyzer.js';
 import { ToolRegistry, compactRegistryState, executeGeneratedSpec } from './webmcp-runtime.js';
 import { browserMcpSession } from './browser-mcp-session.js';
+import { createWorkspaceStore } from './workspace-store.js';
 
 const $ = (selector) => document.querySelector(selector);
 const elements = {
   nativeStatus: $('#native-status'),
+  storageStatus: $('#storage-status'),
   toolCount: $('#tool-count'),
   resetButton: $('#reset-button'),
   ownerMode: $('#owner-mode'),
@@ -58,9 +60,18 @@ const elements = {
 
 const META_ORIGIN = 'meta';
 const GENERATED_ORIGIN = 'generated';
+const WORKSPACE_RECORD_VERSION = 1;
 const RISK_SEVERITY = Object.freeze({ read: 0, write: 1, consequential: 2 });
 const META_TOOL_NAMES = new Set();
+const PERSISTED_META_MUTATIONS = new Set([
+  'meta_analyze_site',
+  'meta_create_webmcp',
+  'meta_activate_webmcp',
+  'meta_test_webmcp',
+  'meta_export_webmcp',
+]);
 const registry = new ToolRegistry();
+const workspaceStore = createWorkspaceStore();
 const workspaceId = (() => {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
   const bytes = new Uint8Array(16);
@@ -85,8 +96,168 @@ const state = {
   latestTargetState: null,
 };
 
+const persistence = {
+  ready: false,
+  available: true,
+  restored: false,
+  savedAt: null,
+  error: null,
+  paused: false,
+  timer: null,
+  queue: Promise.resolve(),
+};
+
 function clone(value) {
   return value == null ? value : structuredClone(value);
+}
+
+function isRecord(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function setPersistenceStatus(label, status = 'ready', detail = '') {
+  elements.storageStatus.textContent = label;
+  elements.storageStatus.dataset.state = status;
+  elements.storageStatus.title = detail || 'Workspace drafts and recipes are saved only in this browser.';
+}
+
+function persistenceState() {
+  return {
+    storage: 'indexeddb',
+    available: persistence.available,
+    restored: persistence.restored,
+    savedAt: persistence.savedAt,
+    ...(persistence.error ? { error: persistence.error } : {}),
+  };
+}
+
+function currentReviewDrafts() {
+  return [...elements.capabilityList.querySelectorAll('.capability-card')].map((card) => ({
+    capabilityId: card.dataset.capabilityId,
+    name: card.querySelector('[data-review-name]')?.value || '',
+    description: card.querySelector('[data-review-description]')?.value || '',
+  }));
+}
+
+function workspaceRecord() {
+  const savedAt = new Date().toISOString();
+  return {
+    version: WORKSPACE_RECORD_VERSION,
+    savedAt,
+    draft: {
+      adapterSourceKind: elements.adapterSourceKind.value,
+      sourceKind: elements.sourceKind.value,
+      targetUrl: elements.targetUrl.value,
+      targetHtml: elements.targetHtml.value,
+      targetSnapshot: elements.targetSnapshot.value,
+      goal: elements.goal.value,
+      reviewDrafts: currentReviewDrafts(),
+    },
+    workspace: {
+      mode: state.mode,
+      sourceKind: state.sourceKind,
+      analysis: clone(state.analysis),
+      contracts: clone(state.contracts),
+      selectedCapabilityIds: [...state.selectedCapabilityIds],
+      activated: state.activated,
+      verificationComplete: state.verificationComplete,
+      evals: clone(state.evals),
+      trace: clone(state.trace),
+      selectedToolName: state.selectedToolName,
+      latestTargetState: clone(state.latestTargetState),
+      hadTemporaryExport: Boolean(state.export),
+    },
+  };
+}
+
+function validWorkspaceRecord(record) {
+  const saved = record?.workspace;
+  const draft = record?.draft;
+  return record?.version === WORKSPACE_RECORD_VERSION
+    && typeof record.savedAt === 'string'
+    && isRecord(saved)
+    && ['owner', 'adapter'].includes(saved.mode)
+    && ['demo', 'url', 'html', 'agent_snapshot', 'browser_mcp'].includes(saved.sourceKind)
+    && (saved.analysis === null || (
+      isRecord(saved.analysis)
+      && Array.isArray(saved.analysis.capabilities)
+      && saved.analysis.capabilities.length <= 12
+    ))
+    && Array.isArray(saved.contracts) && saved.contracts.length <= 25
+    && saved.contracts.every((contract) => (
+      isRecord(contract)
+      && /^[a-z][a-z0-9_]{0,63}$/.test(contract.name || '')
+      && typeof contract.description === 'string'
+      && contract.description.length >= 8
+      && isRecord(contract.inputSchema)
+    ))
+    && Array.isArray(saved.selectedCapabilityIds)
+    && saved.selectedCapabilityIds.every((id) => typeof id === 'string')
+    && Array.isArray(saved.evals) && saved.evals.length <= 25
+    && Array.isArray(saved.trace) && saved.trace.length <= 30
+    && isRecord(draft)
+    && ['adapterSourceKind', 'sourceKind', 'targetUrl', 'targetHtml', 'targetSnapshot', 'goal']
+      .every((key) => typeof draft[key] === 'string')
+    && Array.isArray(draft.reviewDrafts || [])
+    && draft.reviewDrafts.every((review) => (
+      isRecord(review)
+      && typeof review.capabilityId === 'string'
+      && typeof review.name === 'string'
+      && typeof review.description === 'string'
+    ));
+}
+
+function enqueuePersistence(operation) {
+  const pending = persistence.queue.catch(() => {}).then(operation);
+  persistence.queue = pending.catch(() => {});
+  return pending;
+}
+
+async function persistWorkspace() {
+  if (persistence.timer) clearTimeout(persistence.timer);
+  persistence.timer = null;
+  if (!persistence.ready || !persistence.available || persistence.paused) return false;
+  const record = workspaceRecord();
+  setPersistenceStatus('Saving locally…', 'saving');
+  try {
+    await enqueuePersistence(() => workspaceStore.save(record));
+    persistence.savedAt = record.savedAt;
+    persistence.error = null;
+    setPersistenceStatus('Saved locally', 'ready', 'Workspace drafts and recipes are saved only in this browser. Reset removes them.');
+    return true;
+  } catch (error) {
+    persistence.available = false;
+    persistence.error = error instanceof Error ? error.message : String(error);
+    setPersistenceStatus('Local save unavailable', 'unavailable', persistence.error);
+    return false;
+  }
+}
+
+function scheduleWorkspaceSave() {
+  persistence.paused = false;
+  if (!persistence.ready || !persistence.available) return;
+  if (persistence.timer) clearTimeout(persistence.timer);
+  setPersistenceStatus('Saving locally…', 'saving');
+  persistence.timer = setTimeout(() => { persistWorkspace(); }, 250);
+}
+
+async function clearPersistedWorkspace() {
+  if (persistence.timer) clearTimeout(persistence.timer);
+  persistence.timer = null;
+  persistence.restored = false;
+  persistence.savedAt = null;
+  persistence.paused = true;
+  if (!persistence.available) return false;
+  try {
+    await enqueuePersistence(() => workspaceStore.clear());
+    setPersistenceStatus('Local workspace cleared', 'ready', 'The browser-local workspace has been removed. New changes will be saved automatically.');
+    return true;
+  } catch (error) {
+    persistence.available = false;
+    persistence.error = error instanceof Error ? error.message : String(error);
+    setPersistenceStatus('Local save unavailable', 'unavailable', persistence.error);
+    return false;
+  }
 }
 
 function nowLabel() {
@@ -380,6 +551,132 @@ function renderCapabilities() {
   elements.capabilitySection.classList.toggle('hidden', !state.analysis?.capabilities?.length);
 }
 
+function setSavedSelectValue(select, value) {
+  if ([...select.options].some((option) => option.value === value)) select.value = value;
+}
+
+function applySavedDraft(draft, saved) {
+  setSavedSelectValue(elements.adapterSourceKind, draft.adapterSourceKind);
+  setSavedSelectValue(elements.sourceKind, draft.sourceKind);
+  if (saved.mode === 'adapter') setSavedSelectValue(elements.adapterSourceKind, saved.sourceKind);
+  else setSavedSelectValue(elements.sourceKind, saved.sourceKind);
+  elements.targetUrl.value = draft.targetUrl;
+  elements.targetHtml.value = draft.targetHtml;
+  elements.targetSnapshot.value = draft.targetSnapshot;
+  elements.goal.value = draft.goal;
+}
+
+function applySavedReviewDrafts(reviewDrafts) {
+  const byCapability = new Map(reviewDrafts.map((review) => [review.capabilityId, review]));
+  for (const card of elements.capabilityList.querySelectorAll('.capability-card')) {
+    const review = byCapability.get(card.dataset.capabilityId);
+    if (!review) continue;
+    card.querySelector('[data-review-name]').value = review.name;
+    card.querySelector('[data-review-description]').value = review.description;
+  }
+}
+
+function restoredPhase() {
+  if (state.activated && state.verificationComplete) return 4;
+  if (state.activated) return 3;
+  if (state.contracts.length) return 2;
+  if (state.analysis) return 1;
+  return 0;
+}
+
+async function restoreWorkspace() {
+  let record;
+  try {
+    record = await workspaceStore.load();
+  } catch (error) {
+    persistence.ready = true;
+    persistence.available = false;
+    persistence.error = error instanceof Error ? error.message : String(error);
+    setPersistenceStatus('Local save unavailable', 'unavailable', persistence.error);
+    return false;
+  }
+
+  persistence.ready = true;
+  if (!record) {
+    setPersistenceStatus('Local autosave', 'ready', 'Workspace drafts and recipes will be saved only in this browser.');
+    return false;
+  }
+
+  if (!validWorkspaceRecord(record)) {
+    await workspaceStore.clear().catch(() => {});
+    setPersistenceStatus('Local workspace reset', 'ready', 'An incompatible browser-local workspace was removed.');
+    addTrace('Saved workspace ignored', 'The browser-local record was incompatible or malformed, so MetaWebMCP started clean.', 'warning');
+    return false;
+  }
+
+  const saved = record.workspace;
+  applySavedDraft(record.draft, saved);
+  state.mode = saved.mode;
+  state.sourceKind = saved.sourceKind;
+  state.analysis = clone(saved.analysis);
+  state.contracts = clone(saved.contracts);
+  const knownCapabilityIds = new Set(state.analysis?.capabilities?.map((capability) => capability.id) || []);
+  state.selectedCapabilityIds = new Set(
+    saved.selectedCapabilityIds.filter((id) => knownCapabilityIds.has(id)),
+  );
+  state.activated = false;
+  state.verificationComplete = false;
+  state.evals = clone(saved.evals);
+  state.export = null;
+  state.trace = clone(saved.trace);
+  state.selectedToolName = saved.selectedToolName;
+  state.latestTargetState = clone(saved.latestTargetState);
+
+  renderSourceControls();
+  renderCapabilities();
+  applySavedReviewDrafts(record.draft.reviewDrafts);
+  renderTrace();
+
+  const hostedSessionCannotResume = saved.activated && state.analysis?.source?.kind === 'browser_mcp';
+  if (saved.activated && state.contracts.length && !hostedSessionCannotResume) {
+    try {
+      await registerGeneratedContracts();
+      state.activated = true;
+      state.verificationComplete = Boolean(saved.verificationComplete);
+    } catch (error) {
+      registry.unregisterOrigin(GENERATED_ORIGIN);
+      state.selectedToolName = null;
+      addTrace('Generated tools need review', error instanceof Error ? error.message : String(error), 'warning');
+    }
+  }
+
+  if (hostedSessionCannotResume) {
+    state.evals = [];
+    state.latestTargetState = null;
+    state.selectedToolName = null;
+    addTrace('Hosted session not restored', 'The contracts remain saved, but the expired browser session must be analyzed again before execution.', 'warning');
+  }
+
+  state.phase = restoredPhase();
+  elements.downloadLink.classList.add('hidden');
+  elements.downloadLink.removeAttribute('href');
+  renderTargetStage();
+  renderActions();
+  renderRegistry();
+  setPhase(state.phase);
+  if (state.selectedToolName && registry.get(state.selectedToolName)) selectTool(state.selectedToolName);
+  else {
+    state.selectedToolName = null;
+    elements.toolLab.classList.add('hidden');
+  }
+
+  persistence.restored = true;
+  persistence.savedAt = record.savedAt;
+  setPersistenceStatus('Restored locally', 'ready', 'This workspace was restored from this browser. Reset removes the saved copy.');
+  addTrace(
+    'Browser-local workspace restored',
+    saved.hadTemporaryExport
+      ? 'Analysis and recipes were restored. The expired, single-use export link was not; export again when needed.'
+      : 'Analysis, review state, and generated recipes were restored from this browser.',
+  );
+  return true;
+}
+
 function renderActions() {
   elements.activateButton.disabled = state.contracts.length === 0;
   elements.testButton.disabled = !state.activated;
@@ -447,6 +744,7 @@ function selectTool(name) {
   const contract = state.contracts.find((candidate) => candidate.name === name);
   elements.labInput.value = JSON.stringify(contract?.sampleArgs || {}, null, 2);
   elements.labOutput.textContent = JSON.stringify({ inputSchema: tool.inputSchema, nativeRegistered: tool.nativeRegistered }, null, 2);
+  scheduleWorkspaceSave();
 }
 
 function compactAnalysis(analysis) {
@@ -592,32 +890,46 @@ function getTargetDocument() {
   return state.analysis?.source?.kind === 'demo' ? elements.targetFrame.contentDocument : null;
 }
 
+async function registerGeneratedContracts() {
+  registry.unregisterOrigin(GENERATED_ORIGIN);
+  const names = new Set();
+  try {
+    for (const spec of state.contracts) {
+      if (META_TOOL_NAMES.has(spec.name)) throw new Error(`Generated tool ${spec.name} collides with MetaWebMCP's control plane.`);
+      if (names.has(spec.name)) throw new Error(`Generated tool name ${spec.name} is duplicated.`);
+      names.add(spec.name);
+      await registry.register(spec, async (input, context) => {
+        const result = await executeGeneratedSpec(spec, input, {
+          ...context,
+          getTargetDocument,
+          allowConsequential: false,
+          browserExecution: state.analysis?.source?.kind === 'agent_snapshot' ? 'agent' : 'managed',
+          targetUrl: state.analysis?.source?.url || '',
+          workspaceId,
+        });
+        state.latestTargetState = clone(result.state || result.result || result);
+        addTrace(
+          result.completed === false ? `Prepared ${spec.name}` : `Executed ${spec.name}`,
+          result.completed === false
+            ? 'Returned a bounded recipe for the calling agent’s browser; no remote action was claimed.'
+            : `Generated ${spec.risk} tool completed through ${spec.executor.type}.`,
+          result.completed === false ? 'warning' : 'success',
+        );
+        renderTargetStage();
+        persistence.paused = false;
+        await persistWorkspace();
+        return result;
+      }, { origin: GENERATED_ORIGIN });
+    }
+  } catch (error) {
+    registry.unregisterOrigin(GENERATED_ORIGIN);
+    throw error;
+  }
+}
+
 async function activateWebMcp() {
   if (!state.contracts.length) throw new Error('Create WebMCP contracts before activation.');
-  registry.unregisterOrigin(GENERATED_ORIGIN);
-
-  for (const spec of state.contracts) {
-    await registry.register(spec, async (input, context) => {
-      const result = await executeGeneratedSpec(spec, input, {
-        ...context,
-        getTargetDocument,
-        allowConsequential: false,
-        browserExecution: state.analysis?.source?.kind === 'agent_snapshot' ? 'agent' : 'managed',
-        targetUrl: state.analysis?.source?.url || '',
-        workspaceId,
-      });
-      state.latestTargetState = clone(result.state || result.result || result);
-      addTrace(
-        result.completed === false ? `Prepared ${spec.name}` : `Executed ${spec.name}`,
-        result.completed === false
-          ? 'Returned a bounded recipe for the calling agent’s browser; no remote action was claimed.'
-          : `Generated ${spec.risk} tool completed through ${spec.executor.type}.`,
-        result.completed === false ? 'warning' : 'success',
-      );
-      renderTargetStage();
-      return result;
-    }, { origin: GENERATED_ORIGIN });
-  }
+  await registerGeneratedContracts();
 
   state.activated = true;
   state.verificationComplete = false;
@@ -813,6 +1125,7 @@ function getMetaState() {
     verificationComplete: state.verificationComplete,
     evals: clone(state.evals),
     export: clone(state.export),
+    persistence: persistenceState(),
     recentTrace: clone(state.trace.slice(-10)),
   };
 }
@@ -921,7 +1234,7 @@ const metaTools = [
   {
     spec: {
       name: 'meta_get_state',
-      description: 'Read the current MetaWebMCP build state, generated contracts, registry contents, evaluation results, and export status.',
+      description: 'Read the current MetaWebMCP build state, browser-local persistence status, generated contracts, registry contents, evaluation results, and export status.',
       risk: 'read',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     },
@@ -930,7 +1243,7 @@ const metaTools = [
   {
     spec: {
       name: 'meta_reset_workspace',
-      description: 'Remove every dynamically generated tool and clear the current build while preserving MetaWebMCP’s permanent seven-tool control plane.',
+      description: 'Remove every dynamically generated tool and clear the current build and browser-local saved copy while preserving MetaWebMCP’s permanent seven-tool control plane.',
       risk: 'write',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     },
@@ -941,7 +1254,15 @@ const metaTools = [
 async function registerMetaTools() {
   for (const { spec, execute } of metaTools) {
     META_TOOL_NAMES.add(spec.name);
-    await registry.register(spec, execute, { origin: META_ORIGIN });
+    await registry.register(spec, async (input, context) => {
+      const result = await execute(input, context);
+      if (spec.name === 'meta_reset_workspace') await clearPersistedWorkspace();
+      else if (PERSISTED_META_MUTATIONS.has(spec.name)) {
+        persistence.paused = false;
+        await persistWorkspace();
+      }
+      return result;
+    }, { origin: META_ORIGIN });
   }
 }
 
@@ -980,6 +1301,8 @@ async function switchMode(mode) {
     ? 'Analyze a controlled demo, public HTML, or pasted HTML and export native WebMCP code.'
     : 'Supply a snapshot from the calling agent’s browser, or explicitly select the optional hosted adapter.');
   if (mode === 'adapter' && elements.adapterSourceKind.value === 'browser_mcp') await checkBrowserMcp();
+  persistence.paused = false;
+  await persistWorkspace();
 }
 
 function bindEvents() {
@@ -997,12 +1320,15 @@ function bindEvents() {
         : 'The deployment will use its explicitly enabled Browser MCP runtime.',
     );
     if (state.sourceKind === 'browser_mcp') await checkBrowserMcp();
+    persistence.paused = false;
+    await persistWorkspace();
   });
   elements.sourceKind.addEventListener('change', () => {
     state.sourceKind = elements.sourceKind.value;
     clearBuildState({ keepTrace: false });
     renderSourceControls();
     addTrace('Source changed', `Ready to analyze ${state.sourceKind}.`);
+    scheduleWorkspaceSave();
   });
   elements.analyzeButton.addEventListener('click', () => invoke('meta_analyze_site', { source: 'current' }).catch(() => {}));
   elements.selectAllButton.addEventListener('click', () => {
@@ -1011,6 +1337,7 @@ function bindEvents() {
     boxes.forEach((box) => { box.checked = shouldSelect; });
     state.selectedCapabilityIds = new Set(shouldSelect ? boxes.map((box) => box.value) : []);
     elements.selectAllButton.textContent = shouldSelect ? 'Clear all' : 'Select all';
+    scheduleWorkspaceSave();
   });
   elements.createButton.addEventListener('click', () => invoke('meta_create_webmcp', {
     capability_ids: selectedIdsFromUi(),
@@ -1033,8 +1360,17 @@ function bindEvents() {
   window.addEventListener('message', (event) => {
     if (event.origin !== location.origin || event.data?.type !== 'relay-state') return;
     state.latestTargetState = clone(event.data.state);
+    scheduleWorkspaceSave();
   });
-  window.addEventListener('pagehide', () => browserMcpSession.closeOnPageHide());
+  for (const field of [elements.targetUrl, elements.targetHtml, elements.targetSnapshot, elements.goal, elements.labInput]) {
+    field.addEventListener('input', scheduleWorkspaceSave);
+  }
+  elements.capabilityList.addEventListener('input', scheduleWorkspaceSave);
+  elements.capabilityList.addEventListener('change', scheduleWorkspaceSave);
+  window.addEventListener('pagehide', () => {
+    persistWorkspace();
+    browserMcpSession.closeOnPageHide();
+  });
   window.addEventListener('keydown', (event) => {
     if (event.metaKey || event.ctrlKey || event.altKey || /INPUT|TEXTAREA|SELECT/.test(event.target?.tagName)) return;
     const actions = {
@@ -1051,12 +1387,14 @@ function bindEvents() {
 async function initialize() {
   bindEvents();
   renderSourceControls();
+  setPersistenceStatus('Checking local save…', 'saving');
   addTrace('MetaWebMCP ready', 'The permanent control plane is registering. The embedded target still exposes no WebMCP of its own.');
   registry.addEventListener('registrychange', renderRegistry);
   await registerMetaTools();
+  const restored = await restoreWorkspace();
   renderRegistry();
   renderActions();
-  setPhase(0);
+  if (!restored) setPhase(0);
   window.MetaWebMCP = Object.freeze({
     registry,
     getState: getMetaState,

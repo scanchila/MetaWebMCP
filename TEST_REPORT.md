@@ -1,6 +1,6 @@
 # Test report
 
-Local regression verification completed on **2026-09-03T09:46:13Z** (**2026-09-03 16:46:13, Asia/Ho_Chi_Minh**) against the working tree based on source commit `d5a231df056e98b88cb0a6cd1c92bb2b0402bda0`. At the time of this verification, these working-tree changes had not yet been deployed.
+Local regression verification completed on **2026-09-03T16:43:05Z** (**2026-09-03 23:43:05, Asia/Ho_Chi_Minh**) against the working tree based on source commit `cd6ecff9bc6610956007516bc49ca4dcde0d9d8e`. At the time of this verification, these browser-local persistence changes had not yet been deployed.
 
 The retained production-native and Lighthouse evidence below was captured earlier against deployed Worker version `c5ac5494-8d79-413e-9a9c-8db3dcd3339c`, built from source commit `178f2ff8dd63dc6f1c29558f5ed36cf4798b23e8`.
 
@@ -20,11 +20,11 @@ The retained production-native and Lighthouse evidence below was captured earlie
 ## Automated results
 
 - Capture-script syntax checks: **passed**.
-- Static repository checks: **106 repository files passed**.
+- Static repository checks: **107 release files passed**.
 - Node unit and integration tests: **85 passed, 0 failed**.
 - Evidence provenance tests: **11 passed, 0 failed**.
 - Cloudflare Worker dry-run bundle: **passed** with Browser Run, Durable Object, Rate Limit, Static Assets, and Worker Version Metadata bindings.
-- Recursive Chromium end-to-end journey: **16 checks passed** with no console or page errors.
+- Recursive Chromium end-to-end journey: **18 checks passed** with no console or page errors.
 - Generated runtime evaluations: **4 contracts evaluated, 4 passed, 0 failed, 0 skipped, 0 not run**.
 - Retained production Lighthouse: **100 median performance (99–100 across three mobile samples)** and **100 accessibility, best practices, SEO, and agentic browsing in every sample**. Maximum CLS was **0.000106**; console errors were **0**.
 - Retained independently served native export Lighthouse: **100 performance, accessibility, best practices, SEO, and agentic browsing**. CLS and console errors were **0**.
@@ -35,18 +35,19 @@ The deterministic browser journey verifies:
 
 1. The server health endpoint responds.
 2. The client guide identifies native and non-native states and remains usable without horizontal overflow from 1440 px down to 390 px.
-3. Source-mode controls expose pressed-button semantics and respond to native keyboard activation.
-4. The fallback exposes source evidence for explicit review and never reports skipped or partial verification as complete, including after export.
-5. Seven permanent meta-tools register on the top-level page while the target iframe has no WebMCP registry.
-6. `meta_analyze_site` derives four evidence-backed capabilities from the live target.
-7. `meta_create_webmcp` constructs constrained ToolSpecs.
-8. `meta_activate_webmcp` changes the top-level registry from seven to eleven tools.
-9. The generated tools search sessions, add an itinerary item, inspect the visible state, and clear it.
-10. `meta_test_webmcp` completes registration, schema, execution, and visible-postcondition checks for all four tools.
-11. `meta_export_webmcp` returns a valid 13-file repository ZIP with direct `document.modelContext.registerTool(...)` source.
-12. The extracted site independently registers and executes all four exported tools, including a zero-item postcondition after `clear_itinerary`.
-13. A browser-derived export validates inputs before effects, rejects form ambiguity, registers on a separate owned-page fixture, runs without MetaWebMCP or a browser bridge, and fails closed when the requested item disappears.
-14. The completed workspace has no horizontal overflow at the tested responsive breakpoints.
+3. Browser-local drafts, contracts, and active caller recipes survive a real reload; temporary export links do not, Reset removes the saved record, and unavailable IndexedDB leaves the in-memory workflow functional.
+4. Source-mode controls expose pressed-button semantics and respond to native keyboard activation.
+5. The fallback exposes source evidence for explicit review and never reports skipped or partial verification as complete, including after export.
+6. Seven permanent meta-tools register on the top-level page while the target iframe has no WebMCP registry.
+7. `meta_analyze_site` derives four evidence-backed capabilities from the live target.
+8. `meta_create_webmcp` constructs constrained ToolSpecs.
+9. `meta_activate_webmcp` changes the top-level registry from seven to eleven tools.
+10. The generated tools search sessions, add an itinerary item, inspect the visible state, and clear it.
+11. `meta_test_webmcp` completes registration, schema, execution, and visible-postcondition checks for all four tools.
+12. `meta_export_webmcp` returns a valid 13-file repository ZIP with direct `document.modelContext.registerTool(...)` source.
+13. The extracted site independently registers and executes all four exported tools, including a zero-item postcondition after `clear_itinerary`.
+14. A browser-derived export validates inputs before effects, rejects form ambiguity, registers on a separate owned-page fixture, runs without MetaWebMCP or a browser bridge, and fails closed when the requested item disappears.
+15. The completed workspace has no horizontal overflow at the tested responsive breakpoints.
 
 Deterministic local artifacts are retained in:
 
@@ -99,4 +100,4 @@ The deterministic browser suite injects a narrow implementation of the documente
 
 The separate production-native run proves the current Chrome boundary without treating the deterministic mock as browser-native evidence. Native discovery in any particular client still depends on that client's WebMCP availability and rollout.
 
-The caller-browser path is tested through the native `meta_analyze_site` surface, including snapshot analysis, generated recipe handoff, explicit `completed: false` reporting, and skipped hosted verification. Browser MCP clients remain tested against Streamable HTTP JSON/event responses and a long-lived SSE control connection, including session reuse, failure cleanup, closure, concurrency, page-owned execution, capability binding, and server-side workspace isolation. The opt-in hosted Cloudflare path previously completed three live-site journeys with semantic postconditions and target screenshots. Verification inside ChatGPT's built-in browser remains client-specific and is therefore described in the usage instructions rather than represented as an automated result.
+The caller-browser path is tested through the native `meta_analyze_site` surface, including snapshot analysis, generated recipe handoff, explicit `completed: false` reporting, skipped hosted verification, IndexedDB save/restore across a real reload, and fallback when IndexedDB is unavailable. Browser MCP clients remain tested against Streamable HTTP JSON/event responses and a long-lived SSE control connection, including session reuse, failure cleanup, closure, concurrency, page-owned execution, capability binding, and server-side workspace isolation. The opt-in hosted Cloudflare path previously completed three live-site journeys with semantic postconditions and target screenshots. Verification inside ChatGPT's built-in browser remains client-specific and is therefore described in the usage instructions rather than represented as an automated result.

@@ -26,7 +26,7 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / "test-artifacts"
@@ -96,10 +96,12 @@ def build_browser_sources() -> tuple[str, str, str, str]:
     analyzer_source = analyzer_source.replace("'./browser-mcp-session.js'", json.dumps(browser_session_url))
     runtime_url = browser_module_url(runtime_source)
     analyzer_url = browser_module_url(analyzer_source)
+    workspace_store_url = browser_module_url((ROOT / "public/js/workspace-store.js").read_text())
     app_source = (ROOT / "public/js/app.js").read_text()
     app_source = app_source.replace("'./demo-analyzer.js'", json.dumps(analyzer_url))
     app_source = app_source.replace("'./webmcp-runtime.js'", json.dumps(runtime_url))
     app_source = app_source.replace("'./browser-mcp-session.js'", json.dumps(browser_session_url))
+    app_source = app_source.replace("'./workspace-store.js'", json.dumps(workspace_store_url))
     return index_html, (ROOT / "public/styles.css").read_text(), demo_html, app_source
 
 
@@ -195,7 +197,11 @@ def main() -> int:
                 args=["--no-sandbox", "--disable-dev-shm-usage"],
             )
             try:
-                context = browser.new_context(viewport={"width": 1840, "height": 1120}, device_scale_factor=1)
+                context = browser.new_context(
+                    viewport={"width": 1840, "height": 1120},
+                    device_scale_factor=1,
+                    bypass_csp=True,
+                )
 
                 preview_page = context.new_page()
                 preview_page.set_default_timeout(12_000)
@@ -206,6 +212,7 @@ def main() -> int:
                     else None,
                 )
                 preview_page.on("pageerror", lambda error: console_errors.append(f"preview: {error}"))
+                preview_page.goto(base_url, wait_until="domcontentloaded")
                 preview_page.set_content(index_html, wait_until="domcontentloaded")
                 preview_page.add_style_tag(content=styles)
                 preview_page.add_script_tag(content=app_source, type="module")
@@ -262,6 +269,127 @@ def main() -> int:
                     "native client prerequisites, readable judge guidance, and responsive five-step fallback"
                 )
 
+                persistence_page = context.new_page()
+                persistence_page.set_default_timeout(12_000)
+                persistence_page.add_init_script(
+                    """(() => {
+                      if (window !== window.top) return;
+                      const registered = Object.create(null);
+                      Object.defineProperty(window, '__nativeTools', { configurable: false, value: registered });
+                      Object.defineProperty(document, 'modelContext', {
+                        configurable: true,
+                        value: {
+                          async registerTool(tool, options = {}) {
+                            if (!tool || !tool.name || typeof tool.execute !== 'function') throw new Error('Invalid test WebMCP tool');
+                            if (registered[tool.name]) throw new Error(`Duplicate tool: ${tool.name}`);
+                            registered[tool.name] = tool;
+                            options.signal?.addEventListener('abort', () => {
+                              if (registered[tool.name] === tool) delete registered[tool.name];
+                            }, { once: true });
+                          },
+                          async getTools() {
+                            return Object.values(registered).map(({ execute, ...tool }) => tool);
+                          },
+                          async executeTool(tool, inputJson = '{}') {
+                            const registeredTool = registered[tool?.name];
+                            if (!registeredTool) throw new Error(`Unknown tool ${tool?.name}`);
+                            const input = typeof inputJson === 'string' ? JSON.parse(inputJson) : inputJson;
+                            return registeredTool.execute(input);
+                          }
+                        }
+                      });
+                      window.__callNative = async (name, input = {}) => {
+                        const tool = (await document.modelContext.getTools()).find(candidate => candidate.name === name);
+                        if (!tool) throw new Error(`Unknown native tool ${name}`);
+                        return document.modelContext.executeTool(tool, JSON.stringify(input));
+                      };
+                    })();"""
+                )
+                persistence_page.goto(base_url, wait_until="domcontentloaded")
+                persistence_page.wait_for_function(
+                    "window.MetaWebMCP && Object.keys(window.__nativeTools || {}).length === 7"
+                )
+                persisted_analysis = persistence_page.evaluate(
+                    """async () => window.__callNative('meta_analyze_site', {
+                      source: 'agent_snapshot',
+                      url: 'https://example.com/',
+                      goal: 'Search the persisted catalog.',
+                      snapshot: '- searchbox "Catalog query" [ref=e1]\\n- button "Search catalog" [ref=e2]',
+                    })"""
+                )
+                persisted_capability = next(
+                    capability for capability in persisted_analysis["capabilities"]
+                    if capability["name"] == "search_catalog"
+                )
+                persistence_page.evaluate(
+                    """async ({ capabilityId }) => {
+                      await window.__callNative('meta_create_webmcp', {
+                        capability_ids: [capabilityId],
+                        overrides: [{
+                          capability_id: capabilityId,
+                          name: 'search_catalog',
+                          description: 'Search the catalog in the caller-controlled browser and inspect visible results.'
+                        }]
+                      });
+                      await window.__callNative('meta_activate_webmcp', {});
+                      await window.__callNative('meta_export_webmcp', { project_name: 'persisted-catalog' });
+                    }""",
+                    {"capabilityId": persisted_capability["id"]},
+                )
+                assert persistence_page.evaluate("window.MetaWebMCP.getState().export.fileName") == "persisted-catalog.zip"
+
+                persistence_page.reload(wait_until="domcontentloaded")
+                expect(persistence_page.locator("#generated-tool-count")).to_have_text("1")
+                expect(persistence_page.locator("#tool-count")).to_have_text("8 tools")
+                restored_workspace = persistence_page.evaluate("window.MetaWebMCP.getState()")
+                assert restored_workspace["contracts"][0]["name"] == "search_catalog"
+                assert restored_workspace["export"] is None
+                assert restored_workspace["persistence"]["storage"] == "indexeddb"
+                assert restored_workspace["persistence"]["available"] is True
+                assert restored_workspace["persistence"]["restored"] is True
+                assert restored_workspace["persistence"]["savedAt"]
+                assert persistence_page.locator("#goal").input_value() == "Search the persisted catalog."
+                assert "Catalog query" in persistence_page.locator("#target-snapshot").input_value()
+                assert persistence_page.locator("#download-link").is_hidden()
+                restored_recipe = persistence_page.evaluate(
+                    "async () => window.__callNative('search_catalog', { catalog_query: 'WebMCP' })"
+                )
+                assert restored_recipe["execution"] == "agent_browser_required"
+
+                persistence_page.evaluate("async () => window.__callNative('meta_reset_workspace', {})")
+                persistence_page.reload(wait_until="domcontentloaded")
+                expect(persistence_page.locator("#generated-tool-count")).to_have_text("0")
+                expect(persistence_page.locator("#tool-count")).to_have_text("7 tools")
+                cleared_workspace = persistence_page.evaluate("window.MetaWebMCP.getState()")
+                assert cleared_workspace["phase"] == 0
+                assert cleared_workspace["contracts"] == []
+                assert cleared_workspace["persistence"]["restored"] is False
+                assert cleared_workspace["persistence"]["savedAt"] is None
+                persistence_page.close()
+                result["checks"].append(
+                    "browser-local workspace survives reload without reviving an export link and Reset clears it"
+                )
+
+                unavailable_storage_page = context.new_page()
+                unavailable_storage_page.on(
+                    "console",
+                    lambda message: console_errors.append(f"storage fallback: {message.text}")
+                    if message.type == "error"
+                    else None,
+                )
+                unavailable_storage_page.add_init_script(
+                    "Object.defineProperty(globalThis, 'indexedDB', { configurable: true, value: undefined });"
+                )
+                unavailable_storage_page.goto(base_url, wait_until="domcontentloaded")
+                expect(unavailable_storage_page.locator("#storage-status")).to_have_text(
+                    "Local save unavailable"
+                )
+                assert unavailable_storage_page.evaluate(
+                    "window.MetaWebMCP.registry.list().length"
+                ) == 7
+                unavailable_storage_page.close()
+                result["checks"].append("workspace remains usable when IndexedDB is unavailable")
+
                 page = context.new_page()
                 page.set_default_timeout(12_000)
                 progress("Chromium page created")
@@ -269,6 +397,7 @@ def main() -> int:
                 page.on("pageerror", lambda error: console_errors.append(str(error)))
                 page.expose_function("__metaApiBridge", make_api_bridge(base_url))
                 progress("rendering production HTML")
+                page.goto(base_url, wait_until="domcontentloaded")
                 page.set_content(index_html, wait_until="domcontentloaded")
                 page.add_style_tag(content=styles)
 

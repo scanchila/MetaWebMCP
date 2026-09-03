@@ -65,6 +65,10 @@ A public same-origin MCP route is a powerful resource even when the product UI e
 - A restrictive Content Security Policy allows only same-origin scripts, styles, frames, and network connections.
 - The top-level page has no inline script or external CDN dependency.
 - Generated target labels are inserted with `textContent`, not HTML.
+- One versioned workspace is stored in same-origin IndexedDB. It can include pasted HTML, accessibility snapshots, reviewed metadata, recipes, and evaluation results; users must not include credentials or secrets in those inputs.
+- Restored records are shape-checked before use, restored generated ToolSpecs pass through the normal registry validation, and control-plane name collisions or duplicate tool names fail closed.
+- Reset deletes the browser-local workspace. IndexedDB is not synchronized server-side, and storage failure falls back to the in-memory workflow.
+- Temporary export URLs and hosted browser sessions are never restored from IndexedDB.
 - Static file paths are normalized and constrained to the public root.
 - Export creation and download require the page's signed capability. Download URLs are bound to their creating page; retained archive bytes are deleted following a successful retrieval.
 - The Node runtime retains at most eight pending archives and 16 MB of archive buffers, rejects archives over 3 MB, limits generation to twelve requests per minute, and expires pending downloads within twenty minutes.

@@ -1,8 +1,10 @@
 # MetaWebMCP
 
-> MetaWebMCP is a WebMCP application that observes website interfaces, creates narrow semantic tools, activates them for the current session, verifies them against visible state, and exports the same contracts as native integration code.
+> MetaWebMCP is a WebMCP application that observes website interfaces, creates narrow semantic tools, activates them in a browser-local workspace, verifies them against visible state, and exports the same contracts as native integration code.
 
 The live workspace exposes seven permanent `meta_*` WebMCP tools. A completed build adds reviewed, domain-specific tools to the same top-level registry without adding WebMCP to the target page. The controlled Relay Sessions demo is deterministic. For any public site, the preferred path is for the calling agent to navigate with its own browser, capture an accessibility snapshot, and call `meta_analyze_site` with `source: "agent_snapshot"`; hosted Browser MCP is an optional deployment feature.
+
+The current workspace is saved in same-origin IndexedDB and restored after reload. `meta_reset_workspace` deletes that browser-local copy. Temporary export URLs and hosted browser sessions are not restored.
 
 ## Primary links
 
