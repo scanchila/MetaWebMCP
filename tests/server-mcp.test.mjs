@@ -217,6 +217,9 @@ test('Browser MCP transport sessions are isolated by MetaWebMCP workspace', { ti
 
 test('generated browser recipes satisfy the Playwright MCP tool contracts', { timeout: 20_000 }, async (t) => {
   const toolCalls = [];
+  let markOversizedNavigationClosed;
+  let oversizedNavigationCanceled = false;
+  const oversizedNavigationClosed = new Promise((resolve) => { markOversizedNavigationClosed = resolve; });
   const contracts = {
     browser_navigate: { required: ['url'], allowed: ['url'] },
     browser_snapshot: { required: [], allowed: [] },
@@ -285,6 +288,30 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
         const { name, arguments: args } = message.params;
         validateCall(name, args);
         toolCalls.push({ name, args });
+        if (name === 'browser_navigate' && args.url.endsWith('/oversized-navigation')) {
+          res.writeHead(200, { 'content-type': 'application/json' });
+          res.write(`{"jsonrpc":"2.0","id":${message.id},"result":{"content":[{"type":"text","text":"`);
+          const chunk = 'x'.repeat(64 * 1024);
+          let chunksSent = 0;
+          let timer;
+          const writeChunk = () => {
+            if (res.destroyed) return;
+            chunksSent += 1;
+            if (chunksSent > 40) {
+              res.end('"}]}}');
+              return;
+            }
+            res.write(chunk);
+            timer = setTimeout(writeChunk, 2);
+          };
+          res.once('close', () => {
+            clearTimeout(timer);
+            oversizedNavigationCanceled = !res.writableEnded;
+            markOversizedNavigationClosed();
+          });
+          timer = setTimeout(writeChunk, 2);
+          return;
+        }
         const text = name === 'browser_snapshot'
           ? '- textbox "Topic" [ref=e1]\n- combobox "Level" [ref=e2]\n- button "Find sessions" [ref=e3]'
           : name === 'browser_navigate' && args.url.endsWith('/redirect')
@@ -312,6 +339,7 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
       PORT: String(appPort),
       BROWSER_MCP_URL: `http://127.0.0.1:${mcpPort}/mcp`,
       BROWSER_MCP_EGRESS_ISOLATED: '1',
+      ANALYSIS_RATE_LIMIT_PER_MINUTE: '4',
     },
     stdio: 'ignore',
   });
@@ -357,6 +385,36 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
   assert.equal(redirected.status, 400);
   assert.match((await redirected.json()).error, /Private and reserved IP targets are blocked/);
 
+  const snapshotsBeforeOversizedNavigation = toolCalls.filter((call) => call.name === 'browser_snapshot').length;
+  const oversizedNavigation = await fetch(`${base}/api/mcp/analyze`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({
+      workspaceId,
+      url: 'https://8.8.8.8/oversized-navigation',
+      goal: 'Inspect.',
+    }),
+  });
+  assert.equal(oversizedNavigation.status, 413);
+  assert.match((await oversizedNavigation.json()).error, /MCP response exceeds 2000000 bytes/i);
+  await oversizedNavigationClosed;
+  assert.equal(oversizedNavigationCanceled, true);
+  assert.equal(
+    toolCalls.filter((call) => call.name === 'browser_snapshot').length,
+    snapshotsBeforeOversizedNavigation,
+  );
+
+  const rateLimited = await fetch(`${base}/api/mcp/analyze-snapshot`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({
+      snapshot: '- button "Inspect" [ref=r1]',
+      url: 'https://8.8.8.8/',
+    }),
+  });
+  assert.equal(rateLimited.status, 429);
+  assert.match((await rateLimited.json()).error, /analysis request limit reached/i);
+
   const executed = await fetch(`${base}/api/mcp/execute`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', cookie },
@@ -373,6 +431,7 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
     { name: 'browser_navigate', args: { url: 'https://8.8.8.8/' } },
     { name: 'browser_snapshot', args: {} },
     { name: 'browser_navigate', args: { url: 'https://8.8.8.8/redirect' } },
+    { name: 'browser_navigate', args: { url: 'https://8.8.8.8/oversized-navigation' } },
     { name: 'browser_type', args: { element: 'Topic', ref: 'e1', text: 'WebMCP' } },
     { name: 'browser_select_option', args: { element: 'Level', ref: 'e2', values: ['Advanced'] } },
     { name: 'browser_click', args: { element: 'Find sessions', ref: 'e3' } },

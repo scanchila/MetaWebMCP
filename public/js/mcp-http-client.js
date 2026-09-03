@@ -18,9 +18,55 @@ function parseEventStream(text) {
   return messages;
 }
 
-async function parseResponse(response) {
+function oversizedResponseError(maxBytes) {
+  const error = new Error(`MCP response exceeds ${maxBytes} bytes.`);
+  error.statusCode = 413;
+  return error;
+}
+
+async function readResponseText(response, maxBytes) {
+  if (maxBytes === undefined) return response.text();
+  if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) {
+    throw new Error('MCP response byte limit must be a positive integer.');
+  }
+
+  const declaredLength = response.headers.get('content-length');
+  if (/^\d+$/.test(declaredLength || '') && Number(declaredLength) > maxBytes) {
+    await response.body?.cancel().catch(() => {});
+    throw oversizedResponseError(maxBytes);
+  }
+
+  if (!response.body?.getReader) {
+    const text = await response.text();
+    if (new TextEncoder().encode(text).byteLength > maxBytes) throw oversizedResponseError(maxBytes);
+    return text;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const chunks = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) throw oversizedResponseError(maxBytes);
+      chunks.push(decoder.decode(value, { stream: true }));
+    }
+    chunks.push(decoder.decode());
+    return chunks.join('');
+  } catch (error) {
+    await reader.cancel(error).catch(() => {});
+    throw error;
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+async function parseResponse(response, { maxBytes } = {}) {
   if (response.status === 202 || response.status === 204) return null;
-  const text = await response.text();
+  const text = await readResponseText(response, maxBytes);
   if (!text.trim()) return null;
   const contentType = response.headers.get('content-type') || '';
   if (contentType.includes('text/event-stream')) {
@@ -74,7 +120,7 @@ export class McpHttpClient {
     this._queue = Promise.resolve();
   }
 
-  async _post(payload, { initialization = false } = {}) {
+  async _post(payload, { initialization = false, maxResponseBytes } = {}) {
     const headers = {
       accept: 'application/json, text/event-stream',
       'content-type': 'application/json',
@@ -91,7 +137,7 @@ export class McpHttpClient {
     });
     const returnedSession = response.headers.get('mcp-session-id');
     if (returnedSession) this.sessionId = returnedSession;
-    const body = await parseResponse(response);
+    const body = await parseResponse(response, { maxBytes: maxResponseBytes });
     if (!response.ok) {
       const detail = body?.error?.message || body?.message || `${response.status} ${response.statusText}`;
       throw new Error(`MCP request failed: ${detail}`);
@@ -99,9 +145,9 @@ export class McpHttpClient {
     return body;
   }
 
-  async _request(method, params = {}) {
+  async _request(method, params = {}, options = {}) {
     const id = this.nextId++;
-    const response = await this._post({ jsonrpc: '2.0', id, method, params });
+    const response = await this._post({ jsonrpc: '2.0', id, method, params }, options);
     if (!response) throw new Error(`MCP server returned no response for ${method}.`);
     if (response.error) throw new Error(`MCP ${method} failed: ${response.error.message || JSON.stringify(response.error)}`);
     if (response.id !== undefined && response.id !== id) throw new Error(`MCP response ID mismatch for ${method}.`);
@@ -145,10 +191,10 @@ export class McpHttpClient {
     });
   }
 
-  async callTool(name, args = {}) {
+  async callTool(name, args = {}, options = {}) {
     return this.run(async () => {
       await this.initialize();
-      return checkedToolResult(name, await this._request('tools/call', { name, arguments: args }));
+      return checkedToolResult(name, await this._request('tools/call', { name, arguments: args }, options));
     });
   }
 

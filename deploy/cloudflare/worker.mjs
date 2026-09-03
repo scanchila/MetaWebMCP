@@ -300,6 +300,9 @@ async function handleApi(request, bindings, pathname, browserCapability) {
   }
 
   if (pathname === '/api/mcp/analyze-snapshot' && request.method === 'POST') {
+    if (!await analysisRequestWithinLimit(request, bindings)) {
+      return json({ ok: false, error: 'Analysis request limit reached. Try again in a minute.' }, { status: 429 });
+    }
     const body = await readJson(request);
     const target = validatePublicTarget(body.url);
     const analysis = analyzeAccessibilitySnapshot({

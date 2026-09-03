@@ -168,6 +168,47 @@ test('accessibility snapshot analysis produces browser MCP recipes', () => {
   ]);
 });
 
+test('accessibility snapshot analysis rejects oversized and control-heavy input', () => {
+  assert.throws(
+    () => analyzeAccessibilitySnapshot({ snapshot: 'x'.repeat(250_001) }),
+    /exceeds 250000 characters/,
+  );
+  const controls = Array.from(
+    { length: 2_001 },
+    (_, index) => `- button "Action ${index}" [ref=e${index}]`,
+  ).join('\n');
+  assert.throws(
+    () => analyzeAccessibilitySnapshot({ snapshot: controls }),
+    /exceeds 2000 controls/,
+  );
+});
+
+test('duplicate snapshot action names remain bounded at the control limit', () => {
+  const label = '\ufdfa'.repeat(100);
+  const snapshot = Array.from(
+    { length: 2_000 },
+    (_, index) => `- button "${label}" [ref=e${index}]`,
+  ).join('\n');
+  const started = performance.now();
+  const result = analyzeAccessibilitySnapshot({ snapshot });
+  const elapsed = performance.now() - started;
+  assert.equal(result.summary.controls, 2_000);
+  assert.equal(new Set(result.capabilities.map((capability) => capability.name)).size, result.capabilities.length);
+  assert.ok(elapsed < 2_000, `duplicate-name analysis took ${elapsed.toFixed(1)}ms`);
+});
+
+test('snapshot form fields are bounded by the preceding button in one pass', () => {
+  const result = analyzeAccessibilitySnapshot({
+    snapshot: `- textbox "Unrelated" [ref=e1]
+- button "Open panel" [ref=e2]
+- textbox "Query" [ref=e3]
+- button "Search" [ref=e4]`,
+    url: 'https://search.example/',
+  });
+  const search = result.capabilities.find((capability) => capability.name === 'search');
+  assert.deepEqual(Object.keys(search.inputSchema.properties), ['query']);
+});
+
 test('snapshot forms retain distant fields and generate unique required input names', () => {
   const structuralLines = Array.from({ length: 18 }, (_, index) => `    - generic "layout ${index}"`).join('\n');
   const snapshot = `- main "Store" [ref=e0]

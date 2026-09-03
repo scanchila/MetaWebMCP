@@ -85,6 +85,17 @@ async function createAnalysis(base, payload) {
   });
 }
 
+async function createSnapshotAnalysis(base, cookie) {
+  return fetch(`${base}/api/mcp/analyze-snapshot`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({
+      snapshot: '- textbox "Query" [ref=s1]\n- button "Search" [ref=s2]',
+      url: 'https://8.8.8.8/',
+    }),
+  });
+}
+
 test('exports require a page capability and downloads are owner-bound and single-use', async (t) => {
   const base = await startApp(t);
   const unauthorized = await createExport(base, '');
@@ -191,4 +202,14 @@ test('analysis work has independent request-rate and concurrency limits', async 
     releaseResponse();
     assert.equal((await first).status, 200);
   });
+});
+
+test('snapshot analysis shares the analysis rate limit', async (t) => {
+  const base = await startApp(t, { ANALYSIS_RATE_LIMIT_PER_MINUTE: '2' });
+  const cookie = await capabilityCookie(base);
+  assert.equal((await createSnapshotAnalysis(base, cookie)).status, 200);
+  assert.equal((await createSnapshotAnalysis(base, cookie)).status, 200);
+  const limited = await createSnapshotAnalysis(base, cookie);
+  assert.equal(limited.status, 429);
+  assert.match((await limited.json()).error, /analysis request limit reached/i);
 });
