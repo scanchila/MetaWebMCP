@@ -149,6 +149,16 @@ assert.deepEqual(screenshotResult.content, [
   },
 ]);
 
+const chromiumPageSource = await readFile(
+  './node_modules/@cloudflare/playwright/lib/playwright-core/src/server/chromium/crPage.js',
+  'utf8',
+);
+assert.match(
+  chromiumPageSource,
+  /layoutMetrics\.cssVisualViewport \?\? layoutMetrics\.visualViewport/,
+  'Kitesurf screenshots should accept the current CSS visual viewport response shape',
+);
+
 const commonJsPatch = await readFile(
   './node_modules/@cloudflare/playwright-mcp/lib/cjs/src/tools/utils.js',
   'utf8',

@@ -141,6 +141,21 @@ for (const { file, configImport, originalSetup } of screenshotFiles) {
   if (source !== installedSource) await writeFile(file, source);
 }
 
+const chromiumPageFile = 'node_modules/@cloudflare/playwright/lib/playwright-core/src/server/chromium/crPage.js';
+const originalViewportMetrics = '    const { visualViewport } = await progress.race(this._mainFrameSession._client.send("Page.getLayoutMetrics"));';
+const compatibleViewportMetrics = `    const layoutMetrics = await progress.race(this._mainFrameSession._client.send("Page.getLayoutMetrics"));
+    const visualViewport = layoutMetrics.cssVisualViewport ?? layoutMetrics.visualViewport;
+    if (!visualViewport)
+      throw new Error("Browser did not return viewport metrics for screenshot.");`;
+
+{
+  const source = await readFile(chromiumPageFile, 'utf8');
+  if (!source.includes(compatibleViewportMetrics)) {
+    if (!source.includes(originalViewportMetrics)) throw new Error(`Unexpected Playwright viewport metrics in ${chromiumPageFile}.`);
+    await writeFile(chromiumPageFile, source.replace(originalViewportMetrics, compatibleViewportMetrics));
+  }
+}
+
 const connectionFiles = [
   {
     file: 'node_modules/@cloudflare/playwright-mcp/lib/esm/src/connection.js',
