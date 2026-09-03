@@ -129,8 +129,21 @@ Run the generated WebMCP evaluation suite and export a repository named relay-se
 
 ## Judge setup
 
-1. Open the deployed HTTPS URL as a top-level page in a supported WebMCP client.
-2. Confirm the seven `meta_*` tools appear.
-3. Run the prompt sequence above.
-4. The controlled demo requires no credentials or external service.
-5. The live “Any public site” path uses the deployment's isolated Browser MCP runtime; the controlled demo remains a deterministic fallback.
+### Native Site Tools path
+
+1. In the latest ChatGPT desktop app, open the deployed HTTPS URL as a top-level page in the built-in browser.
+2. Use ChatGPT Work or Codex with GPT‑5.6 Sol or Terra. Site Tools are disabled on Luna and unavailable in ChatGPT Enterprise and Edu. Availability is still rolling out and can differ between otherwise eligible workspaces; the current requirements are in the [Site Tools setup reference](https://learn.chatgpt.com/docs/webmcp).
+3. Confirm that the page header reads **WebMCP active** and the seven `meta_*` tools appear.
+4. Run the prompt sequence above.
+
+### Ordinary browser fallback
+
+If native tools do not appear or the header reads **Preview registry**, use the in-page controls. They call the same implementations as the seven registered meta-tools.
+
+1. Keep **Owned page → Controlled legacy demo**, then select **Observe this interface** (1).
+2. Review the evidence-backed candidates and select **Shape selected tools** (2).
+3. Select **Activate tools** (3) and confirm the registry grows from seven to eleven tools.
+4. Select **Run live checks** (4) and confirm that all four generated-tool checks pass.
+5. Select **Export native repository** (5), download the ZIP, and compare it with the [retained production evidence](https://github.com/scanchila/MetaWebMCP/tree/main/evidence).
+
+The controlled demo requires no account, credentials, model API, or external service. The live **Any public site** path uses the deployment's isolated Browser MCP runtime and is separate from this deterministic fallback.
