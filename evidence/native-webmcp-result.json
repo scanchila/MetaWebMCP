@@ -1,0 +1,222 @@
+{
+  "browserApi": {
+    "modelContext": true,
+    "registerTool": "function",
+    "getTools": "function",
+    "executeTool": "function"
+  },
+  "initialTools": [
+    "meta_activate_webmcp",
+    "meta_analyze_site",
+    "meta_create_webmcp",
+    "meta_export_webmcp",
+    "meta_get_state",
+    "meta_reset_workspace",
+    "meta_test_webmcp"
+  ],
+  "analysis": {
+    "summary": {
+      "forms": 1,
+      "buttons": 8,
+      "inputs": 3,
+      "links": 0,
+      "candidates": 4,
+      "generatedFromLiveDom": true
+    },
+    "capabilities": [
+      {
+        "name": "find_sessions",
+        "risk": "read"
+      },
+      {
+        "name": "add_session_to_itinerary",
+        "risk": "write"
+      },
+      {
+        "name": "inspect_itinerary",
+        "risk": "read"
+      },
+      {
+        "name": "clear_itinerary",
+        "risk": "write"
+      }
+    ]
+  },
+  "created": {
+    "toolCount": 4
+  },
+  "activated": {
+    "ok": true,
+    "generatedTools": [
+      {
+        "name": "find_sessions",
+        "nativeRegistered": true
+      },
+      {
+        "name": "add_session_to_itinerary",
+        "nativeRegistered": true
+      },
+      {
+        "name": "inspect_itinerary",
+        "nativeRegistered": true
+      },
+      {
+        "name": "clear_itinerary",
+        "nativeRegistered": true
+      }
+    ],
+    "registrySize": 11
+  },
+  "activeTools": [
+    "add_session_to_itinerary",
+    "clear_itinerary",
+    "find_sessions",
+    "inspect_itinerary",
+    "meta_activate_webmcp",
+    "meta_analyze_site",
+    "meta_create_webmcp",
+    "meta_export_webmcp",
+    "meta_get_state",
+    "meta_reset_workspace",
+    "meta_test_webmcp"
+  ],
+  "search": {
+    "ok": true,
+    "visibleSessionCount": 3
+  },
+  "added": {
+    "ok": true,
+    "itinerary": [
+      {
+        "id": "agent-evals-that-catch-regressions",
+        "title": "Agent evals that catch regressions"
+      }
+    ]
+  },
+  "inspected": {
+    "ok": true,
+    "visibleState": "WORKING SET Your itinerary Clear Remove Agent evals that catch regressions Day 1 \u00b7 10:00\u201310:45 1 SESSION \u00b7 0 CONFLICTS"
+  },
+  "evaluation": {
+    "ok": true,
+    "results": [
+      {
+        "tool": "find_sessions",
+        "status": "passed",
+        "checks": [
+          {
+            "name": "registered in generated tool registry",
+            "passed": true
+          },
+          {
+            "name": "execution returned ok",
+            "passed": true
+          },
+          {
+            "name": "matching sessions are visible",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "tool": "add_session_to_itinerary",
+        "status": "passed",
+        "checks": [
+          {
+            "name": "registered in generated tool registry",
+            "passed": true
+          },
+          {
+            "name": "execution returned ok",
+            "passed": true
+          },
+          {
+            "name": "requested session is in itinerary",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "tool": "inspect_itinerary",
+        "status": "passed",
+        "checks": [
+          {
+            "name": "registered in generated tool registry",
+            "passed": true
+          },
+          {
+            "name": "execution returned ok",
+            "passed": true
+          },
+          {
+            "name": "read result contains itinerary state",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "tool": "clear_itinerary",
+        "status": "passed",
+        "checks": [
+          {
+            "name": "registered in generated tool registry",
+            "passed": true
+          },
+          {
+            "name": "execution returned ok",
+            "passed": true
+          },
+          {
+            "name": "itinerary is empty",
+            "passed": true
+          }
+        ]
+      }
+    ]
+  },
+  "exported": {
+    "fileName": "relay-sessions-webmcp.zip",
+    "fileCount": 13,
+    "bytes": 54322
+  },
+  "exportedNativeValidation": {
+    "archiveSha256": "9e22cc71135a53a07fd156546db487251805fa4444cad66f492a4d2243951c3b",
+    "fileCount": 13,
+    "unixFileMode": "0644",
+    "directRegisterTool": true,
+    "registeredTools": [
+      "add_session_to_itinerary",
+      "clear_itinerary",
+      "find_sessions",
+      "inspect_itinerary"
+    ],
+    "search": {
+      "ok": true,
+      "matchedTitle": "Agent evals that catch regressions",
+      "postcondition": true
+    },
+    "added": {
+      "ok": true,
+      "selectedTitle": "Agent evals that catch regressions",
+      "postcondition": true
+    },
+    "inspected": {
+      "ok": true,
+      "visibleState": "WORKING SET Your itinerary Clear Remove Agent evals that catch regressions Day 1 \u00b7 10:00\u201310:45 1 SESSION \u00b7 0 CONFLICTS",
+      "postcondition": true
+    },
+    "consoleErrors": [],
+    "screenshot": "native-export-owned-page.png",
+    "screenshotSha256": "48cb99007cd29d551eebe149f44bf2a1fcf89c86fd0c4709f873b0261a722762"
+  },
+  "uiStatus": "WebMCP active",
+  "generatedToolCount": "4",
+  "capturedAt": "2026-09-03T00:48:59.014417Z",
+  "deployment": "https://metawebmcp.neuryta.com",
+  "deploymentVersion": "36b55862-be1d-45e2-a345-81ca2cf7f932",
+  "browser": "Google Chrome 154.0.8037.0 beta",
+  "feature": "WebMCPTesting",
+  "consoleErrors": [],
+  "screenshot": "native-webmcp-recursive-workspace.png",
+  "screenshotSha256": "c20a79879b16c3b60f0ab625fa07267838354ee5d92ffc9de97624c9f238e39c"
+}

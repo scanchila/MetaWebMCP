@@ -8,6 +8,12 @@ MetaWebMCP
 
 **WebMCP builds WebMCP.**
 
+## Links
+
+- Live application: <https://metawebmcp.neuryta.com>
+- Source repository: <https://github.com/scanchila/MetaWebMCP>
+- Production evidence: <https://github.com/scanchila/MetaWebMCP/tree/main/evidence>
+
 ## One-sentence pitch
 
 MetaWebMCP is a WebMCP-native compatibility studio that lets an agent observe a website, create a minimal semantic tool surface, activate it immediately, verify it against real page state, and export the same contracts as a native integration repository.
@@ -23,6 +29,15 @@ The application exposes seven permanent WebMCP tools: analyze a target, construc
 For a site owner, MetaWebMCP analyzes live or supplied HTML and produces a standalone integration pack containing direct imperative WebMCP registration, the tool manifest, evidence, installation instructions, and agent eval prompts. For a third-party site, it creates a session-scoped semantic adapter over a standard Playwright MCP server and exports the same reviewed ToolSpecs with a constrained owned-page runtime. The low-level browser tools remain an internal execution mechanism rather than becoming the agent-facing interface.
 
 The project does not need a separate model API. The WebMCP client is the reasoning agent: it reviews the discovered evidence, chooses the capabilities, refines contracts when needed, activates the new surface, and asks MetaWebMCP to test and export it.
+
+## Production proof
+
+- The live page exposed seven permanent tools through a real `document.modelContext`, dynamically expanded to eleven, and passed all four generated-tool checks.
+- Its 13-file export registered four native tools on an independently served page and completed search, itinerary mutation, and state inspection without MetaWebMCP as the runtime.
+- Through the same native entrypoint, the hosted, page-scoped Browser MCP path generated and executed semantic adapters for Wikipedia search, a two-stage SauceDemo sign-in and cart workflow, and a visible state change on The Internet test site.
+- The production page scored 96 for Lighthouse performance and 100 for accessibility, best practices, SEO, and agentic browsing; the independently served native export scored 100 in all five categories.
+
+The retained screenshots and redacted machine results are in `evidence/` in the public repository.
 
 ## What makes it technically distinct
 

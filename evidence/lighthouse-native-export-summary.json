@@ -1,0 +1,16 @@
+{
+  "url": "http://127.0.0.1:4173/",
+  "capturedAt": "2026-09-03T00:50:28.408Z",
+  "generatedFromDeploymentVersion": "36b55862-be1d-45e2-a345-81ca2cf7f932",
+  "lighthouseVersion": "13.4.1",
+  "browser": "HeadlessChrome 147.0.0.0",
+  "categories": {
+    "performance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100,
+    "agenticBrowsing": 100
+  },
+  "cumulativeLayoutShift": 0,
+  "consoleErrors": 0
+}
