@@ -4,10 +4,24 @@ import assert from 'node:assert/strict';
 import { isPrivateOrReservedIp, parseAllowedOrigins, validateBrowserTarget, validateTargetUrl } from '../lib/security.mjs';
 
 test('private, loopback, link-local, documentation, and multicast IPs are blocked', () => {
-  for (const address of ['127.0.0.1', '10.2.3.4', '172.16.0.1', '192.168.1.2', '169.254.10.2', '203.0.113.8', '::1', 'fd00::1', 'fe80::1']) {
+  for (const address of [
+    '127.0.0.1',
+    '10.2.3.4',
+    '172.16.0.1',
+    '192.168.1.2',
+    '169.254.10.2',
+    '203.0.113.8',
+    '::1',
+    'fd00::1',
+    'fe80::1',
+    '::ffff:127.0.0.1',
+    '::ffff:7f00:1',
+    '0:0:0:0:0:ffff:a9fe:a9fe',
+  ]) {
     assert.equal(isPrivateOrReservedIp(address), true, address);
   }
   assert.equal(isPrivateOrReservedIp('8.8.8.8'), false);
+  assert.equal(isPrivateOrReservedIp('::ffff:808:808'), false);
   assert.equal(isPrivateOrReservedIp('2606:4700:4700::1111'), false);
 });
 
@@ -15,6 +29,8 @@ test('URL validation rejects credentials, unsupported protocols, and direct loca
   await assert.rejects(validateTargetUrl('file:///tmp/index.html'), /Only HTTP and HTTPS/);
   await assert.rejects(validateTargetUrl('https://user:secret@example.com'), /credentials/);
   await assert.rejects(validateTargetUrl('http://127.0.0.1:8000'), /Private and reserved/);
+  await assert.rejects(validateTargetUrl('http://[::ffff:127.0.0.1]/'), /Private and reserved/);
+  await assert.rejects(validateTargetUrl('http://[::ffff:a9fe:a9fe]/latest/meta-data/'), /Private and reserved/);
   const allowed = await validateTargetUrl('http://127.0.0.1:8000', { allowPrivate: true });
   assert.equal(allowed.hostname, '127.0.0.1');
 });
