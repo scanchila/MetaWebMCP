@@ -1,18 +1,19 @@
 # MetaWebMCP
 
-**A WebMCP application that creates other WebMCP applications.**
+**Build, test, and export WebMCP tools from live website workflows.**
 
-**Live application:** https://metawebmcp.neuryta.com
+**Try it:** [metawebmcp.neuryta.com](https://metawebmcp.neuryta.com)
 
-Most websites expose useful workflows but no WebMCP tools. MetaWebMCP makes
-compatibility incremental: if an agent can safely observe part of a website,
-it can author domain-specific tools over bounded action and collection
-primitives, then reuse them instead of rediscovering low-level controls every
-time.
+Most websites still make an agent work at the browser-control level: inspect a
+page, find a control, act, and inspect again. MetaWebMCP lets a WebMCP client
+turn an observed workflow into a small, named tool with a closed schema and
+bounded behavior.
 
-MetaWebMCP exposes a permanent WebMCP control plane that lets an agent inspect a website, turn observed workflows into narrow semantic tools, register those tools immediately on the same top-level page, verify their execution, and export a standalone native integration repository.
+The tool is registered immediately on the MetaWebMCP page. The same reviewed
+ToolSpec is used for live execution, checks, and a standalone export, so the
+integration you download is the one you tested.
 
-The central demonstration is recursive:
+MetaWebMCP itself exposes seven permanent tools, which makes the flow recursive:
 
 ```text
 ChatGPT / a WebMCP agent
@@ -29,39 +30,33 @@ Dynamically registered domain tools
 An ordinary website that initially had no WebMCP tools
 ```
 
-No model API key is required. The browser agent supplies the reasoning and calls the meta-tools. MetaWebMCP handles deterministic discovery, contracts, runtime registration, execution, tests, and code generation.
+No model API key is required. The WebMCP client decides what the observed
+workflow means; MetaWebMCP handles discovery, contract validation, runtime
+registration, execution, tests, and code generation.
 
 ![MetaWebMCP running the recursive flow through native WebMCP](evidence/native-webmcp-recursive-workspace.png)
 
-## Why not just generate a reusable script?
+## Why not save a browser script?
 
-That is a valid alternative. An agent can save, parameterize, test, share,
-and rerun a Playwright script, browser extension, or agent skill. MetaWebMCP
-does not claim to make automation reusable for the first time, and direct
-automation may be the better choice for a one-off task.
+For a one-off automation, saving a Playwright script may be the right answer.
+MetaWebMCP is aimed at the point where that workflow needs a stable interface
+that WebMCP clients can discover and a site owner can adopt.
 
-The distinction is the resulting interface. A script is a reusable
-implementation, usually coupled to its execution environment. MetaWebMCP
-turns an observed workflow into a website-facing contract with a stable
-semantic name, closed input schema, supporting interface evidence, risk
-classification, sample arguments, and a bounded deterministic executor. It
-registers that contract through WebMCP so compatible clients can discover it,
-then uses the same reviewed ToolSpec for immediate activation, testing, and a
-standalone native export. A site owner can adopt that export and replace its
-compatibility DOM lookups with application functions and existing permission
-checks.
+A script mainly packages an implementation. A generated WebMCP integration
+also defines the public interface: its semantic name, input schema, supporting
+page evidence, risk classification, sample arguments, and execution bounds.
+MetaWebMCP registers that contract for immediate use, tests it, and exports it
+as a native project. A site owner can then replace the compatibility DOM
+lookups with application functions and existing permission checks.
 
-A sufficiently mature script platform could add schemas, discovery,
-sandboxing, lifecycle management, tests, and owner-installable packaging. At
-that point it provides much of the same tool-platform layer. MetaWebMCP's
-specific contribution is a constrained, WebMCP-native path from observed
-automation to a published website capability.
+A script platform can add schemas, discovery, sandboxing, lifecycle management,
+tests, and installable packaging. At that point it covers much of the same
+ground. MetaWebMCP provides those pieces as a constrained path from an observed
+workflow to a WebMCP capability.
 
-The retained benchmarks compare MetaWebMCP with agents that repeatedly inspect
-browser snapshots, not with agents that generate and reuse optimized scripts.
-They demonstrate context compression and a crossover when enough repeated
-page interpretation is removed; they do not establish a universal performance
-advantage over reusable scripting.
+The benchmarks below compare MetaWebMCP with repeated browser-snapshot
+inspection, not with hand-optimized reusable scripts. They measure context
+compression and cold-start tradeoffs, not a universal performance advantage.
 
 ## Production proof
 
@@ -69,61 +64,59 @@ The deployed build has been exercised through a real browser `document.modelCont
 
 Screenshots and redacted machine-readable results are retained in [`evidence/`](evidence/). Three mobile Lighthouse samples gave the production workspace a 100 median performance score (99–100) and 100 for accessibility, best practices, SEO, and agentic browsing; the independently served native export scored 100 in all five categories. The exact production-generated [`relay-sessions-webmcp.zip`](evidence/relay-sessions-webmcp.zip) is retained alongside its SHA-256 digest and independent execution result.
 
-### Live-site benchmark summary
+### Live-site benchmarks
 
-Fresh, isolated Codex processes ran each arm with the same model and reasoning
-effort. The direct arm repeatedly read Playwright accessibility snapshots; the
-MetaWebMCP arm started without a domain tool, analyzed the site, authored and
-activated a constrained ToolSpec, and invoked it. Cold analysis, authoring
-retries, activation, execution, and final formatting are included in every
-MetaWebMCP wall time.
+For each arm, a fresh isolated Codex process used the same model and reasoning
+setting. The direct arm read Playwright accessibility snapshots. The
+MetaWebMCP arm began without a domain tool, analyzed the site, authored and
+activated a constrained ToolSpec, and invoked it. Its times include cold
+analysis, authoring retries, activation, execution, and final formatting. Both
+arms had to pass the same task-specific correctness gate before their
+efficiency numbers were compared.
 
-In the table, values are **MetaWebMCP / direct browser**. A reduction factor
-greater than 1× favors MetaWebMCP.
+![Live-site benchmark comparing MetaWebMCP with direct browser parsing across wall time, processed tokens, non-cached tokens, and model-facing tool-response text](docs/assets/benchmark-comparison.svg)
 
-| Benchmark | Scope and quality gate | Wall time M / D | Wall-time result | Processed tokens M / D | Non-cached tokens M / D | Model-facing tool text M / D |
-|---|---|---:|---:|---:|---:|---:|
-| FincaRaíz pair 1 | 13 pages; top 50, both 50/50 exact | 290.550 / 634.630 s | **2.18× faster** | 345,737 / 5,997,779 · **17.35× fewer** | 71,689 / 336,723 · **4.70× fewer** | 51,277 / 1,205,716 chars · **23.51× less** |
-| FincaRaíz pair 2 | 13 pages; top 50, both 50/50 exact | 373.607 / 713.181 s | **1.91× faster** | 473,796 / 4,657,195 · **9.83× fewer** | 62,276 / 423,851 · **6.81× fewer** | 53,506 / 3,066,487 chars · **57.31× less** |
-| **FincaRaíz median** | **Two matched pairs; all four arms passed** | **332.079 / 673.906 s** | **2.03× faster** | **409,767 / 5,327,487 · 13.00× fewer** | **66,983 / 380,287 · 5.68× fewer** | **52,392 / 2,136,102 chars · 40.77× less** |
-| Metrocuadrado | 1 lazy page; both 10/10 exact end to end¹ | 159.678 / 114.470 s | **1.40× slower** | 319,868 / 147,997 · 2.16× more | 46,332 / 59,421 · **1.28× fewer** | 133,952 / 549,894 chars · **4.11× less** |
-| Steam | 20 pages, 500 cards; both 50/50 exact² | 287.680 / 399.300 s | **1.39× faster** | 248,889 / 2,634,279 · **10.58× fewer** | 46,777 / 240,935 · **5.15× fewer** | 33,340 / 628,090 chars · **18.84× less** |
+The chart reports **direct browser ÷ MetaWebMCP**, so values above 1× favor
+MetaWebMCP. The FincaRaíz row averages each arm's two matched runs; with two
+runs, it is the same value as the median in the retained summary. Rebuild the
+graphic from the checked-in manifests with
+`python3 scripts/render-benchmark-chart.py`.
 
-The strongest consistent benefit in these limited tests is **context
-compression**. MetaWebMCP kept repetitive browser output behind a typed
-semantic tool and reduced model-facing tool text by 4.11× to 57.31× and
-non-cached tokens by 1.28× to 6.81× in every matched run. On the multipage
-FincaRaíz and Steam workloads, that reduction also outweighed cold tool
-authoring cost and improved wall time by 1.39× to 2.18×. MetaWebMCP did not
-need fewer browser operations in every case—the Steam tool deliberately used
-fresh snapshots and waits internally—but those low-level responses did not
-enter the managing agent's context.
+#### Tasks
 
-Metrocuadrado is the useful latency counterexample, but it still shows the
-context-efficiency benefit clearly. Even though direct inspection finished
-45.208 seconds sooner, MetaWebMCP used **22% fewer non-cached tokens** (46,332
-versus 59,421) and exposed **76% less model-facing tool text** (133,952 versus
-549,894 characters, a 4.11× reduction). Total processed tokens, which include
-repeated cached context, were 2.16× higher because the one-off workload was too
-short to amortize cold analysis and authoring. These results support a
-crossover claim, not a blanket speed claim: generated semantic tools provided
-substantial context savings in every test and improved wall time when they
-replaced enough repeated parsing.
+- **FincaRaíz (average of two matched runs):** Scan rent-sorted Bogotá
+  apartment results until the stopping condition is proved; both runs needed
+  13 pages. Return the 50 cheapest unique listings with at least two bedrooms,
+  45–100 m², and an explicit laundry-area phrase, ranked by rent plus any
+  administration fee.
+- **Metrocuadrado:** Read one tall, lazy-rendered Bogotá results page, combine
+  promoted and ordinary cards, and return the 10 cheapest unique listings with
+  at least two bedrooms and 45–100 m². Rent, area, and canonical URL determine
+  the order.
+- **Steam:** Inspect exactly 20 pages of Windows specials, covering 500 result
+  cards, and return the top 50 unique games inside fixed discount, original
+  price, and sale-price ranges. Sale price, discount, original price, and URL
+  determine the order.
 
-¹ Metrocuadrado's generated tool retained tracking parameters; the managing
-agent canonicalized URLs in the schema-constrained final answer. This result
-therefore validates the end-to-end workflow, not reusable URL canonicalization
-inside that ToolSpec.
+The consistent result was context compression: model-facing tool text fell by
+4.11× to 40.77× and non-cached tokens fell by 1.28× to 5.68×. On the two
+multipage tasks, that was enough to offset cold tool authoring and improve wall
+time by 1.39× to 2.03×. Steam used more low-level browser operations internally,
+but those responses stayed behind the generated tool instead of entering the
+managing process's context.
 
-² Steam's untouched generated execution and final answer both passed 50/50.
-The initially frozen oracle missed quoted accessibility keys; its failed score
-is retained, and a documented post-run parser correction produced the reported
-gate. A preregistered repeat remains desirable.
+Metrocuadrado shows the other side of the tradeoff. Direct inspection finished
+45.208 seconds sooner, and MetaWebMCP processed 2.16× more total tokens because
+the single-page task did not amortize analysis and authoring. MetaWebMCP still
+used 22% fewer non-cached tokens and exposed 76% less tool-response text.
 
-These are two FincaRaíz pairs and one pair on each other site, all against
-volatile third-party pages—not a statistical performance estimate. Full
-methods, prompts, limitations, oracles, token accounting, and machine-readable
-results are in [`benchmarks/fincaraiz/`](benchmarks/fincaraiz/),
+These are small, point-in-time tests against volatile third-party pages, not a
+statistical performance estimate. Metrocuadrado's URL cleanup happened in the
+schema-constrained final response rather than inside the generated ToolSpec.
+Steam's reported correctness uses a documented post-run fix to an oracle parser;
+the original failed scores are retained. Full methods, prompts, limitations,
+oracles, token accounting, and machine-readable results are in
+[`benchmarks/fincaraiz/`](benchmarks/fincaraiz/),
 [`benchmarks/metrocuadrado/`](benchmarks/metrocuadrado/), and
 [`benchmarks/steam/`](benchmarks/steam/).
 
