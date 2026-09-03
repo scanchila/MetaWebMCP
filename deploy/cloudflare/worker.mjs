@@ -19,6 +19,7 @@ const BODY_LIMIT = 2_000_000;
 const HTML_LIMIT = 1_500_000;
 const DOWNLOAD_TTL_SECONDS = 20 * 60;
 const MAX_EXPORT_ARCHIVE_BYTES = 3_000_000;
+const SOURCE_COMMIT_PATTERN = /^[0-9a-f]{40,64}$/;
 
 export const PlaywrightMCP = createMcpAgent(runtimeEnv.BROWSER, {
   capabilities: ['core', 'wait'],
@@ -186,7 +187,28 @@ async function validateBrowserTransportRequest(request) {
 
 async function handleApi(request, bindings, pathname, browserCapability) {
   if (pathname === '/health' && request.method === 'GET') {
-    return json({ ok: true, service: 'MetaWebMCP', browserMcpConfigured: true, runtime: 'cloudflare' });
+    const deploymentVersion = String(bindings.CF_VERSION_METADATA?.id || '').trim();
+    const sourceCommit = String(bindings.META_WEBMCP_SOURCE_COMMIT || '').trim().toLowerCase();
+    const deployedAt = String(bindings.CF_VERSION_METADATA?.timestamp || '').trim();
+    const deploymentTag = String(bindings.CF_VERSION_METADATA?.tag || '').trim() || null;
+    if (!deploymentVersion || !SOURCE_COMMIT_PATTERN.test(sourceCommit) || !deployedAt) {
+      return json({
+        ok: false,
+        service: 'MetaWebMCP',
+        runtime: 'cloudflare',
+        error: 'Deployment identity is not configured.',
+      }, { status: 503, headers: { 'cache-control': 'no-store' } });
+    }
+    return json({
+      ok: true,
+      service: 'MetaWebMCP',
+      browserMcpConfigured: true,
+      runtime: 'cloudflare',
+      deploymentVersion,
+      sourceCommit,
+      deployedAt,
+      deploymentTag,
+    }, { headers: { 'cache-control': 'no-store' } });
   }
 
   if (pathname === '/api/config' && request.method === 'GET') {

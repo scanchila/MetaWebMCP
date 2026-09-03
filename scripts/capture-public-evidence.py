@@ -7,26 +7,24 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urljoin
 
 from playwright.sync_api import sync_playwright
+from evidence_provenance import configured_source_commit, verified_deployment_identity
 
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = Path(os.environ.get('META_WEBMCP_EVIDENCE_OUT', ROOT / 'evidence'))
 APP_URL = os.environ.get('META_WEBMCP_APP_URL', 'https://metawebmcp.neuryta.com')
-DEPLOYMENT_VERSION = os.environ.get('META_WEBMCP_DEPLOYMENT_VERSION', '').strip()
-SOURCE_COMMIT = os.environ.get('META_WEBMCP_SOURCE_COMMIT', '').strip() or subprocess.check_output(
-    ['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True
-).strip()
+EXPECTED_DEPLOYMENT_VERSION = os.environ.get('META_WEBMCP_DEPLOYMENT_VERSION', '').strip()
 DRY_RUN = os.environ.get('META_WEBMCP_EVIDENCE_DRY_RUN') == '1'
 APPEND = os.environ.get('META_WEBMCP_EVIDENCE_APPEND') == '1'
 CASE_SLUG = os.environ.get('META_WEBMCP_EVIDENCE_CASE')
 BROWSER_ARGS = ['--no-sandbox', '--disable-dev-shm-usage', '--enable-blink-features=WebMCPTesting']
+PROVENANCE_HELPER = Path(__file__).with_name('evidence_provenance.py')
 
 
 def chrome_executable():
@@ -43,11 +41,9 @@ def chrome_executable():
     return str(executable)
 
 
-if not DEPLOYMENT_VERSION:
-    raise RuntimeError('Set META_WEBMCP_DEPLOYMENT_VERSION to the deployed Worker version.')
-
 CHROME = chrome_executable()
 CAPTURE_SCRIPT_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+PROVENANCE_HELPER_SHA256 = hashlib.sha256(PROVENANCE_HELPER.read_bytes()).hexdigest()
 
 CASES = [
     {
@@ -194,26 +190,39 @@ def deployed_asset_hashes(page):
 
 def main():
     OUT.mkdir(exist_ok=True)
+    identity = verified_deployment_identity(
+        APP_URL,
+        configured_source_commit(),
+        EXPECTED_DEPLOYMENT_VERSION,
+    )
     report_path = OUT / 'public-site-results.json'
     report = json.loads(report_path.read_text()) if APPEND and report_path.exists() else {
         'capturedAt': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
         'deployment': APP_URL,
-        'deploymentVersion': DEPLOYMENT_VERSION,
-        'sourceCommit': SOURCE_COMMIT,
+        'deploymentVersion': identity['deploymentVersion'],
+        'sourceCommit': identity['sourceCommit'],
+        'deployedAt': identity['deployedAt'],
+        'deploymentTag': identity['deploymentTag'],
+        'identityVerifiedFromHealth': True,
         'captureScript': Path(__file__).name,
         'captureScriptSha256': CAPTURE_SCRIPT_SHA256,
+        'captureDependencies': {PROVENANCE_HELPER.name: PROVENANCE_HELPER_SHA256},
         'runtime': 'Cloudflare Browser Run with Playwright MCP',
         'entrypoint': 'native document.modelContext',
         'feature': 'WebMCPTesting',
         'initialTools': [],
         'results': [],
     }
-    if report.get('deploymentVersion') != DEPLOYMENT_VERSION:
+    if report.get('deploymentVersion') != identity['deploymentVersion']:
         raise RuntimeError('Existing evidence belongs to a different deployment version.')
-    if report.get('sourceCommit') != SOURCE_COMMIT:
+    if report.get('sourceCommit') != identity['sourceCommit']:
         raise RuntimeError('Existing evidence belongs to a different source commit.')
+    report['deployedAt'] = identity['deployedAt']
+    report['deploymentTag'] = identity['deploymentTag']
+    report['identityVerifiedFromHealth'] = True
     report['captureScript'] = Path(__file__).name
     report['captureScriptSha256'] = CAPTURE_SCRIPT_SHA256
+    report['captureDependencies'] = {PROVENANCE_HELPER.name: PROVENANCE_HELPER_SHA256}
     selected_cases = [case for case in CASES if CASE_SLUG in (None, case['slug'])]
     if not selected_cases:
         raise RuntimeError(f'Unknown evidence case: {CASE_SLUG}')

@@ -12,8 +12,9 @@
     "dev": "NODE_ENV=development node --watch server.mjs",
     "check": "node scripts/check.mjs",
     "test:unit": "node --test tests/*.test.mjs",
+    "test:evidence": "python3 -m unittest discover -s tests -p 'test_*.py'",
     "test:e2e": "python3 tests/e2e.py",
-    "test": "npm run check && npm run test:unit && npm run test:e2e"
+    "test": "npm run check && npm run test:unit && npm run test:evidence && npm run test:e2e"
   },
   "license": "MIT"
 }

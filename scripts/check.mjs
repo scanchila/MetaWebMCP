@@ -6,6 +6,8 @@ const root = path.resolve(new URL('..', import.meta.url).pathname);
 const required = [
   'server.mjs',
   'egress-proxy.mjs',
+  'scripts/capture-deployment-security-gates.py',
+  'scripts/evidence_provenance.py',
   'public/index.html',
   'public/js/app.js',
   'public/js/webmcp-runtime.js',
@@ -48,6 +50,15 @@ for (const relative of required) {
 const files = repositoryFiles() || await walk(root);
 for (const file of files.filter((name) => /\.(?:mjs|js)$/.test(name))) {
   const checked = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+  if (checked.status !== 0) throw new Error(`Syntax check failed for ${path.relative(root, file)}:\n${checked.stderr}`);
+}
+
+for (const file of files.filter((name) => name.endsWith('.py'))) {
+  const checked = spawnSync('python3', [
+    '-c',
+    'import pathlib, sys; compile(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"), sys.argv[1], "exec")',
+    file,
+  ], { encoding: 'utf8' });
   if (checked.status !== 0) throw new Error(`Syntax check failed for ${path.relative(root, file)}:\n${checked.stderr}`);
 }
 

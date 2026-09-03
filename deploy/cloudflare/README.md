@@ -15,10 +15,11 @@ cd deploy/cloudflare
 npm ci
 npm run check
 npx wrangler secret put MCP_CAPABILITY_SECRET
+export META_WEBMCP_SOURCE_COMMIT=$(git rev-parse HEAD)
 npm run deploy
 ```
 
-Set `MCP_CAPABILITY_SECRET` to a randomly generated value of at least 32 bytes. The checked-in configuration publishes `metawebmcp.neuryta.com`. Change `routes` and the Worker name before deploying a fork.
+Set `MCP_CAPABILITY_SECRET` to a randomly generated value of at least 32 bytes. The deployment wrapper requires a clean worktree, verifies that `META_WEBMCP_SOURCE_COMMIT` exactly matches `HEAD`, and publishes that commit with Cloudflare's immutable Worker version metadata. The checked-in configuration publishes `metawebmcp.neuryta.com`. Change `routes` and the Worker name before deploying a fork.
 
 ## Runtime layout
 
@@ -43,5 +44,7 @@ After deployment:
 ```bash
 curl https://metawebmcp.neuryta.com/health
 ```
+
+The healthy response includes `deploymentVersion`, `sourceCommit`, `deployedAt`, and `deploymentTag`. Evidence capture rejects the deployment if those live values do not match the expected source.
 
 Then open the site, choose **Any public site**, and analyze a public HTTP or HTTPS target. A healthy deployment reports the browser runtime as connected and preserves the same session through generated-tool execution and reset.
