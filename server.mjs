@@ -382,14 +382,19 @@ async function handleApi(req, res, pathname, searchParams) {
   }
 
   if (pathname === '/api/mcp/analyze-snapshot' && req.method === 'POST') {
-    const body = await readJson(req);
-    const parsed = await validateBrowserTarget(body.url, { allowPrivate: false });
-    const analysis = analyzeAccessibilitySnapshot({
-      snapshot: String(body.snapshot || ''),
-      url: parsed.href,
-      goal: String(body.goal || ''),
-    });
-    return sendJson(res, 200, { ok: true, analysis });
+    const releaseAnalysisSlot = claimAnalysisSlot();
+    try {
+      const body = await readJson(req);
+      const parsed = await validateBrowserTarget(body.url, { allowPrivate: false });
+      const analysis = analyzeAccessibilitySnapshot({
+        snapshot: String(body.snapshot || ''),
+        url: parsed.href,
+        goal: String(body.goal || ''),
+      });
+      return sendJson(res, 200, { ok: true, analysis });
+    } finally {
+      releaseAnalysisSlot();
+    }
   }
 
   if (pathname === '/api/mcp/execute' && req.method === 'POST') {

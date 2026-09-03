@@ -30,6 +30,11 @@ test('Cloudflare deployment declares immutable version metadata and source ident
   assert.match(worker, /bindings\.META_WEBMCP_SOURCE_COMMIT/);
   assert.match(worker, /'cache-control': 'no-store'/);
   assert.match(worker, /bindings\.ANALYSIS_RATE_LIMITER\.limit/);
+  const snapshotRoute = worker.slice(
+    worker.indexOf("pathname === '/api/mcp/analyze-snapshot'"),
+    worker.indexOf("pathname === '/api/export'"),
+  );
+  assert.match(snapshotRoute, /analysisRequestWithinLimit\(request, bindings\)/);
   assert.match(worker, /bindings\.EXPORT_STORE\.idFromName/);
   assert.match(worker, /request\.headers\.get\('cf-connecting-ip'\)/);
   assert.match(worker, /'x-metawebmcp-source-key'/);
