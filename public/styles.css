@@ -553,16 +553,29 @@ kbd {
   border-radius: 6px;
   background: rgba(255, 253, 248, .8);
   padding: 11px;
-  display: grid;
-  grid-template-columns: 18px 1fr auto;
-  gap: 8px;
-  cursor: pointer;
+  min-width: 0;
 }
 .capability-card:hover { border-color: var(--accent); }
-.capability-card:has(input:checked) { border-color: rgba(23, 71, 209, .55); background: var(--paper-strong); }
-.capability-card input { width: 14px; height: 14px; margin: 1px 0 0; accent-color: var(--accent); }
+.capability-card:has(.capability-choice > input:checked) { border-color: rgba(23, 71, 209, .55); background: var(--paper-strong); }
+.capability-card:has(.capability-detail[open]) { grid-column: 1 / -1; }
+.capability-card-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.capability-choice { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; cursor: pointer; }
+.capability-choice > input { width: 14px; height: 14px; margin: 1px 0 0; accent-color: var(--accent); }
 .capability-card strong { display: block; font-size: 10px; overflow-wrap: anywhere; }
 .capability-card p { color: var(--muted); font-size: 9px; line-height: 1.4; margin: 3px 0 0; }
+.observed-label { display: block; margin-top: 3px; color: var(--ink-soft); font: 8px/1.4 ui-monospace, monospace; overflow-wrap: anywhere; }
+.capability-detail { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 8px; }
+.capability-detail > summary { color: var(--accent); cursor: pointer; font-size: 9px; font-weight: 750; list-style-position: inside; }
+.capability-detail-body { display: grid; gap: 10px; padding-top: 10px; }
+.trust-note { border-left: 2px solid var(--amber); padding: 7px 9px; background: var(--paper); }
+.evidence-list { display: grid; gap: 4px; margin: -4px 0 0; padding-left: 18px; color: var(--ink-soft); font: 8px/1.45 ui-monospace, monospace; overflow-wrap: anywhere; }
+.metadata-review { display: grid; grid-template-columns: minmax(180px, .65fr) minmax(260px, 1.35fr); gap: 8px; }
+.review-field { display: grid; gap: 5px; color: var(--ink-soft); font-size: 8px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
+.review-field input, .review-field textarea { width: 100%; border: 1px solid var(--line-strong); border-radius: 5px; background: #fffdfa; color: var(--ink); padding: 8px; font: 10px/1.4 ui-monospace, monospace; text-transform: none; letter-spacing: normal; resize: vertical; }
+.review-field input:focus, .review-field textarea:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
+.contract-review-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.review-code { min-width: 0; border: 1px solid var(--line); border-radius: 5px; padding: 8px; background: var(--paper); }
+.review-code pre { max-height: 190px; overflow: auto; margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-soft); font: 8px/1.45 ui-monospace, monospace; }
 .kind-chip, .risk-badge {
   align-self: start;
   border-bottom: 1px solid currentColor;
@@ -721,6 +734,7 @@ body.busy .primary-button::after, body.busy .secondary-button::after {
   .client-guide-body { grid-template-columns: 1fr; }
   .client-guide-body section + section { border-left: 0; border-top: 1px solid var(--line); padding: 14px 0 0; }
   .capability-list { grid-template-columns: 1fr; }
+  .metadata-review, .contract-review-grid { grid-template-columns: 1fr; }
   .build-actions { grid-template-columns: 1fr; }
   .action-dock-heading { display: grid; }
   .action-dock-heading small { text-align: left; }
