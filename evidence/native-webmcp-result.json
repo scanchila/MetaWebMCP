@@ -99,8 +99,22 @@
     "ok": true,
     "visibleState": "WORKING SET Your itinerary Clear Remove Agent evals that catch regressions Day 1 \u00b7 10:00\u201310:45 1 SESSION \u00b7 0 CONFLICTS"
   },
+  "cleared": {
+    "ok": true,
+    "remainingItems": 0,
+    "postcondition": true
+  },
   "evaluation": {
     "ok": true,
+    "complete": true,
+    "coverage": {
+      "contracts": 4,
+      "evaluated": 4,
+      "notRun": 0,
+      "passed": 4,
+      "skipped": 0,
+      "failed": 0
+    },
     "results": [
       {
         "tool": "find_sessions",
@@ -179,11 +193,11 @@
   "exported": {
     "fileName": "relay-sessions-webmcp.zip",
     "fileCount": 13,
-    "bytes": 56665
+    "bytes": 60031
   },
   "exportedNativeValidation": {
     "archive": "relay-sessions-webmcp.zip",
-    "archiveSha256": "51d5d0cba9c0fb4acdd35cd3f0ac2807fc78074a0a9d452e1a51e18022f468f1",
+    "archiveSha256": "9b53891d18fb6f87462849c6d961404df616698750f4763fe0e8231492f33669",
     "fileCount": 13,
     "unixFileMode": "0644",
     "directRegisterTool": true,
@@ -208,18 +222,112 @@
       "visibleState": "WORKING SET Your itinerary Clear Remove Agent evals that catch regressions Day 1 \u00b7 10:00\u201310:45 1 SESSION \u00b7 0 CONFLICTS",
       "postcondition": true
     },
+    "cleared": {
+      "ok": true,
+      "visibleState": "WORKING SET Your itinerary Clear No sessions selected. 0 SESSIONS \u00b7 0 CONFLICTS",
+      "remainingItems": 0,
+      "postcondition": true
+    },
     "consoleErrors": [],
     "screenshot": "native-export-owned-page.png",
     "screenshotSha256": "48cb99007cd29d551eebe149f44bf2a1fcf89c86fd0c4709f873b0261a722762"
   },
+  "semanticToolTrace": [
+    {
+      "tool": "meta_analyze_site",
+      "arguments": {
+        "source": "demo",
+        "goal": "Find conference sessions, add useful ones to an itinerary, and inspect the resulting plan."
+      },
+      "completed": true
+    },
+    {
+      "tool": "meta_create_webmcp",
+      "arguments": {},
+      "completed": true
+    },
+    {
+      "tool": "meta_activate_webmcp",
+      "arguments": {},
+      "ok": true
+    },
+    {
+      "tool": "find_sessions",
+      "arguments": {
+        "query": "agent",
+        "level": "all",
+        "day": "all"
+      },
+      "ok": true
+    },
+    {
+      "tool": "add_session_to_itinerary",
+      "arguments": {
+        "item_id": "agent-evals-that-catch-regressions"
+      },
+      "ok": true
+    },
+    {
+      "tool": "inspect_itinerary",
+      "arguments": {},
+      "ok": true
+    },
+    {
+      "tool": "clear_itinerary",
+      "arguments": {},
+      "ok": true
+    },
+    {
+      "tool": "meta_test_webmcp",
+      "arguments": {},
+      "ok": true
+    },
+    {
+      "tool": "meta_export_webmcp",
+      "arguments": {
+        "project_name": "relay-sessions-webmcp"
+      },
+      "completed": true
+    }
+  ],
   "uiStatus": "WebMCP active",
   "generatedToolCount": "4",
-  "capturedAt": "2026-09-03T02:12:48.357122Z",
+  "capturedAt": "2026-09-03T03:39:58.545415Z",
   "deployment": "https://metawebmcp.neuryta.com",
-  "deploymentVersion": "98e48700-b5e5-4e7e-94f8-538a2b528947",
+  "deploymentVersion": "97b3a727-85d8-4a55-93f2-38afcc759428",
+  "sourceCommit": "9744d48c04a400f1879308a50e9f95eb656cd316",
+  "captureScript": "capture-native-evidence.py",
+  "captureScriptSha256": "2f0a855237f668f3a262062088526ac0183a61a270e2895f612060f685755d64",
   "browser": "Google Chrome 154.0.8037.0 beta",
+  "browserLaunch": {
+    "executable": "google-chrome-beta",
+    "headless": true,
+    "args": [
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "--enable-blink-features=WebMCPTesting"
+    ],
+    "viewport": {
+      "width": 1840,
+      "height": 1215
+    },
+    "deviceScaleFactor": 1
+  },
   "feature": "WebMCPTesting",
+  "assetSha256": {
+    "/": "1e348ff6df3a0f3f6a1d45c399608ebe9d3af6678ef570aebdc63eab6cd3620d",
+    "/styles.css": "c471d41c8d45f09475f4d03301cffc1a69c3a5e434783fa140c504395608e40a",
+    "/js/app.js": "e97e196b136a91d8fb83293ac8e5a24eb74f7ab84c4acc92993def7bd5ada577",
+    "/js/browser-mcp-session.js": "69e76f51afc917f235da3f890aec15cb2c3070d71c4920e428833327dd3d69c3",
+    "/js/demo-analyzer.js": "8c6da0b627d0d7c99596702964c9c3af282e7b71bc2f9f88618e6aad93dbc378",
+    "/js/mcp-http-client.js": "7e5e5c882e2b40b859cb04f63f023116013d8e5da9573e7662a5e67770286659",
+    "/js/mcp-recipe.js": "4625018c329f768dbc9c6d0592d018e73cf04307342dd2f820e37fbea484e8de",
+    "/js/webmcp-runtime.js": "f16585da4e34a565dcd3a62bdebf681f9fd1b736bd2784948d954b4695deaf5b",
+    "/demo/index.html": "5fc4f5641674dbc0dd1bc814ff347f32f08484cccdbc2b365593c63f9c05b4e3",
+    "/demo/demo.css": "372e05371ba2cb2a68e65b27820f504b2f964521ae845b71e52528137e779d45",
+    "/demo/demo.js": "8b3c372de38f6667ed7c30c623aa870b32bdbbf5a3656064320cefe43a27a1c4"
+  },
   "consoleErrors": [],
   "screenshot": "native-webmcp-recursive-workspace.png",
-  "screenshotSha256": "1d60688f4d88f6e26355b57cfe3863317dc1b3fab68a3d8774eccbcfc3b0f6b2"
+  "screenshotSha256": "cd6a2cbdf25c3e5af8ddfc567baabf8291418f468ce56e883ebbcc05ed523b78"
 }

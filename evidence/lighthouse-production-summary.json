@@ -1,9 +1,13 @@
 {
   "url": "https://metawebmcp.neuryta.com/",
-  "capturedAt": "2026-09-03T02:15:09.647Z",
-  "deploymentVersion": "98e48700-b5e5-4e7e-94f8-538a2b528947",
+  "capturedAt": "2026-09-03T03:37:00.560Z",
+  "deploymentVersion": "97b3a727-85d8-4a55-93f2-38afcc759428",
+  "sourceCommit": "9744d48c04a400f1879308a50e9f95eb656cd316",
+  "rawReport": "lighthouse-production-report.json",
+  "rawReportSha256": "0874262676273b91bac7e41e7d41d3894c3b1c86829006bb14e3275eff112320",
   "lighthouseVersion": "13.4.1",
-  "browser": "HeadlessChrome 154.0.0.0",
+  "browser": "HeadlessChrome/154.0.0.0",
+  "formFactor": "mobile",
   "categories": {
     "performance": 100,
     "accessibility": 100,
@@ -11,6 +15,6 @@
     "seo": 100,
     "agenticBrowsing": 100
   },
-  "cumulativeLayoutShift": 0,
+  "cumulativeLayoutShift": 0.000105686448327509,
   "consoleErrors": 0
 }

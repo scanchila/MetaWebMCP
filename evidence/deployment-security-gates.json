@@ -1,0 +1,20 @@
+{
+  "capturedAt": "2026-09-03T03:32:11.812Z",
+  "deployment": "https://metawebmcp.neuryta.com",
+  "deploymentVersion": "97b3a727-85d8-4a55-93f2-38afcc759428",
+  "sourceCommit": "9744d48c04a400f1879308a50e9f95eb656cd316",
+  "checks": {
+    "healthStatus": 200,
+    "unauthenticatedBrowserApiStatus": 401,
+    "crossOriginCapabilityIssueStatus": 403,
+    "sameOriginCapabilityIssueStatus": 201,
+    "authorizedBrowserApiStatus": 200,
+    "tamperedCapabilityStatus": 401,
+    "unauthenticatedRawSseStatus": 401,
+    "cookieSecure": true,
+    "cookieHttpOnly": true,
+    "cookieSameSiteStrict": true,
+    "cookiePathRoot": true
+  },
+  "sensitiveValuesRetained": false
+}

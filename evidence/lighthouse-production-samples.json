@@ -1,0 +1,51 @@
+{
+  "deployment": "https://metawebmcp.neuryta.com/",
+  "deploymentVersion": "97b3a727-85d8-4a55-93f2-38afcc759428",
+  "sourceCommit": "9744d48c04a400f1879308a50e9f95eb656cd316",
+  "recordedAt": "2026-09-03T03:38:30Z",
+  "lighthouseVersion": "13.4.1",
+  "browser": "HeadlessChrome/154.0.0.0",
+  "formFactor": "mobile",
+  "samples": [
+    {
+      "rawReport": "lighthouse-production-report-run1.json",
+      "rawReportSha256": "4d4542a8ca15bd663bc0f99b91f45e1c20419e9e7acfe109f6662dd2c32e5ed0",
+      "capturedAt": "2026-09-03T03:35:51.894Z",
+      "performance": 94,
+      "firstContentfulPaintMs": 2399.8675,
+      "largestContentfulPaintMs": 2499.8675,
+      "totalBlockingTimeMs": 0,
+      "cumulativeLayoutShift": 0
+    },
+    {
+      "rawReport": "lighthouse-production-report-run2.json",
+      "rawReportSha256": "9f784c1678e298706c99bf16b41f64e9cf7025538ebcf6fd3bb04c3a0d2c6c2f",
+      "capturedAt": "2026-09-03T03:36:35.149Z",
+      "performance": 100,
+      "firstContentfulPaintMs": 1394.676,
+      "largestContentfulPaintMs": 1394.676,
+      "totalBlockingTimeMs": 18,
+      "cumulativeLayoutShift": 0.000105686448327509
+    },
+    {
+      "rawReport": "lighthouse-production-report.json",
+      "rawReportSha256": "0874262676273b91bac7e41e7d41d3894c3b1c86829006bb14e3275eff112320",
+      "capturedAt": "2026-09-03T03:37:00.560Z",
+      "performance": 100,
+      "firstContentfulPaintMs": 1441.371,
+      "largestContentfulPaintMs": 1441.371,
+      "totalBlockingTimeMs": 0,
+      "cumulativeLayoutShift": 0.000105686448327509
+    }
+  ],
+  "aggregate": {
+    "performanceRange": [94, 100],
+    "medianPerformance": 100,
+    "accessibility": 100,
+    "bestPractices": 100,
+    "seo": 100,
+    "agenticBrowsing": 100,
+    "maximumCumulativeLayoutShift": 0.000105686448327509,
+    "consoleErrors": 0
+  }
+}

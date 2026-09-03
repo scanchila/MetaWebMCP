@@ -1,7 +1,10 @@
 {
-  "capturedAt": "2026-09-03T02:11:12.002792Z",
+  "capturedAt": "2026-09-03T03:50:30.374911Z",
   "deployment": "https://metawebmcp.neuryta.com",
-  "deploymentVersion": "98e48700-b5e5-4e7e-94f8-538a2b528947",
+  "deploymentVersion": "97b3a727-85d8-4a55-93f2-38afcc759428",
+  "sourceCommit": "9744d48c04a400f1879308a50e9f95eb656cd316",
+  "captureScript": "capture-public-evidence.py",
+  "captureScriptSha256": "1fd975d9afc7dcdd99541c1e651ac7f0b4bd887cca7f2c4648a92c48d8069b2f",
   "runtime": "Cloudflare Browser Run with Playwright MCP",
   "entrypoint": "native document.modelContext",
   "feature": "WebMCPTesting",
@@ -39,20 +42,30 @@
             "runtime": {
               "transport": "page",
               "availableToolCount": 8,
+              "availableTools": [
+                "browser_click",
+                "browser_close",
+                "browser_navigate",
+                "browser_select_option",
+                "browser_snapshot",
+                "browser_take_screenshot",
+                "browser_type",
+                "browser_wait_for"
+              ],
               "sessionEstablished": true,
               "sessionReused": true
             },
             "capabilities": [
               {
                 "name": "search",
-                "description": "Use the \u201cSearch\u201d workflow through the connected browser MCP session and return the resulting page snapshot.",
+                "description": "Use this reviewed form workflow through the connected browser MCP session and return the resulting page snapshot.",
                 "risk": "read",
                 "inputSchema": {
                   "type": "object",
                   "properties": {
                     "search_wikipedia": {
                       "type": "string",
-                      "description": "Value for Search Wikipedia."
+                      "description": "Text value for this control."
                     }
                   },
                   "required": [
@@ -64,7 +77,7 @@
               },
               {
                 "name": "main_menu",
-                "description": "Activate \u201cMain menu\u201d through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "description": "Run this reviewed page action through the connected browser MCP session and return the resulting page snapshot.",
                 "risk": "write",
                 "inputSchema": {
                   "type": "object",
@@ -75,7 +88,7 @@
               },
               {
                 "name": "tools",
-                "description": "Activate \u201cTools\u201d through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "description": "Run this reviewed page action through the connected browser MCP session and return the resulting page snapshot.",
                 "risk": "write",
                 "inputSchema": {
                   "type": "object",
@@ -86,7 +99,7 @@
               },
               {
                 "name": "hide_appearance",
-                "description": "Activate \u201cHide Appearance\u201d through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "description": "Run this reviewed page action through the connected browser MCP session and return the resulting page snapshot.",
                 "risk": "write",
                 "inputSchema": {
                   "type": "object",
@@ -97,7 +110,7 @@
               },
               {
                 "name": "tool_349_languages",
-                "description": "Activate \u201c349 languages\u201d through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "description": "Run this reviewed page action through the connected browser MCP session and return the resulting page snapshot.",
                 "risk": "write",
                 "inputSchema": {
                   "type": "object",
@@ -117,7 +130,7 @@
                 "properties": {
                   "search_wikipedia": {
                     "type": "string",
-                    "description": "Value for Search Wikipedia."
+                    "description": "Text value for this control."
                   }
                 },
                 "required": [
@@ -167,7 +180,7 @@
           }
         }
       ],
-      "capturedAt": "2026-09-03T02:11:38.556878Z",
+      "capturedAt": "2026-09-03T03:51:00.257663Z",
       "postconditions": {
         "search:WebMCP": true
       },
@@ -177,7 +190,7 @@
         "stageCount": 1
       },
       "workspaceScreenshot": "wikipedia-search-workspace.png",
-      "workspaceScreenshotSha256": "1e165745c3b476a84e0fc6db4f6de4249b2a63b619e56620d9ad6f267bd878ee",
+      "workspaceScreenshotSha256": "43b2fdcb5f193956cf1cf01156971acef0f42cd4753920ebe80291047e76a78c",
       "targetScreenshot": "wikipedia-search-target.png",
       "targetScreenshotSha256": "25580a0a4cbe227dac5aa372d70e2844a7c86a115de082e4b7b2cdf3f88be995",
       "consoleErrors": []
@@ -206,24 +219,34 @@
             "runtime": {
               "transport": "page",
               "availableToolCount": 8,
+              "availableTools": [
+                "browser_click",
+                "browser_close",
+                "browser_navigate",
+                "browser_select_option",
+                "browser_snapshot",
+                "browser_take_screenshot",
+                "browser_type",
+                "browser_wait_for"
+              ],
               "sessionEstablished": true,
               "sessionReused": true
             },
             "capabilities": [
               {
                 "name": "login",
-                "description": "Use the \u201cLogin\u201d workflow through the connected browser MCP session and return the resulting page snapshot.",
+                "description": "Use this reviewed form workflow through the connected browser MCP session and return the resulting page snapshot.",
                 "risk": "write",
                 "inputSchema": {
                   "type": "object",
                   "properties": {
                     "username": {
                       "type": "string",
-                      "description": "Value for Username."
+                      "description": "Text value for this control."
                     },
                     "password": {
                       "type": "string",
-                      "description": "Value for Password."
+                      "description": "Text value for this control."
                     }
                   },
                   "required": [
@@ -245,11 +268,11 @@
                 "properties": {
                   "username": {
                     "type": "string",
-                    "description": "Value for Username."
+                    "description": "Text value for this control."
                   },
                   "password": {
                     "type": "string",
-                    "description": "Value for Password."
+                    "description": "Text value for this control."
                   }
                 },
                 "required": [
@@ -317,31 +340,41 @@
           "goal": "Add one selected product to the cart and return the updated catalog state.",
           "analysis": {
             "summary": {
-              "controls": 28,
-              "buttons": 8,
+              "controls": 23,
+              "buttons": 7,
               "inputs": 1,
-              "candidates": 3,
-              "discoveredCandidates": 3,
+              "candidates": 2,
+              "discoveredCandidates": 2,
               "omittedCandidates": 0
             },
             "warnings": [],
             "runtime": {
               "transport": "page",
               "availableToolCount": 8,
+              "availableTools": [
+                "browser_click",
+                "browser_close",
+                "browser_navigate",
+                "browser_select_option",
+                "browser_snapshot",
+                "browser_take_screenshot",
+                "browser_type",
+                "browser_wait_for"
+              ],
               "sessionEstablished": true,
               "sessionReused": true
             },
             "capabilities": [
               {
                 "name": "add_to_cart",
-                "description": "Activate \u201cAdd to cart\u201d for one visible item through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "description": "Run this reviewed item-scoped action through the connected browser MCP session and return the resulting page snapshot.",
                 "risk": "write",
                 "inputSchema": {
                   "type": "object",
                   "properties": {
                     "item": {
                       "type": "string",
-                      "description": "Visible item associated with the \u201cAdd to cart\u201d action.",
+                      "description": "Visible item associated with this action.",
                       "enum": [
                         "Sauce Labs Backpack",
                         "Sauce Labs Bike Light",
@@ -361,18 +394,7 @@
               },
               {
                 "name": "open_menu",
-                "description": "Activate \u201cOpen Menu\u201d through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
-                "risk": "write",
-                "inputSchema": {
-                  "type": "object",
-                  "properties": {},
-                  "additionalProperties": false
-                },
-                "evidenceCount": 1
-              },
-              {
-                "name": "button",
-                "description": "Activate \u201cbutton\u201d through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "description": "Run this reviewed page action through the connected browser MCP session and return the resulting page snapshot.",
                 "risk": "write",
                 "inputSchema": {
                   "type": "object",
@@ -392,7 +414,7 @@
                 "properties": {
                   "item": {
                     "type": "string",
-                    "description": "Visible item associated with the \u201cAdd to cart\u201d action.",
+                    "description": "Visible item associated with this action.",
                     "enum": [
                       "Sauce Labs Backpack",
                       "Sauce Labs Bike Light",
@@ -426,7 +448,7 @@
                 "tool": "browser_click",
                 "arguments": {
                   "element": "Add to cart for Sauce Labs Backpack",
-                  "ref": "e45"
+                  "ref": "e35"
                 }
               },
               {
@@ -434,13 +456,13 @@
                 "arguments": {}
               }
             ],
-            "finalSnapshotExcerpt": "o A)\" - option \"Price (low to high)\" - option \"Price (high to low)\" - generic [ref=e33]: - generic [ref=e34]: - link \"Sauce Labs Backpack\" [ref=e36] [cursor=pointer]: - /url: \"#\" - img \"Sauce Labs Backpack\" [ref=e37] - generic [ref=e38]: - generic [ref=e39]: - link \"Sauce Labs Backpack\" [ref=e40] [cursor=pointer]: - /url: \"#\"\n\u2026\nuncompromising style with unequaled laptop and tablet protection. - generic [ref=e43]: - generic [ref=e44]: $29.99 - button \"Remove\" [ref=e116] [cursor=pointer] - generic [ref=e46]: - link \"Sauce Labs Bike Light\" [ref=e48] [cursor=pointer]: - /url: \"#\" - img \"Sauce Labs Bike Light\" [ref=e49] - generic [ref=e50]: - generic [ref=e51]:"
+            "finalSnapshotExcerpt": "o A)\" - option \"Price (low to high)\" - option \"Price (high to low)\" - generic [ref=e23]: - generic [ref=e24]: - link \"Sauce Labs Backpack\" [ref=e26] [cursor=pointer]: - /url: \"#\" - img \"Sauce Labs Backpack\" [ref=e27] - generic [ref=e28]: - generic [ref=e29]: - link \"Sauce Labs Backpack\" [ref=e30] [cursor=pointer]: - /url: \"#\"\n\u2026\nuncompromising style with unequaled laptop and tablet protection. - generic [ref=e33]: - generic [ref=e34]: $29.99 - button \"Remove\" [ref=e106] [cursor=pointer] - generic [ref=e36]: - link \"Sauce Labs Bike Light\" [ref=e38] [cursor=pointer]: - /url: \"#\" - img \"Sauce Labs Bike Light\" [ref=e39] - generic [ref=e40]: - generic [ref=e41]:"
           },
           "export": {
             "fileName": "saucedemo-cart-webmcp.zip",
             "fileCount": 11,
-            "bytes": 32293,
-            "archiveSha256": "147146ad1cbb74f225f5a030984be1cfe9502ccb0b630506a6cae1a0ebff99e3",
+            "bytes": 35074,
+            "archiveSha256": "50bb96e6ba75f1a522b54a822b40c04ae1af8858550ac81c22c53f4fd1bafa76",
             "directRegisterTool": true,
             "unixFileMode": "0644",
             "toolNames": [
@@ -453,7 +475,7 @@
           }
         }
       ],
-      "capturedAt": "2026-09-03T02:12:05.647338Z",
+      "capturedAt": "2026-09-03T03:51:35.753846Z",
       "postconditions": {
         "login:Products": true,
         "add_to_cart:Sauce Labs Backpack": true,
@@ -465,7 +487,7 @@
         "stageCount": 2
       },
       "workspaceScreenshot": "saucedemo-cart-workspace.png",
-      "workspaceScreenshotSha256": "af8b7ada2c846c2077efea2b61b7b1ff0e764f951669deea8b0567e8b4a51358",
+      "workspaceScreenshotSha256": "50f4c8570e908bb95beb13279499bc12306709d6aed0dc1eae7683473c6ec7de",
       "targetScreenshot": "saucedemo-cart-target.png",
       "targetScreenshotSha256": "c77d3a18d159252141a2fc37c039f6ea522aee8fbcfa8a4b452539e272c1e11a",
       "consoleErrors": []
@@ -494,13 +516,23 @@
             "runtime": {
               "transport": "page",
               "availableToolCount": 8,
+              "availableTools": [
+                "browser_click",
+                "browser_close",
+                "browser_navigate",
+                "browser_select_option",
+                "browser_snapshot",
+                "browser_take_screenshot",
+                "browser_type",
+                "browser_wait_for"
+              ],
               "sessionEstablished": true,
               "sessionReused": true
             },
             "capabilities": [
               {
                 "name": "add_element",
-                "description": "Activate \u201cAdd Element\u201d through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "description": "Run this reviewed page action through the connected browser MCP session and return the resulting page snapshot.",
                 "risk": "write",
                 "inputSchema": {
                   "type": "object",
@@ -552,7 +584,7 @@
           }
         }
       ],
-      "capturedAt": "2026-09-03T02:12:33.792827Z",
+      "capturedAt": "2026-09-03T03:52:35.805007Z",
       "postconditions": {
         "add_element:Delete": true
       },
@@ -562,25 +594,38 @@
         "stageCount": 1
       },
       "workspaceScreenshot": "the-internet-add-element-workspace.png",
-      "workspaceScreenshotSha256": "51af98e5adbb69b2e30c78cacf0e420be54721caead5f981088a134a672db266",
+      "workspaceScreenshotSha256": "be1d13c1cc9f41cb42a574d15381327e6c15a4f04ba15f9f4d39df69c9872355",
       "targetScreenshot": "the-internet-add-element-target.png",
       "targetScreenshotSha256": "f38d6e45f3bec0e541978360b436aa9875b77801d41b326452ee4267190e5837",
       "consoleErrors": []
     }
   ],
   "browser": "Google Chrome 154.0.8037.0 beta",
-  "browserMcp": {
-    "configured": true,
-    "transport": "page",
-    "availableTools": [
-      "browser_click",
-      "browser_close",
-      "browser_navigate",
-      "browser_select_option",
-      "browser_snapshot",
-      "browser_take_screenshot",
-      "browser_type",
-      "browser_wait_for"
-    ]
+  "browserLaunch": {
+    "executable": "google-chrome-beta",
+    "headless": true,
+    "args": [
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "--enable-blink-features=WebMCPTesting"
+    ],
+    "viewport": {
+      "width": 1840,
+      "height": 1120
+    },
+    "deviceScaleFactor": 1
+  },
+  "assetSha256": {
+    "/": "1e348ff6df3a0f3f6a1d45c399608ebe9d3af6678ef570aebdc63eab6cd3620d",
+    "/styles.css": "c471d41c8d45f09475f4d03301cffc1a69c3a5e434783fa140c504395608e40a",
+    "/js/app.js": "e97e196b136a91d8fb83293ac8e5a24eb74f7ab84c4acc92993def7bd5ada577",
+    "/js/browser-mcp-session.js": "69e76f51afc917f235da3f890aec15cb2c3070d71c4920e428833327dd3d69c3",
+    "/js/demo-analyzer.js": "8c6da0b627d0d7c99596702964c9c3af282e7b71bc2f9f88618e6aad93dbc378",
+    "/js/mcp-http-client.js": "7e5e5c882e2b40b859cb04f63f023116013d8e5da9573e7662a5e67770286659",
+    "/js/mcp-recipe.js": "4625018c329f768dbc9c6d0592d018e73cf04307342dd2f820e37fbea484e8de",
+    "/js/webmcp-runtime.js": "f16585da4e34a565dcd3a62bdebf681f9fd1b736bd2784948d954b4695deaf5b",
+    "/demo/index.html": "5fc4f5641674dbc0dd1bc814ff347f32f08484cccdbc2b365593c63f9c05b4e3",
+    "/demo/demo.css": "372e05371ba2cb2a68e65b27820f504b2f964521ae845b71e52528137e779d45",
+    "/demo/demo.js": "8b3c372de38f6667ed7c30c623aa870b32bdbbf5a3656064320cefe43a27a1c4"
   }
 }
