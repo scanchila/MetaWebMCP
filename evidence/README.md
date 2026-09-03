@@ -1,6 +1,6 @@
 # Production evidence
 
-These artifacts exercise the deployed workspace at <https://metawebmcp.neuryta.com> through native WebMCP and its hosted, session-scoped Browser MCP runtime. Machine-readable results retain the deployment version, exact tool surfaces, postconditions, workspace console errors, archive validation, and screenshot SHA-256 digests.
+These artifacts exercise deployed Worker version `98e48700-b5e5-4e7e-94f8-538a2b528947` at <https://metawebmcp.neuryta.com> through native WebMCP and its hosted, session-scoped Browser MCP runtime. Machine-readable results retain the deployment version, exact tool surfaces, postconditions, workspace console errors, archive validation, and screenshot SHA-256 digests.
 
 ## Results at a glance
 
@@ -11,7 +11,7 @@ These artifacts exercise the deployed workspace at <https://metawebmcp.neuryta.c
 | Wikipedia | Generated `search(search_wikipedia)`, submitted `WebMCP`, and observed the query in the resulting search page snapshot. |
 | SauceDemo | Generated `login(username, password)`, retained the same browser session, re-analyzed the authenticated catalog, generated `add_to_cart(item)`, changed the selected product control to “Remove,” and validated the exported one-tool native contract. The retained result redacts the password value. |
 | The Internet | Generated `add_element()`, executed it, and observed the new “Delete” control in the resulting page state. |
-| Production quality | Lighthouse 13.4.1 scored 96 for performance and 100 for accessibility, best practices, SEO, and agentic browsing. The independently served native export scored 100 in all five categories; both runs reported zero layout shift and no console errors. |
+| Production quality | Lighthouse 13.4.1 scored 100 for performance, accessibility, best practices, SEO, and agentic browsing on both the production workspace and independently served native export; both runs reported zero layout shift and no console errors. |
 
 ## Native WebMCP recursion
 
@@ -23,11 +23,13 @@ The resulting ZIP was then downloaded, extracted, started as an independent site
 
 ![The exported repository running independently with a generated tool result](native-export-owned-page.png)
 
-Exact results: [`native-webmcp-result.json`](native-webmcp-result.json)
+Exact production-generated archive: [`relay-sessions-webmcp.zip`](relay-sessions-webmcp.zip)
+
+Exact results and archive SHA-256 digest: [`native-webmcp-result.json`](native-webmcp-result.json)
 
 ## Session-scoped public-site adapters
 
-Each target started in a fresh, isolated browser session. MetaWebMCP ran analyze → create → activate → generated semantic tool → reset. Every meta-tool and generated semantic call used tool objects discovered from the top-level page's native `document.modelContext`. The target screenshot came from that same remote session after execution; the workspace screenshot records the semantic contract and result visible to the calling page.
+Each target started in a fresh, isolated browser session. MetaWebMCP ran analyze → create → activate → generated semantic tool → reset. Every meta-tool and generated semantic call used tool objects discovered from the top-level page's native `document.modelContext`. The page-owned runtime advertised exactly eight allowlisted browser operations while the generated agent-facing surface remained one semantic tool per stage. The target screenshot came from that same remote session after execution; the workspace screenshot records the semantic contract and result visible to the calling page.
 
 Workspace console failures are recorded independently from target-page postconditions in the JSON.
 
@@ -53,6 +55,6 @@ Exact redacted results: [`public-site-results.json`](public-site-results.json)
 
 ## Quality profile
 
-The production workspace scored 96 for performance and 100 in the other four Lighthouse categories. The independently served export scored 100 in all five. Both recorded zero cumulative layout shift and no console errors. Their summaries are retained in [`lighthouse-production-summary.json`](lighthouse-production-summary.json) and [`lighthouse-native-export-summary.json`](lighthouse-native-export-summary.json). The complete deterministic suite and its coverage boundary are documented in [`../TEST_REPORT.md`](../TEST_REPORT.md).
+The production workspace and independently served export each scored 100 in all five Lighthouse categories. Both recorded zero cumulative layout shift and no console errors. Their summaries are retained in [`lighthouse-production-summary.json`](lighthouse-production-summary.json) and [`lighthouse-native-export-summary.json`](lighthouse-native-export-summary.json). The complete deterministic suite and its coverage boundary are documented in [`../TEST_REPORT.md`](../TEST_REPORT.md).
 
 Third-party pages are shown only as limited functional-test evidence. Their names, interface content, and marks remain the property of their respective owners; MetaWebMCP is not affiliated with them.

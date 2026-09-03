@@ -1,6 +1,6 @@
 # Test report
 
-Verification was performed on **2026-09-03T00:53Z** (**2026-09-03 07:53, Asia/Ho_Chi_Minh**).
+Verification was performed on **2026-09-03T02:18Z** (**2026-09-03 09:18, Asia/Ho_Chi_Minh**) against deployed Worker version `98e48700-b5e5-4e7e-94f8-538a2b528947`.
 
 ## Environment
 
@@ -19,12 +19,12 @@ Verification was performed on **2026-09-03T00:53Z** (**2026-09-03 07:53, Asia/Ho
 
 `npm test` runs static analysis, Node tests, and the Chromium journey.
 
-- Static repository checks: **69 repository files passed**.
-- Node unit and integration tests: **25 passed, 0 failed**.
+- Static repository checks: **74 repository files passed**.
+- Node unit and integration tests: **33 passed, 0 failed**.
 - Cloudflare Worker dry-run bundle: **passed** with Browser Run, Durable Object, Rate Limit, and Static Assets bindings.
 - Recursive Chromium end-to-end test: **passed** with no console or page errors.
 - Generated runtime evaluations: **4 passed, 0 failed, 0 skipped**.
-- Production Lighthouse: **96 performance, 100 accessibility, 100 best practices, 100 SEO, and 100 agentic browsing**.
+- Production Lighthouse: **100 performance, 100 accessibility, 100 best practices, 100 SEO, and 100 agentic browsing**.
 - Generated native preview Lighthouse: **100 performance, 100 accessibility, 100 best practices, 100 SEO, and 100 agentic browsing**.
 
 The Node suite covers HTML and accessibility-snapshot analysis, required form fields across deep trees, repeated item-action grouping, bounded input-to-reference mappings, current and legacy Playwright reference schemas, response-scoped reference refresh, ZIP generation with portable Unix file modes, runnable owner bundles, unsafe bundle rejection, SSRF and origin validation, Streamable HTTP and long-lived SSE MCP clients, serialized MCP operations, server-side workspace isolation, and page-owned MCP session reuse and closure. The deployment compatibility check also executes the patched inline screenshot response without persistent filesystem access.
@@ -32,16 +32,18 @@ The Node suite covers HTML and accessibility-snapshot analysis, required form fi
 The browser journey verifies the following sequence:
 
 1. The server health endpoint responds.
-2. Seven permanent meta-tools register on the top-level page while the target iframe has no WebMCP registry.
-3. `meta_analyze_site` derives four evidence-backed capabilities from the live target.
-4. `meta_create_webmcp` constructs the ToolSpecs.
-5. `meta_activate_webmcp` changes the top-level registry from seven to eleven tools.
-6. The generated tools search sessions, mutate the itinerary, and read the resulting state.
-7. `meta_test_webmcp` passes registration, schema, execution, and visible-postcondition checks for all four generated tools.
-8. `meta_export_webmcp` returns a valid repository ZIP with direct `document.modelContext.registerTool(...)` source.
-9. The extracted exported site registers its own four tools and executes them against its bundled target UI.
-10. A browser-derived export registers on a separate owned-page fixture, searches and changes the requested item without MetaWebMCP or a browser bridge, then fails closed when that item disappears.
-11. The completed workspace reflows from 1440 px down to 390 px without horizontal overflow across the brief, conversation, and live registry.
+2. The client guide identifies both native and non-native states, states the current Site Tools prerequisites, and exposes a five-step fallback without horizontal overflow at 900 px or 390 px.
+3. The two source modes expose pressed-button semantics and respond to native Enter and Space activation.
+4. Seven permanent meta-tools register on the top-level page while the target iframe has no WebMCP registry.
+5. `meta_analyze_site` derives four evidence-backed capabilities from the live target.
+6. `meta_create_webmcp` constructs the ToolSpecs.
+7. `meta_activate_webmcp` changes the top-level registry from seven to eleven tools.
+8. The generated tools search sessions, mutate the itinerary, and read the resulting state.
+9. `meta_test_webmcp` passes registration, schema, execution, and visible-postcondition checks for all four generated tools.
+10. `meta_export_webmcp` returns a valid repository ZIP with direct `document.modelContext.registerTool(...)` source.
+11. The extracted exported site registers its own four tools and executes them against its bundled target UI.
+12. A browser-derived export validates inputs before effects, registers on a separate owned-page fixture, changes the requested item without MetaWebMCP or a browser bridge, then fails closed when that item disappears.
+13. The completed workspace reflows from 1440 px down to 390 px without horizontal overflow across the brief, conversation, and live registry.
 
 Evidence from the deterministic local run is retained in:
 
@@ -50,7 +52,7 @@ Evidence from the deterministic local run is retained in:
 - `test-artifacts/metawebmcp-mobile.png`
 - `test-artifacts/relay-sessions-webmcp.zip`
 
-Production-native and hosted public-site evidence is retained in [`evidence/`](evidence/). The JSON records include the deployed Worker version, tool surfaces, execution postconditions, console-error results, and screenshot hashes.
+Production-native and hosted public-site evidence is retained in [`evidence/`](evidence/). The JSON records include the deployed Worker version, tool surfaces, execution postconditions, console-error results, and screenshot hashes. The exact validated production export is retained as [`evidence/relay-sessions-webmcp.zip`](evidence/relay-sessions-webmcp.zip).
 
 ## Public-site Browser MCP validation
 
@@ -62,7 +64,7 @@ The production Cloudflare deployment was exercised through Chrome's native `docu
 | SauceDemo | `login(username, password)` → `add_to_cart(item)` | Used the site's public test account, retained that session while re-analyzing the catalog, selected “Sauce Labs Backpack,” and observed its control change to “Remove.” |
 | The Internet | `add_element()` | Added a page element and observed the new “Delete” control. |
 
-Each target started in a fresh browser session and used the analyze → create → activate → execute → reset sequence. Across four semantic stages, the retained results verify that the same transport session was reused from analysis through generated-tool execution and that the page-owned runtime exposed 15 low-level tools. MetaWebMCP adapted the `target` reference field used by the current server while retaining the `ref` field used by the Cloudflare package.
+Each target started in a fresh browser session and used the analyze → create → activate → execute → reset sequence. Across four semantic stages, the retained results verify that the same transport session was reused from analysis through generated-tool execution. The page-owned runtime advertised exactly eight allowlisted browser operations; the broader package surface stayed hidden. MetaWebMCP adapted the `target` reference field used by the current server while retaining the `ref` field used by the Cloudflare package.
 
 ## Commands
 
