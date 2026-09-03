@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 
 import { generateProjectFiles, generateProjectZip, validateExportRequest } from '../lib/generator.mjs';
 
@@ -26,6 +27,36 @@ const tool = {
   },
 };
 
+function loadGeneratedRuntime(source, environment = {}) {
+  const registered = [];
+  const document = {
+    readyState: 'loading',
+    addEventListener() {},
+    ...environment.document,
+  };
+  document.modelContext = {
+    async registerTool(descriptor) { registered.push(descriptor); },
+  };
+  const context = {
+    AbortController,
+    console: { info() {} },
+    Event,
+    InputEvent: Event,
+    location: { href: 'https://example.com/' },
+    setTimeout,
+    window: environment.window || {},
+    document,
+    HTMLElement: environment.HTMLElement || class {},
+    HTMLFormElement: environment.HTMLFormElement || class {},
+    HTMLInputElement: environment.HTMLInputElement || class {},
+    HTMLSelectElement: environment.HTMLSelectElement || class {},
+    HTMLTextAreaElement: environment.HTMLTextAreaElement || class {},
+  };
+  const executable = `${source.replace(/\bexport /g, '')}\nglobalThis.generatedApi = { registerGeneratedWebMCP };`;
+  vm.runInNewContext(executable, context);
+  return context.generatedApi.registerGeneratedWebMCP().then(() => ({ registered, context }));
+}
+
 test('export validation normalizes project name and preserves tool contract', () => {
   const result = validateExportRequest({ projectName: 'Relay Sessions!', tools: [tool], goal: 'Find sessions' });
   assert.equal(result.projectName, 'relay-sessions');
@@ -46,6 +77,128 @@ test('generated project directly registers WebMCP tools and includes review arti
   assert.match(project.files['AGENTS.md'], /Replace DOM clicks with stable application functions/);
   assert.match(project.files['tests/manual-evals.md'], /Expected selection: `find_sessions`/);
   assert.doesNotThrow(() => JSON.parse(project.files['src/tool-spec.json']));
+});
+
+test('generated runtime requires own schema properties for prototype-colliding names', async () => {
+  const propertyNames = ['constructor', 'toString', '__proto__'];
+  const prototypeTools = propertyNames.map((propertyName, index) => ({
+    ...structuredClone(tool),
+    name: `set_prototype_value_${index + 1}`,
+    inputSchema: {
+      type: 'object',
+      properties: Object.fromEntries([[propertyName, { type: 'string' }]]),
+      required: [propertyName],
+      additionalProperties: false,
+    },
+    executor: { type: 'mcp-recipe', steps: [] },
+  }));
+  const rejectExtrasTool = {
+    ...structuredClone(tool),
+    name: 'reject_prototype_extras',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    executor: { type: 'mcp-recipe', steps: [] },
+  };
+  const project = generateProjectFiles({ projectName: 'prototype-fields', tools: [...prototypeTools, rejectExtrasTool] });
+  const { registered } = await loadGeneratedRuntime(project.files['src/webmcp.generated.js'], {
+    window: {
+      MetaWebMCPBrowserBridge: {
+        execute: (_spec, input) => ({ value: Object.values(input)[0] }),
+      },
+    },
+  });
+
+  for (const [index, propertyName] of propertyNames.entries()) {
+    const descriptor = registered[index];
+    await assert.rejects(descriptor.execute({}), new RegExp(`input\\.${propertyName} is required`));
+    const input = JSON.parse(`{${JSON.stringify(propertyName)}:"safe"}`);
+    assert.equal(Object.hasOwn(input, propertyName), true);
+    assert.deepEqual(await descriptor.execute(input), { value: 'safe' });
+  }
+
+  const extrasDescriptor = registered.at(-1);
+  for (const propertyName of propertyNames) {
+    const input = JSON.parse(`{${JSON.stringify(propertyName)}:"unexpected"}`);
+    assert.equal(Object.hasOwn(input, propertyName), true);
+    await assert.rejects(extrasDescriptor.execute(input), new RegExp(`input\\.${propertyName} is not accepted`));
+  }
+});
+
+test('generated DOM form runtime actuates only own optional input properties', async () => {
+  class TestElement {}
+  class TestInputElement extends TestElement {
+    constructor() {
+      super();
+      this.events = [];
+      this.value = '';
+    }
+
+    dispatchEvent(event) { this.events.push(event.type); }
+  }
+  class TestTextAreaElement extends TestInputElement {}
+  class TestSelectElement extends TestElement {}
+  class TestFormElement extends TestElement {
+    constructor(controls) {
+      super();
+      this.controls = controls;
+      this.submissions = 0;
+    }
+
+    contains(element) { return [...this.controls.values()].includes(element); }
+    requestSubmit() { this.submissions += 1; }
+  }
+
+  const propertyNames = ['constructor', 'toString', '__proto__'];
+  const controls = new Map(propertyNames.map((name) => [name, new TestInputElement()]));
+  const form = new TestFormElement(controls);
+  const document = {
+    body: { textContent: '' },
+    title: 'Prototype form',
+    querySelector: () => null,
+    querySelectorAll(selector) {
+      if (selector === '#prototype-form') return [form];
+      const control = controls.get(selector.slice(1));
+      return control ? [control] : [];
+    },
+  };
+  const optionalFieldsTool = {
+    ...structuredClone(tool),
+    name: 'submit_optional_fields',
+    inputSchema: {
+      type: 'object',
+      properties: Object.fromEntries(propertyNames.map((name) => [name, { type: 'string' }])),
+      additionalProperties: false,
+    },
+    executor: {
+      type: 'dom-form',
+      formSelector: '#prototype-form',
+      fields: propertyNames.map((name) => ({ name, selector: `#${name}`, controlType: 'text' })),
+      submitSelector: null,
+      resultSelector: '#result',
+    },
+  };
+  const project = generateProjectFiles({ projectName: 'prototype-form', tools: [optionalFieldsTool] });
+  const { registered } = await loadGeneratedRuntime(project.files['src/webmcp.generated.js'], {
+    document,
+    HTMLElement: TestElement,
+    HTMLFormElement: TestFormElement,
+    HTMLInputElement: TestInputElement,
+    HTMLSelectElement: TestSelectElement,
+    HTMLTextAreaElement: TestTextAreaElement,
+  });
+  const [descriptor] = registered;
+
+  await descriptor.execute({});
+  assert.equal(form.submissions, 1);
+  for (const control of controls.values()) assert.deepEqual(control.events, []);
+
+  const ownProtoInput = JSON.parse('{"__proto__":"safe"}');
+  assert.equal(Object.hasOwn(ownProtoInput, '__proto__'), true);
+  await descriptor.execute(ownProtoInput);
+  assert.equal(form.submissions, 2);
+  assert.deepEqual(controls.get('__proto__').events, ['input', 'change']);
+  assert.equal(controls.get('__proto__').value, 'safe');
+  assert.deepEqual(controls.get('constructor').events, []);
+  assert.deepEqual(controls.get('toString').events, []);
 });
 
 test('generated ZIP has a valid archive signature and deterministic file count', () => {
