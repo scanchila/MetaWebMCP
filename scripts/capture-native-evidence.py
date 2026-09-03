@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 from playwright.sync_api import sync_playwright
-from evidence_provenance import configured_source_commit, verified_deployment_identity
+from evidence_provenance import browser_identity, configured_source_commit, verified_deployment_identity
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -384,7 +384,7 @@ def main():
                 'captureScript': Path(__file__).name,
                 'captureScriptSha256': CAPTURE_SCRIPT_SHA256,
                 'captureDependencies': {PROVENANCE_HELPER.name: PROVENANCE_HELPER_SHA256},
-                'browser': f'Google Chrome {browser.version}',
+                'browser': browser_identity(CHROME, browser.version),
                 'browserLaunch': {
                     'executable': Path(CHROME).name,
                     'headless': True,

@@ -12,7 +12,7 @@ from evidence_append_provenance import (  # noqa: E402
     apply_browser_capture_provenance,
     apply_static_capture_provenance,
 )
-from evidence_provenance import configured_source_commit, verified_deployment_identity  # noqa: E402
+from evidence_provenance import browser_identity, configured_source_commit, verified_deployment_identity  # noqa: E402
 
 
 SOURCE_COMMIT = 'a' * 40
@@ -56,6 +56,41 @@ def opener(payload, calls):
 
 
 class EvidenceProvenanceTest(unittest.TestCase):
+    def test_browser_identity_preserves_the_executable_product_name(self):
+        identities = (
+            'Google Chrome Beta 152.0.7977.75',
+            'Google Chrome for Testing 152.0.7977.75',
+            'Chromium 152.0.7977.75',
+        )
+        for expected in identities:
+            with self.subTest(identity=expected):
+                calls = []
+
+                def runner(command, **options):
+                    calls.append((command, options))
+                    return type('Completed', (), {
+                        'returncode': 0,
+                        'stdout': f'{expected}\n',
+                        'stderr': '',
+                    })()
+
+                self.assertEqual(browser_identity('/browser', '152.0.7977.75', runner=runner), expected)
+                self.assertEqual(calls, [(
+                    ['/browser', '--version'],
+                    {'capture_output': True, 'text': True, 'timeout': 10, 'check': False},
+                )])
+
+    def test_browser_identity_rejects_a_mismatched_runtime_version(self):
+        def runner(_command, **_options):
+            return type('Completed', (), {
+                'returncode': 0,
+                'stdout': 'Chromium 151.0.0.0\n',
+                'stderr': '',
+            })()
+
+        with self.assertRaisesRegex(RuntimeError, 'does not match'):
+            browser_identity('/browser', '152.0.7977.75', runner=runner)
+
     def test_capture_scripts_use_the_current_headless_webmcp_feature_flag(self):
         for script_name in ('capture-native-evidence.py', 'capture-public-evidence.py'):
             source = (ROOT / 'scripts' / script_name).read_text()

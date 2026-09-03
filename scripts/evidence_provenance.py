@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlsplit
 from urllib.request import Request, urlopen
@@ -10,6 +11,31 @@ from urllib.request import Request, urlopen
 
 SOURCE_COMMIT_PATTERN = re.compile(r'^[0-9a-f]{40,64}$')
 MAX_HEALTH_BYTES = 64 * 1024
+
+
+def browser_identity(executable, runtime_version, *, runner=subprocess.run):
+    version = str(runtime_version).strip()
+    try:
+        completed = runner(
+            [str(executable), '--version'],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        raise RuntimeError('Could not read the launched browser executable identity.') from error
+
+    output_lines = [
+        line.strip()
+        for stream in (completed.stdout or '', completed.stderr or '')
+        for line in stream.splitlines()
+        if line.strip()
+    ]
+    identity = next((line for line in output_lines if version and version in line), '')
+    if completed.returncode != 0 or not identity:
+        raise RuntimeError('Browser executable identity does not match the launched browser version.')
+    return ' '.join(identity.split())
 
 
 def configured_source_commit(environ=None):

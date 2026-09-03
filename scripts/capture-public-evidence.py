@@ -17,7 +17,7 @@ from evidence_append_provenance import (
     apply_browser_capture_provenance,
     apply_static_capture_provenance,
 )
-from evidence_provenance import configured_source_commit, verified_deployment_identity
+from evidence_provenance import browser_identity, configured_source_commit, verified_deployment_identity
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -244,7 +244,7 @@ def main():
         )
         try:
             apply_browser_capture_provenance(report, {
-                'browser': f'Google Chrome {browser.version}',
+                'browser': browser_identity(CHROME, browser.version),
                 'browserLaunch': {
                     'executable': Path(CHROME).name,
                     'headless': True,
