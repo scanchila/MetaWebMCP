@@ -22,6 +22,12 @@ const PORT = Number(process.env.PORT || 8787);
 const HOST = process.env.HOST || '0.0.0.0';
 const BODY_LIMIT = 2_000_000;
 const BROWSER_MCP_URL = process.env.BROWSER_MCP_URL || '';
+const BROWSER_MCP_EGRESS_ISOLATED = process.env.BROWSER_MCP_EGRESS_ISOLATED === '1';
+if (BROWSER_MCP_URL && !BROWSER_MCP_EGRESS_ISOLATED) {
+  throw new Error(
+    'BROWSER_MCP_URL requires BROWSER_MCP_EGRESS_ISOLATED=1 after the browser runtime has been placed behind enforced private-network egress controls.',
+  );
+}
 const MCP_CAPABILITY_SECRET = process.env.MCP_CAPABILITY_SECRET || crypto.randomBytes(48).toString('base64url');
 const DOWNLOAD_TTL_MS = 20 * 60 * 1000;
 const MCP_SESSION_TTL_MS = Math.max(60_000, Number(process.env.MCP_SESSION_TTL_MS) || 20 * 60 * 1000);
@@ -193,17 +199,28 @@ const mcpPruneTimer = setInterval(pruneMcpClients, Math.min(MCP_SESSION_TTL_MS, 
 mcpPruneTimer.unref?.();
 
 async function analyzeWithBrowserMcp(body, capabilityId) {
-  const parsed = await validateBrowserTarget(body.url);
+  const parsed = await validateBrowserTarget(body.url, { allowPrivate: false });
   const client = getMcpClient(body.workspaceId, capabilityId);
   const tools = await client.listTools();
   const names = new Set(tools.map((tool) => tool.name));
   for (const required of ['browser_navigate', 'browser_snapshot']) {
     if (!names.has(required)) throw new Error(`Connected MCP server does not expose required tool ${required}.`);
   }
-  await client.callTool('browser_navigate', { url: parsed.href });
+  const navigationResult = await client.callTool('browser_navigate', { url: parsed.href });
+  const navigationText = flattenMcpText(navigationResult);
+  const finalUrlMatch = navigationText.match(/^- Page URL:\s*(\S+)\s*$/m);
+  const finalTarget = finalUrlMatch
+    ? await validateBrowserTarget(finalUrlMatch[1], { allowPrivate: false })
+    : parsed;
+  const statusMatch = navigationText.match(/^- HTTP status:\s*(\d{3})\b/m);
+  if (statusMatch && Number(statusMatch[1]) >= 400) {
+    const error = new Error(`Target browser navigation returned HTTP ${statusMatch[1]}.`);
+    error.statusCode = 502;
+    throw error;
+  }
   const snapshotResult = await client.callTool('browser_snapshot', {});
   const snapshot = flattenMcpText(snapshotResult);
-  const analysis = analyzeAccessibilitySnapshot({ snapshot, url: parsed.href, goal: String(body.goal || '') });
+  const analysis = analyzeAccessibilitySnapshot({ snapshot, url: finalTarget.href, goal: String(body.goal || '') });
   return { ...analysis, mcp: { endpointConfigured: true, availableTools: [...names].sort() } };
 }
 
@@ -335,7 +352,7 @@ async function handleApi(req, res, pathname, searchParams) {
 
   if (pathname === '/api/mcp/analyze-snapshot' && req.method === 'POST') {
     const body = await readJson(req);
-    const parsed = await validateBrowserTarget(body.url);
+    const parsed = await validateBrowserTarget(body.url, { allowPrivate: false });
     const analysis = analyzeAccessibilitySnapshot({
       snapshot: String(body.snapshot || ''),
       url: parsed.href,

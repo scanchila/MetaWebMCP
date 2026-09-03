@@ -177,6 +177,7 @@ def deployed_asset_hashes(page):
         '/js/demo-analyzer.js',
         '/js/mcp-http-client.js',
         '/js/mcp-recipe.js',
+        '/js/network-policy.js',
         '/js/webmcp-runtime.js',
         '/demo/index.html',
         '/demo/demo.css',

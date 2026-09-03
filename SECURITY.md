@@ -12,7 +12,7 @@ MetaWebMCP is an experimental compatibility studio. It processes untrusted websi
 - DNS answers are checked and a target is rejected if any answer resolves to a blocked range.
 - Every redirect destination is validated again.
 - Redirect count, request duration, response size, and accepted content types are capped.
-- `ALLOW_PRIVATE_TARGETS=1` exists only for deliberate local development.
+- `ALLOW_PRIVATE_TARGETS=1` exists only for deliberate local development of static HTML fetching; it does not relax Browser MCP egress.
 
 These controls reduce, but do not mathematically eliminate, DNS-rebinding and network-side race risks. A hardened public deployment should add egress policy at the container or VPC layer.
 
@@ -20,8 +20,11 @@ These controls reduce, but do not mathematically eliminate, DNS-rebinding and ne
 
 - The MCP endpoint is deployment configuration, not a user-provided URL.
 - A same-origin deployment gives each open page its own MCP transport session and closes it on reset. The Node fallback keys distinct server-side sessions by unguessable workspace identifiers and expires inactive clients.
-- The Node bridge performs DNS and private-network validation before analysis navigation. Navigation is not available to caller-supplied generated recipes.
-- The Cloudflare transport rejects non-HTTP schemes, credentials, local names, direct private/reserved IPs, and common metadata hostnames. Browser-context routing applies the same direct-target checks to requests caused by redirects and page actions.
+- Browser target validation rejects non-HTTP schemes and credentials, then applies a shared policy for local names, private/reserved IPs, IPv4-mapped and translation-prefix forms, common metadata names, and known wildcard-DNS aliases.
+- The Node bridge performs DNS and private-network validation before analysis navigation and validates a reported final navigation URL. Navigation is not available to caller-supplied generated recipes.
+- Node Browser MCP remains disabled unless `BROWSER_MCP_EGRESS_ISOLATED=1` declares an enforced runtime boundary. The declaration is a fail-closed configuration guard, not the boundary itself.
+- The supplied Compose Playwright container has only an internal Docker network. Chromium's HTTP/HTTPS route is a forward proxy that validates every connection's full DNS answer set, permits only ports 80 and 443, and connects to one already-validated address. Chromium's implicit loopback and link-local proxy bypass is removed.
+- The Cloudflare transport applies the shared direct-target policy. Browser Rendering is configured with `blockPrivate: true` so redirects and page actions remain subject to the platform network boundary.
 - `BROWSER_ALLOWED_ORIGINS` can constrain initial navigation.
 - Generated recipes contain at most twelve steps.
 - Only the following MCP tools can be called by recipes:
@@ -34,7 +37,7 @@ These controls reduce, but do not mathematically eliminate, DNS-rebinding and ne
 - Arbitrary browser evaluation is deliberately excluded.
 - The supplied Compose service uses an isolated, headless browser profile and omits image responses.
 
-Playwright MCP and application-layer hostname checks are not complete network boundaries: DNS rebinding and environment-specific name resolution still require infrastructure controls. Use an isolated runtime with restricted egress, no cloud metadata access, no host filesystem mounts, and no persistent authenticated browser profile.
+Playwright MCP origin filters and application-layer hostname checks are not complete network boundaries. External Browser MCP endpoints must independently enforce private-network egress on redirects and subresources before `BROWSER_MCP_EGRESS_ISOLATED=1` is set. Keep browser runtimes isolated, without host filesystem mounts or persistent authenticated profiles.
 
 A public same-origin MCP route is a powerful resource even when the product UI exposes only semantic generated tools. The Cloudflare deployment rejects cross-origin browser transport requests, limits them to 60 requests per source IP per minute, uses the account's browser quotas, and closes browser contexts on reset or page teardown. Production operators should also monitor abuse and account-level consumption.
 

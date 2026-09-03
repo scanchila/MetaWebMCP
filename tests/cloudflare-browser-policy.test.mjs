@@ -40,9 +40,13 @@ test('Browser MCP navigation rejects local, private, reserved, and metadata targ
     'http://169.254.169.254/latest/meta-data/',
     'http://192.0.2.8/',
     'http://metadata.google.internal/computeMetadata/v1/',
+    'http://metadata.google.internal./computeMetadata/v1/',
+    'http://169.254.169.254.nip.io/latest/meta-data/',
+    'http://192.168.1.1.sslip.io/',
     'http://router.home.arpa/',
     'http://[::1]/',
     'http://[fd00::1]/',
+    'http://[64:ff9b::a9fe:a9fe]/latest/meta-data/',
   ]) {
     assert.throws(
       () => validateBrowserTransportMessage({

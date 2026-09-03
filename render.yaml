@@ -7,5 +7,3 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 22
-      - key: BROWSER_MCP_URL
-        sync: false

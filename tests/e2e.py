@@ -78,9 +78,11 @@ def build_browser_sources() -> tuple[str, str, str, str]:
 
     mcp_client_url = browser_module_url((ROOT / "public/js/mcp-http-client.js").read_text())
     recipe_url = browser_module_url((ROOT / "public/js/mcp-recipe.js").read_text())
+    network_policy_url = browser_module_url((ROOT / "public/js/network-policy.js").read_text())
     browser_session_source = (ROOT / "public/js/browser-mcp-session.js").read_text()
     browser_session_source = browser_session_source.replace("'./mcp-http-client.js'", json.dumps(mcp_client_url))
     browser_session_source = browser_session_source.replace("'./mcp-recipe.js'", json.dumps(recipe_url))
+    browser_session_source = browser_session_source.replace("'./network-policy.js'", json.dumps(network_policy_url))
     browser_session_url = browser_module_url(browser_session_source)
 
     runtime_source = (ROOT / "public/js/webmcp-runtime.js").read_text()
