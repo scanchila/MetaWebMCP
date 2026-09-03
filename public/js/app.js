@@ -712,6 +712,7 @@ async function testWebMcp(input = {}) {
 
 async function exportWebMcp(input = {}) {
   if (!state.contracts.length) throw new Error('Create WebMCP contracts before export.');
+  await browserMcpSession.ensureCapability();
   const projectName = String(input.project_name || defaultProjectName());
   let ownerBundle = null;
   if (state.analysis?.source?.kind === 'demo') {

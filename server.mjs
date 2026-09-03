@@ -26,6 +26,19 @@ const MCP_CAPABILITY_SECRET = process.env.MCP_CAPABILITY_SECRET || crypto.random
 const DOWNLOAD_TTL_MS = 20 * 60 * 1000;
 const MCP_SESSION_TTL_MS = Math.max(60_000, Number(process.env.MCP_SESSION_TTL_MS) || 20 * 60 * 1000);
 
+function positiveIntegerSetting(name, fallback) {
+  const raw = process.env[name];
+  if (raw == null || raw === '') return fallback;
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value <= 0) throw new Error(`${name} must be a positive integer.`);
+  return value;
+}
+
+const MAX_PENDING_EXPORTS = positiveIntegerSetting('MAX_PENDING_EXPORTS', 8);
+const MAX_PENDING_EXPORT_BYTES = positiveIntegerSetting('MAX_PENDING_EXPORT_BYTES', 16_000_000);
+const MAX_EXPORT_ARCHIVE_BYTES = positiveIntegerSetting('MAX_EXPORT_ARCHIVE_BYTES', 3_000_000);
+const EXPORT_RATE_LIMIT_PER_MINUTE = positiveIntegerSetting('EXPORT_RATE_LIMIT_PER_MINUTE', 12);
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -41,6 +54,9 @@ const MIME = {
 
 const downloads = new Map();
 const mcpClients = new Map();
+let pendingDownloadBytes = 0;
+let exportRateWindowStartedAt = Date.now();
+let exportsInCurrentWindow = 0;
 
 function securityHeaders(contentType = '') {
   const headers = {
@@ -205,8 +221,47 @@ async function executeMcpRecipe(body, capabilityId) {
 
 function pruneDownloads() {
   const now = Date.now();
-  for (const [id, item] of downloads) if (item.expiresAt <= now) downloads.delete(id);
+  for (const [id, item] of downloads) {
+    if (item.expiresAt > now) continue;
+    downloads.delete(id);
+    pendingDownloadBytes -= item.buffer.length;
+  }
 }
+
+function claimExportRateSlot() {
+  const now = Date.now();
+  if (now - exportRateWindowStartedAt >= 60_000) {
+    exportRateWindowStartedAt = now;
+    exportsInCurrentWindow = 0;
+  }
+  if (exportsInCurrentWindow >= EXPORT_RATE_LIMIT_PER_MINUTE) {
+    const error = new Error('Export request limit reached. Try again in a minute.');
+    error.statusCode = 429;
+    throw error;
+  }
+  exportsInCurrentWindow += 1;
+}
+
+function assertDownloadCapacity(additionalBytes = 0) {
+  pruneDownloads();
+  if (downloads.size >= MAX_PENDING_EXPORTS
+    || pendingDownloadBytes + additionalBytes > MAX_PENDING_EXPORT_BYTES) {
+    const error = new Error('Export storage is at capacity. Download an existing export or try again later.');
+    error.statusCode = 429;
+    throw error;
+  }
+}
+
+function removeDownload(id) {
+  const item = downloads.get(id);
+  if (!item) return null;
+  downloads.delete(id);
+  pendingDownloadBytes -= item.buffer.length;
+  return item;
+}
+
+const downloadPruneTimer = setInterval(pruneDownloads, 60_000);
+downloadPruneTimer.unref?.();
 
 async function handleApi(req, res, pathname, searchParams) {
   if (pathname === '/health' && req.method === 'GET') {
@@ -236,6 +291,8 @@ async function handleApi(req, res, pathname, searchParams) {
   }
 
   const browserCapability = pathname.startsWith('/api/mcp/')
+    || pathname === '/api/export'
+    || pathname.startsWith('/api/download/')
     ? await requireBrowserCapability(req)
     : null;
 
@@ -299,18 +356,34 @@ async function handleApi(req, res, pathname, searchParams) {
   }
 
   if (pathname === '/api/export' && req.method === 'POST') {
+    assertDownloadCapacity();
+    claimExportRateSlot();
     const body = await readJson(req);
     const archive = generateProjectZip(body);
+    if (archive.buffer.length > MAX_EXPORT_ARCHIVE_BYTES) {
+      const error = new Error(`Generated export exceeds ${MAX_EXPORT_ARCHIVE_BYTES} bytes.`);
+      error.statusCode = 413;
+      throw error;
+    }
+    assertDownloadCapacity(archive.buffer.length);
     const id = crypto.randomUUID();
-    downloads.set(id, { ...archive, expiresAt: Date.now() + DOWNLOAD_TTL_MS });
-    pruneDownloads();
+    const expiresInSeconds = Math.max(1, Math.min(
+      Math.floor(DOWNLOAD_TTL_MS / 1000),
+      browserCapability.expiresAt - Math.floor(Date.now() / 1000),
+    ));
+    downloads.set(id, {
+      ...archive,
+      capabilityId: browserCapability.id,
+      expiresAt: Date.now() + expiresInSeconds * 1000,
+    });
+    pendingDownloadBytes += archive.buffer.length;
     return sendJson(res, 201, {
       ok: true,
       fileName: archive.fileName,
       fileCount: archive.fileCount,
       bytes: archive.buffer.length,
       downloadUrl: `/api/download/${id}`,
-      expiresInSeconds: Math.floor(DOWNLOAD_TTL_MS / 1000),
+      expiresInSeconds,
     });
   }
 
@@ -319,6 +392,10 @@ async function handleApi(req, res, pathname, searchParams) {
     const id = pathname.slice('/api/download/'.length);
     const item = downloads.get(id);
     if (!item) return sendError(res, 404, new Error('Export not found or expired.'));
+    if (item.capabilityId !== browserCapability.id) {
+      return sendError(res, 404, new Error('Export not found or expired.'));
+    }
+    removeDownload(id);
     res.writeHead(200, {
       'content-type': 'application/zip',
       'content-length': item.buffer.length,
@@ -399,6 +476,7 @@ server.listen(PORT, HOST, () => {
 async function shutdown() {
   server.close();
   clearInterval(mcpPruneTimer);
+  clearInterval(downloadPruneTimer);
   const clients = [...mcpClients.values()].map((entry) => entry.client);
   mcpClients.clear();
   await Promise.allSettled(clients.map((client) => client.close()));

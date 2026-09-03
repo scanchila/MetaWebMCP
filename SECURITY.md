@@ -58,7 +58,9 @@ A public same-origin MCP route is a powerful resource even when the product UI e
 - The top-level page has no inline script or external CDN dependency.
 - Generated target labels are inserted with `textContent`, not HTML.
 - Static file paths are normalized and constrained to the public root.
-- Download artifacts are held in memory and expire after twenty minutes.
+- Export creation and download require the page's signed capability. Download URLs are bound to their creating page; retained archive bytes are deleted following a successful retrieval.
+- The Node runtime retains at most eight pending archives and 16 MB of archive buffers, rejects archives over 3 MB, limits generation to twelve requests per minute, and expires pending downloads within twenty minutes.
+- The Cloudflare runtime applies a separate twelve-per-minute export limit and keeps generated archives in the Cache API rather than Worker process memory.
 - Bundled owner-source file names and total sizes are validated before they are written into an export archive.
 
 ## Known limitations

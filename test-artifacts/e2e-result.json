@@ -1,5 +1,5 @@
 {
-  "baseUrl": "http://127.0.0.1:58877",
+  "baseUrl": "http://127.0.0.1:49091",
   "checks": [
     "server health endpoint",
     "client prerequisites and responsive five-step non-native fallback",
@@ -150,7 +150,7 @@
       {
         "tool": "add_session_to_itinerary",
         "status": "passed",
-        "durationMs": 76,
+        "durationMs": 73,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -288,7 +288,7 @@
       {
         "tool": "clear_itinerary",
         "status": "passed",
-        "durationMs": 72,
+        "durationMs": 74,
         "checks": [
           {
             "name": "registered in generated tool registry",

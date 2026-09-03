@@ -55,11 +55,6 @@ def wait_for_health(url: str, process: subprocess.Popen[str]) -> dict[str, Any]:
     raise RuntimeError(f"Server did not become healthy: {last_error}")
 
 
-def fetch_bytes(url: str) -> bytes:
-    with urllib.request.urlopen(url, timeout=5) as response:
-        return response.read()
-
-
 def browser_module_url(source: str) -> str:
     encoded = base64.b64encode(source.encode("utf-8")).decode("ascii")
     return f"data:text/javascript;base64,{encoded}"
@@ -67,6 +62,7 @@ def browser_module_url(source: str) -> str:
 
 def build_browser_sources() -> tuple[str, str, str, str]:
     index_html = (ROOT / "public/index.html").read_text()
+    index_html = index_html.replace("<head>", '<head><base href="http://metawebmcp.test/">', 1)
     index_html = index_html.replace('<link rel="stylesheet" href="/styles.css">', "")
     index_html = index_html.replace('<script type="module" src="/js/app.js"></script>', "")
     index_html = index_html.replace('src="/demo/"', 'src="about:blank"')
@@ -128,13 +124,13 @@ def make_api_bridge(base_url: str):
                 return {
                     "status": response.status,
                     "headers": response_headers,
-                    "body": response.read().decode("utf-8"),
+                    "bodyBase64": base64.b64encode(response.read()).decode("ascii"),
                 }
         except urllib.error.HTTPError as error:
             return {
                 "status": error.code,
                 "headers": dict(error.headers.items()),
-                "body": error.read().decode("utf-8"),
+                "bodyBase64": base64.b64encode(error.read()).decode("ascii"),
             }
 
     return api_bridge
@@ -289,7 +285,9 @@ def main() -> int:
                           headers: options.headers || {},
                           body: options.body ?? null,
                         });
-                        return new Response(response.body, { status: response.status, headers: response.headers });
+                        const binary = atob(response.bodyBase64);
+                        const body = Uint8Array.from(binary, character => character.charCodeAt(0));
+                        return new Response(body, { status: response.status, headers: response.headers });
                       };
                     }
                     """
@@ -555,7 +553,18 @@ def main() -> int:
                     "async () => window.__callNative('meta_export_webmcp', { project_name: 'relay-sessions-webmcp' })"
                 )
                 assert exported["fileCount"] == 13, exported
-                archive_bytes = fetch_bytes(f"{base_url}{exported['downloadUrl']}")
+                archive_base64 = page.evaluate(
+                    """async url => {
+                      const response = await fetch(url);
+                      if (!response.ok) throw new Error(`Export download failed: ${response.status}`);
+                      const bytes = new Uint8Array(await response.arrayBuffer());
+                      let binary = '';
+                      for (const byte of bytes) binary += String.fromCharCode(byte);
+                      return btoa(binary);
+                    }""",
+                    exported["downloadUrl"],
+                )
+                archive_bytes = base64.b64decode(archive_base64)
                 archive_path = ARTIFACTS / exported["fileName"]
                 archive_path.write_bytes(archive_bytes)
 
@@ -796,7 +805,18 @@ def main() -> int:
                     }""",
                     browser_export_payload,
                 )
-                browser_archive = fetch_bytes(f"{base_url}{browser_export['downloadUrl']}")
+                browser_archive_base64 = page.evaluate(
+                    """async url => {
+                      const response = await fetch(url);
+                      if (!response.ok) throw new Error(`Export download failed: ${response.status}`);
+                      const bytes = new Uint8Array(await response.arrayBuffer());
+                      let binary = '';
+                      for (const byte of bytes) binary += String.fromCharCode(byte);
+                      return btoa(binary);
+                    }""",
+                    browser_export["downloadUrl"],
+                )
+                browser_archive = base64.b64decode(browser_archive_base64)
                 with zipfile.ZipFile(io.BytesIO(browser_archive)) as archive:
                     browser_source = archive.read(
                         "catalog-browser-adapter/src/webmcp.generated.js"

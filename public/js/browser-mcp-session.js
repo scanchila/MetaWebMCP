@@ -45,7 +45,7 @@ function normalizedTargetUrl(rawUrl) {
 export class BrowserMcpSession {
   constructor(options = {}) {
     this.fetch = options.fetch ?? globalThis.fetch.bind(globalThis);
-    this.baseUrl = options.baseUrl ?? globalThis.location?.href ?? 'http://localhost/';
+    this.baseUrl = options.baseUrl ?? globalThis.document?.baseURI ?? globalThis.location?.href ?? 'http://localhost/';
     this.configPath = options.configPath ?? '/api/config';
     this.capabilityPath = options.capabilityPath ?? '/api/browser-session';
     this.capabilityPromise = null;

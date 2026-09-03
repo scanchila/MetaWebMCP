@@ -164,6 +164,10 @@ The Node bridge validates initial URLs, blocks private/reserved networks by defa
 | `BROWSER_MCP_URL` | empty | Streamable HTTP endpoint, normally `http://127.0.0.1:8931/mcp` |
 | `MCP_CAPABILITY_SECRET` | random per process | Secret of at least 32 bytes used to sign page-issued Browser MCP capabilities; set explicitly when running multiple instances |
 | `MCP_SESSION_TTL_MS` | `1200000` | Inactivity timeout for each page-scoped Browser MCP client |
+| `MAX_PENDING_EXPORTS` | `8` | Maximum ZIP archives retained for pending Node downloads |
+| `MAX_PENDING_EXPORT_BYTES` | `16000000` | Maximum total bytes retained across pending Node downloads |
+| `MAX_EXPORT_ARCHIVE_BYTES` | `3000000` | Maximum generated ZIP size accepted by the Node runtime |
+| `EXPORT_RATE_LIMIT_PER_MINUTE` | `12` | Process-wide Node export generation limit |
 | `ALLOW_PRIVATE_TARGETS` | `0` | Local development override; never enable on a public deployment |
 | `BROWSER_ALLOWED_ORIGINS` | empty | Optional comma-separated initial target origin allowlist |
 
@@ -214,7 +218,7 @@ The repository includes:
 - `docker-compose.yml` for MetaWebMCP plus Playwright MCP.
 - GitHub Actions CI for static, unit, and Chromium end-to-end tests.
 
-The showcase deployment runs at https://metawebmcp.neuryta.com. Its page-owned MCP session uses Cloudflare Browser Rendering for the “any site” path; the controlled recursive flow and native exports use the same origin without requiring a browser session. See [`deploy/cloudflare/README.md`](deploy/cloudflare/README.md) for the reproducible deployment and compatibility pins.
+The showcase deployment runs at https://metawebmcp.neuryta.com. Its page-owned MCP session uses Cloudflare Browser Rendering for the “any site” path; the controlled recursive flow and native exports do not require a Browser Rendering session. Export creation and download still use the page's short-lived signed capability. See [`deploy/cloudflare/README.md`](deploy/cloudflare/README.md) for the reproducible deployment and compatibility pins.
 
 ## Repository guide
 
