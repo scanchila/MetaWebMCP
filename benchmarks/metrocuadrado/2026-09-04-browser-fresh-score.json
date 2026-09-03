@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "metrocuadrado-cheapest-visible-v1",
+  "oracleCompleteVisibleTop10": true,
+  "candidateStatus": "completed",
+  "qualityGatePassed": true,
+  "counts": {
+    "expected": 10,
+    "returned": 10,
+    "uniqueReturned": 10,
+    "duplicates": 0,
+    "contractValid": 10,
+    "matchedExpectedUrls": 10,
+    "exactFieldMatches": 10,
+    "exactRankMatches": 10
+  },
+  "rates": {
+    "urlPrecision": 1,
+    "urlRecall": 1,
+    "exactFieldAccuracyOnExpected": 1,
+    "exactRankAccuracyOnExpected": 1
+  },
+  "ordering": {
+    "sequentialRanks": true,
+    "requestedSort": true
+  },
+  "missingUrls": [],
+  "extraUrls": [],
+  "candidateEvidence": {
+    "capturedAt": "2026-09-04",
+    "sourceUrl": "https://www.metrocuadrado.com/apartamentos/arriendo/bogota/economicos/",
+    "limitations": [],
+    "results": [
+      {
+        "rank": 1,
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-ingles-2-habitaciones-1-banos/MC6112356",
+        "rentCop": 580000,
+        "bedrooms": 2,
+        "areaM2": 55
+      },
+      {
+        "rank": 2,
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-nueva-delly-3-habitaciones-1-banos/3222-M6963978",
+        "rentCop": 700000,
+        "bedrooms": 3,
+        "areaM2": 50
+      },
+      {
+        "rank": 3,
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-2-habitaciones-1-banos/20825-M6825862",
+        "rentCop": 700000,
+        "bedrooms": 2,
+        "areaM2": 46
+      },
+      {
+        "rank": 4,
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-bosa-2-habitaciones-1-banos/3222-M6986372",
+        "rentCop": 700000,
+        "bedrooms": 2,
+        "areaM2": 45
+      },
+      {
+        "rank": 5,
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-compostela-2-habitaciones-1-banos/18552-M6884285",
+        "rentCop": 750000,
+        "bedrooms": 2,
+        "areaM2": 45
+      },
+      {
+        "rank": 6,
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-bosconia-2-habitaciones-1-banos/4058-M5793290",
+        "rentCop": 800000,
+        "bedrooms": 2,
+        "areaM2": 60
+      },
+      {
+        "rank": 7,
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-el-cortijo-2-habitaciones-1-banos/5082-M6945188",
+        "rentCop": 800000,
+        "bedrooms": 2,
+        "areaM2": 45
+      },
+      {
+        "rank": 8,
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-villa-israel-2-habitaciones-1-banos/164-M6968138",
+        "rentCop": 800000,
+        "bedrooms": 2,
+        "areaM2": 45
+      },
+      {
+        "rank": 9,
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-codito-2-habitaciones-1-banos/164-M6047256",
+        "rentCop": 830000,
+        "bedrooms": 2,
+        "areaM2": 65
+      },
+      {
+        "rank": 10,
+        "url": "https://www.metrocuadrado.com/inmueble/arriendo-apartamento-bogota-bosa-2-habitaciones-1-banos/11813-M5940843",
+        "rentCop": 844000,
+        "bedrooms": 2,
+        "areaM2": 48
+      }
+    ]
+  },
+  "inputSha256": {
+    "oracle": "dec6a9e5712990148bf01e206663ed4360fe2044ad3a5fa3939d510b68bcb5b0",
+    "candidate": "4ba48344d6addcb3fa7dd70ce1d267463629e2cb2b35724807f17933879bf2a6"
+  }
+}

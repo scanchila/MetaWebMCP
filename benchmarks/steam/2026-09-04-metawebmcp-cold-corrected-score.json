@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "steam-discounted-games-first-20-pages-v1",
+  "candidateKind": "final",
+  "oracleCompleteScopedTop50": true,
+  "candidateStatus": "completed",
+  "candidatePagesScanned": 20,
+  "executorComplete": null,
+  "qualityGatePassed": true,
+  "counts": {
+    "expected": 50,
+    "returned": 50,
+    "uniqueAppIds": 50,
+    "uniqueUrls": 50,
+    "duplicateAppIds": 0,
+    "contractValid": 50,
+    "matchedExpectedApps": 50,
+    "exactFieldMatches": 50,
+    "exactRankMatches": 50
+  },
+  "rates": {
+    "appPrecision": 1,
+    "appRecall": 1,
+    "exactFieldAccuracyOnExpected": 1,
+    "exactRankAccuracyOnExpected": 1
+  },
+  "ordering": {
+    "requestedSort": true
+  },
+  "missingAppIds": [],
+  "extraAppIds": [],
+  "inputSha256": {
+    "oracle": "6bc7ce21b2a95fc4fdf2df85d27b1f16dbe5f604cf74a4abe0ce4bf1f4ee242c",
+    "candidate": "1a0403a4e97d3f37a11636eef5de905e85f37e11bbc6c9a79dc10165e1e2de21"
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "steam-discounted-games-first-20-pages-v1",
+  "arm": "direct-browser-agent",
+  "trial": 1,
+  "repositoryBaselineCommit": "643db6c8e80e4e0f489c5d17d5a6b9bfb77ace20",
+  "startedAt": "2026-09-03T21:28:59.519Z",
+  "completedAt": "2026-09-03T21:35:38.819Z",
+  "environment": {
+    "codexCli": "0.150.1",
+    "model": "gpt-5.6-sol",
+    "reasoningEffort": "max",
+    "node": "v24.5.0",
+    "browser": "Google Chrome 147.0.7727.116",
+    "playwrightMcp": "0.0.55"
+  },
+  "isolation": {
+    "ephemeral": true,
+    "emptyWorkingDirectory": true,
+    "userConfigurationLoaded": false,
+    "repositoryInstructionsLoaded": false,
+    "appsEnabled": false,
+    "separateBrowserFromMetaWebMcp": true,
+    "separateBrowserFromOracle": true
+  },
+  "inputs": {
+    "promptSha256": "26bfe1dbaa8a749676c36ee6e0a28f96d2baca0dbd04a6f45cbdd0effa7ebc38",
+    "resultSchemaSha256": "abbea9ddbe5d0622cafcc3ad619aed5c466a50fbdf96d151be10b84a4c4cca23",
+    "oracleParserBeforeCorrectionSha256": "0c1951358f01bad7f97cb4ee5462a0f8eb48cacb8b82e67a0310f3c03548c648",
+    "oracleParserAfterCorrectionSha256": "ce2dde97e297f9ac8fce1dd9d6d4a2f021e6b556120b6051b1d5696bdd4a1812",
+    "scorerSha256": "1fd887f5758c76aaec4f94cc899cdf0cb2fcbe0c31181d1d5938670a2c382b80",
+    "resultSha256": "96aa3f230fea2dd5b86b0daa2e28a030c89bcea5980c0cc3f831cf6aa2c7b606",
+    "rawEventLogSha256": "6e6b8666d48bd296556c2aa2852980b1a52431edf3887a137e7dc871939bda9a",
+    "correctedOracleSha256": "6bc7ce21b2a95fc4fdf2df85d27b1f16dbe5f604cf74a4abe0ce4bf1f4ee242c",
+    "correctedScoreSha256": "0994fa0ec3b587897b8476c485b92777c7585aab0f16f3abfaffc55dce6bfbac"
+  },
+  "result": {
+    "status": "completed",
+    "qualityGatePassed": true,
+    "results": 50,
+    "exactApps": 50,
+    "exactFields": 50,
+    "exactRanks": 50,
+    "duplicates": 0,
+    "pagesVisited": 20
+  },
+  "timing": {
+    "wallMs": 399300
+  },
+  "agent": {
+    "mcpOnly": true,
+    "nonMcpToolCalls": 0,
+    "browserToolCalls": 21,
+    "toolNames": ["browser_navigate", "browser_snapshot"],
+    "semanticResponseCharacters": 628090,
+    "tokenUsage": {
+      "input": 2618476,
+      "cachedInput": 2393344,
+      "output": 15803,
+      "reasoningOutput": 10789,
+      "processedTotal": 2634279,
+      "nonCachedTotal": 240935
+    }
+  },
+  "browser": {
+    "calls": 21,
+    "navigate": 20,
+    "snapshot": 1
+  },
+  "oracle": {
+    "correctedStartedAt": "2026-09-03T21:37:13.114Z",
+    "correctedCompletedAt": "2026-09-03T21:37:31.522Z",
+    "rawGameLinks": 500,
+    "uniqueApps": 490,
+    "qualifyingApps": 235,
+    "completeScopedTop50": true,
+    "originalAdjacentGatePassed": false,
+    "originalAdjacentExactApps": 48,
+    "postRunParserCorrection": "Allowed the single-quoted YAML link-key form emitted when an accessible game name contains a colon."
+  },
+  "comparisonToMetaWebMcp": {
+    "metaWebMcpWallMs": 287680,
+    "wallTimeReductionFactor": 1.388001,
+    "metaWebMcpFasterByMs": 111620,
+    "metaWebMcpProcessedTokens": 248889,
+    "processedTokenReductionFactor": 10.584152,
+    "metaWebMcpNonCachedTokens": 46777,
+    "nonCachedTokenReductionFactor": 5.150715,
+    "metaWebMcpModelFacingResponseCharacters": 33340,
+    "modelFacingResponseReductionFactor": 18.838932,
+    "metaWebMcpSemanticCalls": 5,
+    "metaWebMcpInternalBrowserCalls": 62
+  },
+  "excludedStartupAttempt": {
+    "reason": "The legacy /sse endpoint was configured where this Codex client expected the server-advertised /mcp endpoint.",
+    "wallMs": 21670,
+    "browserCalls": 0,
+    "candidateStatus": "failed",
+    "resultSha256": "706064a588d041700ef2a8511b1ed9fef7f64a23a4d1d5b909be1a1ef49b700f",
+    "rawEventLogSha256": "836ba2b0f8ae0bfb808c4e911b21f5094ac8a82f743f9ac52916e2025ff33570",
+    "includedInComparison": false
+  },
+  "limitations": [
+    "This is one direct trial, not a repeated statistical estimate.",
+    "The original adjacent oracle skipped single-quoted accessibility link keys. Its failed score is retained; a one-line parser correction with a regression test produced the reported independent 50/50 gate after both arms completed.",
+    "Three retained app URLs used different tracking-query variants between arms; canonical app paths, IDs, numeric fields, and order were identical.",
+    "Processed token totals include cached input on every model turn. Non-cached totals subtract cached input but are not a monetary cost calculation."
+  ]
+}

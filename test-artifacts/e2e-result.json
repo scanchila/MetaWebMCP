@@ -1,5 +1,5 @@
 {
-  "baseUrl": "http://127.0.0.1:36421",
+  "baseUrl": "http://127.0.0.1:49473",
   "checks": [
     "server health endpoint",
     "landing explains incremental compatibility, opens the workspace, reveals it for tool activity, and remains responsive",
@@ -122,7 +122,7 @@
       {
         "tool": "find_sessions",
         "status": "passed",
-        "durationMs": 95,
+        "durationMs": 96,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -247,7 +247,7 @@
       {
         "tool": "inspect_itinerary",
         "status": "passed",
-        "durationMs": 7,
+        "durationMs": 2,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -316,7 +316,7 @@
       {
         "tool": "clear_itinerary",
         "status": "passed",
-        "durationMs": 77,
+        "durationMs": 74,
         "checks": [
           {
             "name": "registered in generated tool registry",

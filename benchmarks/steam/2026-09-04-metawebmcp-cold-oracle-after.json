@@ -1,0 +1,558 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "steam-discounted-games-first-20-pages-v1",
+  "source": {
+    "site": "Steam Store",
+    "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=1",
+    "startedAt": "2026-09-03T21:26:43.083Z",
+    "completedAt": "2026-09-03T21:26:57.780Z",
+    "volatile": true
+  },
+  "task": {
+    "requestedResults": 50,
+    "firstPage": 1,
+    "lastPage": 20,
+    "minimumDiscountPct": 50,
+    "maximumDiscountPct": 80,
+    "minimumOriginalPriceUsd": 0.99,
+    "maximumSalePriceUsd": 0.49,
+    "ranking": "Sale price ascending, discount descending, original price descending, canonical app URL ascending."
+  },
+  "capture": {
+    "pages": [
+      {
+        "page": 1,
+        "snapshotCharacters": 28731,
+        "snapshotSha256": "1c9687bbc5b784346d59ea44449760a37f5b928621d69f5234e8e8e1986764ce",
+        "gameLinks": 24
+      },
+      {
+        "page": 2,
+        "snapshotCharacters": 29231,
+        "snapshotSha256": "5e6f364b77c7ac16e5e41f4448177f84ad06c1761575242b593a6ced0ee9de8b",
+        "gameLinks": 23
+      },
+      {
+        "page": 3,
+        "snapshotCharacters": 29820,
+        "snapshotSha256": "f531cc5f01cc7af0c5ffdcffc4bd240758d6b08dca756c0ae2d0df5088b4e3cc",
+        "gameLinks": 24
+      },
+      {
+        "page": 4,
+        "snapshotCharacters": 29325,
+        "snapshotSha256": "3cac7910955080c171cb7533a8cce26c7f1a5eae33b4d11dac3847049999057d",
+        "gameLinks": 24
+      },
+      {
+        "page": 5,
+        "snapshotCharacters": 29419,
+        "snapshotSha256": "3c4f88da76076b5e18cd31cab33c7fbf595726ef3448655cf6043d1e1ea22784",
+        "gameLinks": 25
+      },
+      {
+        "page": 6,
+        "snapshotCharacters": 29229,
+        "snapshotSha256": "87bea848233942ff4173202715568eddbc47c14f680705e2d1cbfbceb26b2459",
+        "gameLinks": 24
+      },
+      {
+        "page": 7,
+        "snapshotCharacters": 29353,
+        "snapshotSha256": "3bbf3ce771bf2b9a56fd399280d5847f7b0de46bc18641d475270270f8e69534",
+        "gameLinks": 23
+      },
+      {
+        "page": 8,
+        "snapshotCharacters": 29389,
+        "snapshotSha256": "e6a591be70eea90470a444fa6b8c2137ab39c6cf2135aa74e18757413c73e250",
+        "gameLinks": 25
+      },
+      {
+        "page": 9,
+        "snapshotCharacters": 29693,
+        "snapshotSha256": "0ae7a2f6329bc4d8d670fce090c39fc848f196aef39c1aea1368bf6d2672485e",
+        "gameLinks": 23
+      },
+      {
+        "page": 10,
+        "snapshotCharacters": 29365,
+        "snapshotSha256": "02346b38b34af1683f887b6ada0a3521fce290d4cd200a9f1ee83209759458ca",
+        "gameLinks": 23
+      },
+      {
+        "page": 11,
+        "snapshotCharacters": 29538,
+        "snapshotSha256": "18ec8a57a05fcf7a85662b6120cdd022ba0eca0cba472cf91a50d6b6fe248c84",
+        "gameLinks": 25
+      },
+      {
+        "page": 12,
+        "snapshotCharacters": 29676,
+        "snapshotSha256": "d2d0fc8234207ebe2c768b2f38434777199e3b68f4e160273bf836aabfabe00b",
+        "gameLinks": 25
+      },
+      {
+        "page": 13,
+        "snapshotCharacters": 30146,
+        "snapshotSha256": "720bfb2e0fb052e6ba9b2c3fa888a346d9ddd14ebd0510dfa714f7fe9a92d37b",
+        "gameLinks": 19
+      },
+      {
+        "page": 14,
+        "snapshotCharacters": 30254,
+        "snapshotSha256": "7537c3aa093f65a1ebc682a173bb19c3cbf9e4f2c3dcfcae6f456796f94abdee",
+        "gameLinks": 19
+      },
+      {
+        "page": 15,
+        "snapshotCharacters": 29872,
+        "snapshotSha256": "8aef79f3006c1181c922ea8a5ce1205e7277eaaba4e1de35ae5bb6646139de3f",
+        "gameLinks": 23
+      },
+      {
+        "page": 16,
+        "snapshotCharacters": 29673,
+        "snapshotSha256": "51d1256483d6429852816bb479e70a3a6d91cd6ff00e7dda3a4a3146a09d5d30",
+        "gameLinks": 21
+      },
+      {
+        "page": 17,
+        "snapshotCharacters": 29870,
+        "snapshotSha256": "2a1b8b622c426fb9e45bb12d469b96cc174a6784ace4c64e876062d0277f30c2",
+        "gameLinks": 21
+      },
+      {
+        "page": 18,
+        "snapshotCharacters": 29748,
+        "snapshotSha256": "44838fe09e218baf48369ab4184c8352aaec94d5c4599774d2e9d41ba2362075",
+        "gameLinks": 22
+      },
+      {
+        "page": 19,
+        "snapshotCharacters": 29974,
+        "snapshotSha256": "757c87668970771534d5e63c7beab1e8a98b4f827ffb7ff3098d35f750b00c37",
+        "gameLinks": 16
+      },
+      {
+        "page": 20,
+        "snapshotCharacters": 29607,
+        "snapshotSha256": "95e2faacdd250657f7f5ac3ddf4f6ed2c2c7b016ce57b50293c9a7170d3e7f80",
+        "gameLinks": 21
+      }
+    ],
+    "pagesScanned": 20,
+    "rawGameLinks": 450,
+    "uniqueGames": 441,
+    "duplicateOccurrences": 9,
+    "qualifyingUniqueGames": 195,
+    "completeScopedTop50": true
+  },
+  "expected": [
+    {
+      "rank": 1,
+      "appId": 1066290,
+      "appUrl": "https://store.steampowered.com/app/1066290/_/",
+      "discountPct": 75,
+      "originalPriceUsd": 1.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 2,
+      "appId": 1097550,
+      "appUrl": "https://store.steampowered.com/app/1097550/_fantastic_kingdom/",
+      "discountPct": 75,
+      "originalPriceUsd": 1.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 3,
+      "appId": 948770,
+      "appUrl": "https://store.steampowered.com/app/948770/2018/",
+      "discountPct": 75,
+      "originalPriceUsd": 1.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 4,
+      "appId": 1028711,
+      "appUrl": "https://store.steampowered.com/app/1028711/FateEXTELLA_LINK__Brave_Kings_Surf_Shorts/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 5,
+      "appId": 1029412,
+      "appUrl": "https://store.steampowered.com/app/1029412/FateEXTELLA_LINK__Black_Elegance/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 6,
+      "appId": 1029450,
+      "appUrl": "https://store.steampowered.com/app/1029450/FateEXTELLA_LINK__Candy_Pink/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 7,
+      "appId": 1031920,
+      "appUrl": "https://store.steampowered.com/app/1031920/_/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 8,
+      "appId": 1047680,
+      "appUrl": "https://store.steampowered.com/app/1047680/_ALILIA/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 9,
+      "appId": 1060180,
+      "appUrl": "https://store.steampowered.com/app/1060180/Cyber_Driver/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 10,
+      "appId": 1060300,
+      "appUrl": "https://store.steampowered.com/app/1060300/Homeless_Simulator/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 11,
+      "appId": 1069740,
+      "appUrl": "https://store.steampowered.com/app/1069740/Seen/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 12,
+      "appId": 1070330,
+      "appUrl": "https://store.steampowered.com/app/1070330/Russian_Life_Simulator/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 13,
+      "appId": 1073220,
+      "appUrl": "https://store.steampowered.com/app/1073220/Teeth_Brushing_Simulator/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 14,
+      "appId": 1091210,
+      "appUrl": "https://store.steampowered.com/app/1091210/Kissing_Simulator/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 15,
+      "appId": 1094290,
+      "appUrl": "https://store.steampowered.com/app/1094290/_ButterflyRin/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 16,
+      "appId": 1144860,
+      "appUrl": "https://store.steampowered.com/app/1144860/Flying_Sword/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 17,
+      "appId": 1145130,
+      "appUrl": "https://store.steampowered.com/app/1145130/_Cute_Bully_Nyanbaba/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 18,
+      "appId": 1150620,
+      "appUrl": "https://store.steampowered.com/app/1150620/Bed_Lying_Simulator_2020/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 19,
+      "appId": 1157310,
+      "appUrl": "https://store.steampowered.com/app/1157310/Craft_The_World__Grottoes/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 20,
+      "appId": 1184160,
+      "appUrl": "https://store.steampowered.com/app/1184160/RUSSIAPHOBIA/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 21,
+      "appId": 1191770,
+      "appUrl": "https://store.steampowered.com/app/1191770/_Cute_Chaos_Demon_Nyanbaba/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 22,
+      "appId": 1243560,
+      "appUrl": "https://store.steampowered.com/app/1243560/Vaporwave_World/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 23,
+      "appId": 1305350,
+      "appUrl": "https://store.steampowered.com/app/1305350/C4/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 24,
+      "appId": 1341640,
+      "appUrl": "https://store.steampowered.com/app/1341640/Hard_Driver/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 25,
+      "appId": 1355400,
+      "appUrl": "https://store.steampowered.com/app/1355400/The_Line/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 26,
+      "appId": 1392060,
+      "appUrl": "https://store.steampowered.com/app/1392060/Erzurum/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 27,
+      "appId": 1395560,
+      "appUrl": "https://store.steampowered.com/app/1395560/Kandidatos/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 28,
+      "appId": 1412580,
+      "appUrl": "https://store.steampowered.com/app/1412580/Sword_of_Destiny/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 29,
+      "appId": 1415140,
+      "appUrl": "https://store.steampowered.com/app/1415140/Kandidatos_Kart/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 30,
+      "appId": 1430120,
+      "appUrl": "https://store.steampowered.com/app/1430120/Moving_Letters/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 31,
+      "appId": 1497020,
+      "appUrl": "https://store.steampowered.com/app/1497020/Paint_Girl__Middle_Ages/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 32,
+      "appId": 1498590,
+      "appUrl": "https://store.steampowered.com/app/1498590/Fat_Prisoner_Simulator_3/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 33,
+      "appId": 1503390,
+      "appUrl": "https://store.steampowered.com/app/1503390/Drunk_Soccer_is_the_Best_Soccer/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 34,
+      "appId": 1508650,
+      "appUrl": "https://store.steampowered.com/app/1508650/_/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 35,
+      "appId": 1528110,
+      "appUrl": "https://store.steampowered.com/app/1528110/Athena_the_rabbit__Jigsaw_Puzzle/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 36,
+      "appId": 1534520,
+      "appUrl": "https://store.steampowered.com/app/1534520/STRAY_KITTEN/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 37,
+      "appId": 1542840,
+      "appUrl": "https://store.steampowered.com/app/1542840/PuzzlePet__Feed_your_cat/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 38,
+      "appId": 1544510,
+      "appUrl": "https://store.steampowered.com/app/1544510/_/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 39,
+      "appId": 1548930,
+      "appUrl": "https://store.steampowered.com/app/1548930/Viking_Story/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 40,
+      "appId": 1553910,
+      "appUrl": "https://store.steampowered.com/app/1553910/My_Friend_Stalin/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 41,
+      "appId": 1564090,
+      "appUrl": "https://store.steampowered.com/app/1564090/Landlord_of_the_Woods/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 42,
+      "appId": 1572810,
+      "appUrl": "https://store.steampowered.com/app/1572810/_/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 43,
+      "appId": 1579490,
+      "appUrl": "https://store.steampowered.com/app/1579490/Dangerous_Chris/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 44,
+      "appId": 1596610,
+      "appUrl": "https://store.steampowered.com/app/1596610/Dead_Night/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 45,
+      "appId": 1598710,
+      "appUrl": "https://store.steampowered.com/app/1598710/Wild_world/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 46,
+      "appId": 1599250,
+      "appUrl": "https://store.steampowered.com/app/1599250/BORIS_RUSSIAN_BEAR/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 47,
+      "appId": 1600890,
+      "appUrl": "https://store.steampowered.com/app/1600890/_Go_Back_to_Hell/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 48,
+      "appId": 1600900,
+      "appUrl": "https://store.steampowered.com/app/1600900/_Ghost_Party_Nyanbaba/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 49,
+      "appId": 1606300,
+      "appUrl": "https://store.steampowered.com/app/1606300/Puzzle_Light/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    },
+    {
+      "rank": 50,
+      "appId": 1611850,
+      "appUrl": "https://store.steampowered.com/app/1611850/_The_Marionette/",
+      "discountPct": 51,
+      "originalPriceUsd": 0.99,
+      "salePriceUsd": 0.49
+    }
+  ],
+  "limitations": [
+    "This is a point-in-time observation of volatile Steam search results and sale prices.",
+    "Completeness is intentionally limited to the first 20 pages of the exact public query.",
+    "URL matching ignores tracking query parameters and fragments but requires the same Steam app ID."
+  ]
+}

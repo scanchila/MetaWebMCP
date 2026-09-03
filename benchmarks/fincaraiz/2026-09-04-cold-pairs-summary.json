@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "fincaraiz-cheapest-with-laundry-v1",
+  "matchedPairs": 2,
+  "qualityGate": {
+    "passedRuns": 4,
+    "totalRuns": 4,
+    "exactUrlsPerRun": 50,
+    "exactNormalizedFieldsPerRun": 50,
+    "exactRanksPerRun": 50,
+    "expectedRowsStableAcrossOracles": true
+  },
+  "trials": [
+    {
+      "pair": 1,
+      "metaWebMcp": {
+        "wallMs": 290550,
+        "processedTokens": 345737,
+        "nonCachedTokens": 71689,
+        "modelFacingResponseCharacters": 51277,
+        "internalBrowserCalls": 15
+      },
+      "directBrowser": {
+        "wallMs": 634630,
+        "processedTokens": 5997779,
+        "nonCachedTokens": 336723,
+        "modelFacingResponseCharacters": 1205716,
+        "browserCalls": 15
+      },
+      "wallSpeedup": 2.1842
+    },
+    {
+      "pair": 2,
+      "metaWebMcp": {
+        "wallMs": 373607,
+        "processedTokens": 473796,
+        "nonCachedTokens": 62276,
+        "modelFacingResponseCharacters": 53506,
+        "internalBrowserCalls": 15
+      },
+      "directBrowser": {
+        "wallMs": 713181,
+        "processedTokens": 4657195,
+        "nonCachedTokens": 423851,
+        "modelFacingResponseCharacters": 3066487,
+        "browserCalls": 38
+      },
+      "wallSpeedup": 1.9089
+    }
+  ],
+  "armMedians": {
+    "metaWebMcp": {
+      "wallMs": 332078.5,
+      "processedTokens": 409766.5,
+      "nonCachedTokens": 66982.5,
+      "modelFacingResponseCharacters": 52391.5,
+      "internalBrowserCalls": 15
+    },
+    "directBrowser": {
+      "wallMs": 673905.5,
+      "processedTokens": 5327487,
+      "nonCachedTokens": 380287,
+      "modelFacingResponseCharacters": 2136101.5,
+      "browserCalls": 26.5
+    }
+  },
+  "medianRatios": {
+    "wallTime": 2.0294,
+    "processedTokenReduction": 13.0013,
+    "nonCachedTokenReduction": 5.6774,
+    "modelFacingResponseReduction": 40.7719,
+    "browserCallReduction": 1.7667
+  },
+  "limitations": [
+    "Two trials per arm are insufficient for a statistical performance estimate.",
+    "Every arm used a separate temporally adjacent oracle on a volatile third-party site.",
+    "The pair manifests retain different repository baseline identifiers; comparisons are matched within each pair, and both pairs used identical prompt, result-schema, and benchmark-bridge hashes.",
+    "The median for an even two-value sample is the arithmetic midpoint."
+  ]
+}

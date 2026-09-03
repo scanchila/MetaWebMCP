@@ -2,48 +2,50 @@
 
 ## Result
 
-On the 2026-09-04 point-in-time runs, both the direct-browser agent and a cold
-MetaWebMCP managing agent returned the exact oracle top 50. The cold agent
-started without a domain tool, analyzed the live page, authored and activated
-one, invoked it, and produced the final schema in 290.550 seconds. The primary
-matched direct-browser run took 634.630 seconds: a measured 2.18× wall-time
-improvement after both arms passed the same quality gate.
+Across two point-in-time matched pairs, all four runs matched the oracle top 50
+under the normalized scoring contract. Median wall time was 332.079 seconds for
+the MetaWebMCP managing agent and 673.906 seconds for direct browser parsing, a
+2.03× ratio after both
+arms passed the same quality gate. No generated domain tool existed before
+either cold run, and no warm trial preceded them.
 
-| Arm | Quality gate | Results | Browser calls | Wall time | Processed / non-cached tokens |
-|---|---:|---:|---:|---:|---:|
-| Codex + navigation responses (fresh matched) | Pass | 50/50, exact URLs, fields, and ranks | 15 | 634.630 s | 5,997,779 / 336,723 |
-| MetaWebMCP managing agent (cold) | Pass | 50/50, exact URLs, fields, and ranks | 8 semantic; 15 internal | 290.550 s | 345,737 / 71,689 |
-| Codex + navigation responses (earlier trial) | Pass | Same byte-identical result | 18 | 571.262 s | 6,058,674 / 267,058 |
-| Codex + explicit snapshots (sensitivity) | Pass | Same byte-identical result | 29 | 623.711 s | 1,673,496 / 163,608 |
-| MetaWebMCP legacy analyzer | Fail: unsupported | 0/50 | 1 before analysis | 2.906 s to capability decision | Not comparable |
-| MetaWebMCP authored collection (warm diagnostic) | Pass | 50/50, exact URLs, fields, and ranks | 1 semantic; 14 internal | 19.568 s | Not measured |
+| Matched pair | Arm | Quality gate | Browser calls | Wall time | Processed / non-cached tokens |
+|---|---|---:|---:|---:|---:|
+| 1 | Codex + direct browser parsing | 50/50 exact | 15 | 634.630 s | 5,997,779 / 336,723 |
+| 1 | MetaWebMCP managing agent (cold) | 50/50 exact | 15 internal | 290.550 s | 345,737 / 71,689 |
+| 2 | Codex + direct browser parsing | 50/50 exact | 38 | 713.181 s | 4,657,195 / 423,851 |
+| 2 | MetaWebMCP managing agent (cold) | 50/50 exact | 15 internal | 373.607 s | 473,796 / 62,276 |
+| Median | Codex + direct browser parsing | 50/50 exact | 26.5 | 673.906 s | 5,327,487 / 380,287 |
+| Median | MetaWebMCP managing agent (cold) | 50/50 exact | 15 | 332.079 s | 409,767 / 66,983 |
 
-The cold agent received only MetaWebMCP's five benchmark-facing meta-tools. An
-event audit found no shell, filesystem, web-search, or direct-browser tool
-calls. It called analysis once, attempted contract creation five times,
-activated the generated tool, and invoked it through the transport fallback.
-The first four contracts were rejected because the generic authoring guide
-described the ordered stopping rule without naming its exact `sourceField`
-and `resultField` keys. Those failures and the agent's recovery are included
-in the 290.550-second wall time and token totals.
+At the two-trial medians, MetaWebMCP used 13.00× fewer processed tokens,
+5.68× fewer non-cached tokens, and 40.77× less model-facing tool-response text.
+Pair-level wall-time ratios were 2.18× and 1.91×. The direct agent repeated
+navigation substantially more often in pair 2, while the generated collection
+made the same deterministic 15 internal browser calls in both trials.
 
-The successful tool scanned 263 unique records over 13 pages, found 73
-qualifying records, and stopped when page 13's minimum rent could no longer
-improve rank 50. MetaWebMCP made 15 internal browser calls: an analysis
-navigation and snapshot, then a fresh page-one navigation and pages 2–13. The
-agent received 51,277 characters of semantic tool responses instead of the
-direct arm's 1,205,716 browser-response characters, a 23.5× reduction. It
-processed 345,737 tokens including cached input versus 5,997,779, a 17.3×
-reduction; after subtracting cached input, the reduction was 4.70×. Both arms
-made 15 browser calls internally.
+The cold agents received only MetaWebMCP's five benchmark-facing meta-tools.
+Event audits found no shell, filesystem, web-search, or direct-browser calls.
+Both analyzed the site, authored a collection ToolSpec, activated it, and
+invoked it through the transport fallback. The first cold run needed five
+authoring attempts and the second needed seven. Their rejected contracts and
+recovery time remain included in all timings and token totals.
 
-This is one cold trial per primary arm on a volatile third-party site. They
-ran about eleven minutes apart with separate adjacent correctness oracles.
-This is evidence for this captured task, not a general Codex or WebMCP
-performance claim. The 19.568-second warm run is
-still useful for separating deterministic execution cost from the much larger
-model analysis, authoring, retry, and response cost, but it is not used as the
-end-to-end comparison.
+The authoring retries revealed that the generic guide described the ordered
+stopping rule without enumerating its exact `sourceField`, `resultField`, and
+`rank` shape. The guide has since been corrected, but the captured results are
+unchanged. Both successful tools scanned 263 unique records over 13 pages,
+found 73 qualifying records, and stopped when page 13's minimum rent could no
+longer improve rank 50.
+
+Two trials per arm are still too few for a statistical claim, and the site is
+volatile. Each arm has a separate temporally adjacent correctness oracle. The
+pair manifests retain different repository baseline identifiers, so the
+primary comparisons remain matched within each pair; the prompt, schema, and
+benchmark-bridge hashes are identical across them. The 19.568-second warm run
+remains useful for separating deterministic execution cost from model
+analysis, authoring, retry, and response cost, but it is not
+part of the cold end-to-end comparison.
 
 ## Task
 
@@ -75,27 +77,26 @@ field accuracy, arithmetic, and exact rank.
 
 ### Direct-browser arm
 
-An ephemeral Codex 0.150.1 process with `gpt-5.6-sol` and maximum reasoning
-used Playwright MCP 0.0.55 with Chrome 147 from an empty working directory,
-matching the cold arm's CLI isolation. It was restricted to
+Fresh ephemeral Codex 0.150.1 processes with `gpt-5.6-sol` and maximum
+reasoning used Playwright MCP 0.0.55 with Chrome 147 from empty working
+directories, matching the cold arms' CLI isolation. They were restricted to
 `browser_navigate` and `browser_snapshot`. The prompt prohibited page-source
 access, JavaScript/DOM evaluation, network inspection, APIs, web search,
-filesystem access, and shell use. The event audit found only browser MCP calls.
+filesystem access, and shell use. Event audits found only browser MCP calls.
 
-The fresh run made 15 navigation calls across 13 unique pages, including two
-repeated first-page navigations. It received 1,205,716 browser-response
-characters, processed 5,997,779 tokens including cached input, and used
-336,723 tokens after cached input was subtracted. Its result was byte-identical
-to the earlier navigation-only and explicit-snapshot trials.
+The two retained matched runs made 15 and 38 navigation calls across the same
+13 unique pages. They received 1,205,716 and 3,066,487 browser-response
+characters and processed 5,997,779 and 4,657,195 tokens. Both matched their
+adjacent oracles for URLs, numeric fields, normalized laundry evidence, and
+rank. Their raw evidence strings differ only in casing and accent preservation.
 
 ### MetaWebMCP cold managing-agent arm
 
-A fresh ephemeral Codex 0.150.1 process used `gpt-5.6-sol` with maximum
-reasoning and an empty working directory. User configuration and repository
-instructions were disabled. Its prompt prohibited shell, filesystem, web
+Fresh ephemeral Codex 0.150.1 processes used `gpt-5.6-sol` with maximum
+reasoning and empty working directories. User configuration and repository
+instructions were disabled. Their prompt prohibited shell, filesystem, web
 search, direct browser tools, page source, network requests, and APIs. The
-recorded event stream contains only MetaWebMCP MCP calls and the final agent
-message.
+recorded event streams contain only MetaWebMCP MCP calls and final messages.
 
 The non-interactive CLI cannot discover page-native Site Tools, so a thin
 stdio MCP adapter exposed the real MetaWebMCP analysis, authoring validation,
@@ -106,14 +107,13 @@ list refresh was not available in the client, so the final generated tool was
 called through `meta_invoke_webmcp`; this changes the transport name, not its
 validated execution path.
 
-Analysis returned three repeated-link collection scaffolds. The agent selected
-the apartment evidence and authored extraction for URL, rent,
-administration, bedrooms, area, and laundry evidence; numeric and text
-filters; a computed monthly total; stable sorting; a 50-result limit; bounded
-pagination; and the ordered stopping proof. Four invalid stopping-rule shapes
-were rejected before its fifth contract passed. The interval from completed
-analysis to a valid contract was 137.444 seconds. The generated collection
-itself completed in 21.771 seconds.
+Analysis returned three repeated-link collection scaffolds. Each agent selected
+the apartment evidence and authored extraction for URL, rent, administration,
+bedrooms, area, and laundry evidence; numeric and text filters; a computed
+monthly total; stable sorting; a 50-result limit; bounded pagination; and the
+ordered stopping proof. The first run's valid contract arrived 137.444 seconds
+after analysis and executed in 21.771 seconds. The second arrived after
+207.117 seconds and executed in 16.791 seconds.
 
 ### MetaWebMCP warm executor diagnostic
 
@@ -151,6 +151,8 @@ laundry phrase needed for scoring.
 
 ## Artifacts
 
+- [`2026-09-04-cold-pairs-summary.json`](2026-09-04-cold-pairs-summary.json):
+  matched trial values, arm medians, ratios, and aggregate quality gate.
 - [`2026-09-04-metawebmcp-cold-run.json`](2026-09-04-metawebmcp-cold-run.json):
   cold environment, hashes, timings, calls, token accounting, and comparison.
 - [`2026-09-04-metawebmcp-cold-result.json`](2026-09-04-metawebmcp-cold-result.json):
@@ -169,6 +171,20 @@ laundry phrase needed for scoring.
   fresh direct output and exact correctness metrics.
 - [`2026-09-04-browser-fresh-oracle.json`](2026-09-04-browser-fresh-oracle.json):
   oracle captured immediately before the fresh direct run.
+- [`2026-09-04-metawebmcp-cold-run-2.json`](2026-09-04-metawebmcp-cold-run-2.json):
+  second cold environment, isolation, hashes, timings, calls, tokens, and its
+  matched comparison.
+- [`2026-09-04-metawebmcp-cold-run-2-result.json`](2026-09-04-metawebmcp-cold-run-2-result.json),
+  [`2026-09-04-metawebmcp-cold-run-2-score.json`](2026-09-04-metawebmcp-cold-run-2-score.json),
+  [`2026-09-04-metawebmcp-cold-run-2-oracle.json`](2026-09-04-metawebmcp-cold-run-2-oracle.json),
+  and [`2026-09-04-metawebmcp-cold-run-2-trace.json`](2026-09-04-metawebmcp-cold-run-2-trace.json):
+  second cold result, exact score, adjacent oracle, and execution trace.
+- [`2026-09-04-browser-fresh-run-2.json`](2026-09-04-browser-fresh-run-2.json):
+  second matched direct environment, isolation, timings, calls, and tokens.
+- [`2026-09-04-browser-fresh-run-2-result.json`](2026-09-04-browser-fresh-run-2-result.json),
+  [`2026-09-04-browser-fresh-run-2-score.json`](2026-09-04-browser-fresh-run-2-score.json),
+  and [`2026-09-04-browser-fresh-run-2-oracle.json`](2026-09-04-browser-fresh-run-2-oracle.json):
+  second direct result, exact score, and adjacent oracle.
 - [`2026-09-04-metawebmcp-authored.json`](2026-09-04-metawebmcp-authored.json):
   deterministic warm ToolSpec summary, timings, traversal proof, and results.
 - [`2026-09-04-metawebmcp-authored-score.json`](2026-09-04-metawebmcp-authored-score.json):
@@ -220,7 +236,7 @@ codex exec \
   -m gpt-5.6-sol \
   -c 'model_reasoning_effort="max"' \
   -c 'mcp_servers.metawebmcp.command="node"' \
-  -c "mcp_servers.metawebmcp.args=[\"$repo_root/scripts/serve-metawebmcp-cold-benchmark.mjs\",\"--browser-endpoint\",\"http://localhost:8932/sse\",\"--trace\",\"/tmp/fincaraiz-metawebmcp-trace.json\"]" \
+  -c "mcp_servers.metawebmcp.args=[\"$repo_root/scripts/serve-metawebmcp-cold-benchmark.mjs\",\"--browser-endpoint\",\"http://localhost:8932/sse\",\"--trace\",\"/tmp/fincaraiz-metawebmcp-trace.json\",\"--benchmark\",\"fincaraiz-cheapest-with-laundry-v1\"]" \
   --output-schema "$repo_root/benchmarks/fincaraiz/result.schema.json" \
   --output-last-message /tmp/fincaraiz-metawebmcp-result.json \
   - < "$repo_root/benchmarks/fincaraiz/metawebmcp-cold-prompt.md" \
@@ -278,10 +294,11 @@ Then score that result with the same scorer and a temporally adjacent oracle.
 The cold result clears the missing-capability gate: a managing agent can turn
 observed repeated records into a reusable tool without a prebuilt domain
 contract, arbitrary JavaScript, or a generic browser MCP surface. It also
-identifies the next concrete product fix: publish the exact stopping-rule
-property schema so an agent does not need validation-driven guessing.
+identified a concrete authoring-guide defect: the stopping-rule property names
+were not published. The guide now exposes the exact validated shape, with a
+regression test that prevents the contract from drifting back to prose.
 
-The next performance gate should run at least three fresh trials per arm and
-report medians and dispersion. The current 2.18× wall-time result is the honest
-single-run comparison; the former 29.2× figure describes warm deterministic
-execution only.
+The next performance gate should add at least one more fresh matched pair and
+report a minimum three-trial median and dispersion. The current cold evidence
+is a two-pair 2.03× ratio of arm medians; the former 29.2× figure describes warm
+deterministic execution only.

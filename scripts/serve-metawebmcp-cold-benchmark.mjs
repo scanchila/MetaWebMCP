@@ -24,11 +24,12 @@ const META_TOOL_NAMES = new Set([
 ]);
 
 function parseArguments(argv) {
-  const options = { browserEndpoint: DEFAULT_BROWSER_ENDPOINT, trace: '' };
+  const options = { browserEndpoint: DEFAULT_BROWSER_ENDPOINT, trace: '', benchmark: 'web-collection-cold-v1' };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
-    if (argument === '--browser-endpoint' || argument === '--trace') {
-      options[argument === '--trace' ? 'trace' : 'browserEndpoint'] = argv[index + 1] || '';
+    if (argument === '--browser-endpoint' || argument === '--trace' || argument === '--benchmark') {
+      const key = argument === '--trace' ? 'trace' : argument === '--benchmark' ? 'benchmark' : 'browserEndpoint';
+      options[key] = argv[index + 1] || '';
       index += 1;
       continue;
     }
@@ -39,7 +40,7 @@ function parseArguments(argv) {
 }
 
 function usage() {
-  return 'Usage: node scripts/serve-metawebmcp-cold-benchmark.mjs [--browser-endpoint URL] [--trace PATH]\n';
+  return 'Usage: node scripts/serve-metawebmcp-cold-benchmark.mjs [--browser-endpoint URL] [--trace PATH] [--benchmark NAME]\n';
 }
 
 function clone(value) {
@@ -143,7 +144,12 @@ const META_TOOLS = [
 ];
 
 export class ColdBenchmarkSession {
-  constructor({ browserEndpoint = DEFAULT_BROWSER_ENDPOINT, tracePath = '', emitNotification = () => {} } = {}) {
+  constructor({
+    browserEndpoint = DEFAULT_BROWSER_ENDPOINT,
+    tracePath = '',
+    benchmark = 'web-collection-cold-v1',
+    emitNotification = () => {},
+  } = {}) {
     this.browserEndpoint = browserEndpoint;
     this.tracePath = tracePath;
     this.emitNotification = emitNotification;
@@ -155,7 +161,7 @@ export class ColdBenchmarkSession {
     this.active = false;
     this.trace = {
       schemaVersion: 1,
-      benchmark: 'fincaraiz-cheapest-with-laundry-v1',
+      benchmark,
       arm: 'metawebmcp-cold-agent',
       serverStartedAt: new Date().toISOString(),
       browserEndpoint,
@@ -378,6 +384,7 @@ async function serve(options) {
   const session = new ColdBenchmarkSession({
     browserEndpoint: options.browserEndpoint,
     tracePath: options.trace,
+    benchmark: options.benchmark,
     emitNotification: send,
   });
   await session.flushTrace();

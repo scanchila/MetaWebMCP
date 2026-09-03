@@ -1,0 +1,1281 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "steam-discounted-games-first-20-pages-v1",
+  "arm": "metawebmcp-cold-agent",
+  "serverStartedAt": "2026-09-03T21:21:28.856Z",
+  "browserEndpoint": "http://localhost:8941/sse",
+  "metaCalls": [
+    {
+      "name": "meta_analyze_site",
+      "startedAt": "2026-09-03T21:21:51.911Z",
+      "durationMs": 1508,
+      "ok": true
+    },
+    {
+      "name": "meta_create_webmcp",
+      "startedAt": "2026-09-03T21:23:03.749Z",
+      "durationMs": 4,
+      "ok": true
+    },
+    {
+      "name": "meta_activate_webmcp",
+      "startedAt": "2026-09-03T21:23:09.944Z",
+      "durationMs": 4,
+      "ok": true
+    },
+    {
+      "name": "meta_invoke_webmcp",
+      "startedAt": "2026-09-03T21:23:21.313Z",
+      "durationMs": 56892,
+      "ok": true
+    },
+    {
+      "name": "meta_get_state",
+      "startedAt": "2026-09-03T21:24:56.735Z",
+      "durationMs": 0,
+      "ok": true
+    }
+  ],
+  "browserCalls": [
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=1"
+      },
+      "durationMs": 1372,
+      "responseCharacters": 28731,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 75,
+      "responseCharacters": 28582,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=1"
+      },
+      "durationMs": 778,
+      "responseCharacters": 28731,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2080,
+      "responseCharacters": 32442,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 65,
+      "responseCharacters": 32343,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=2"
+      },
+      "durationMs": 660,
+      "responseCharacters": 29231,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2073,
+      "responseCharacters": 32942,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 60,
+      "responseCharacters": 32843,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=3"
+      },
+      "durationMs": 658,
+      "responseCharacters": 29820,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2076,
+      "responseCharacters": 33531,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 65,
+      "responseCharacters": 33432,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=4"
+      },
+      "durationMs": 610,
+      "responseCharacters": 29325,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2067,
+      "responseCharacters": 33036,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 57,
+      "responseCharacters": 32937,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=5"
+      },
+      "durationMs": 758,
+      "responseCharacters": 29392,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2076,
+      "responseCharacters": 33103,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 68,
+      "responseCharacters": 33004,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=6"
+      },
+      "durationMs": 683,
+      "responseCharacters": 29303,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2073,
+      "responseCharacters": 33014,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 57,
+      "responseCharacters": 32915,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=7"
+      },
+      "durationMs": 664,
+      "responseCharacters": 29321,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2065,
+      "responseCharacters": 33032,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 57,
+      "responseCharacters": 32933,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=8"
+      },
+      "durationMs": 624,
+      "responseCharacters": 29367,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2075,
+      "responseCharacters": 33078,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 88,
+      "responseCharacters": 32979,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=9"
+      },
+      "durationMs": 1030,
+      "responseCharacters": 33467,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2071,
+      "responseCharacters": 33417,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 56,
+      "responseCharacters": 33318,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=10"
+      },
+      "durationMs": 735,
+      "responseCharacters": 29353,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2079,
+      "responseCharacters": 33063,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 62,
+      "responseCharacters": 32964,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=11"
+      },
+      "durationMs": 659,
+      "responseCharacters": 29510,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2072,
+      "responseCharacters": 33220,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 68,
+      "responseCharacters": 33121,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=12"
+      },
+      "durationMs": 623,
+      "responseCharacters": 29703,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2064,
+      "responseCharacters": 33413,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 58,
+      "responseCharacters": 33314,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=13"
+      },
+      "durationMs": 642,
+      "responseCharacters": 30091,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2076,
+      "responseCharacters": 33801,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 86,
+      "responseCharacters": 33702,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=14"
+      },
+      "durationMs": 608,
+      "responseCharacters": 30254,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2071,
+      "responseCharacters": 33964,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 55,
+      "responseCharacters": 33865,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=15"
+      },
+      "durationMs": 636,
+      "responseCharacters": 29819,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2087,
+      "responseCharacters": 33529,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 61,
+      "responseCharacters": 33430,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=16"
+      },
+      "durationMs": 738,
+      "responseCharacters": 29808,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2077,
+      "responseCharacters": 33518,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 58,
+      "responseCharacters": 33419,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=17"
+      },
+      "durationMs": 679,
+      "responseCharacters": 29788,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2059,
+      "responseCharacters": 33498,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 57,
+      "responseCharacters": 33399,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=18"
+      },
+      "durationMs": 889,
+      "responseCharacters": 29748,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2078,
+      "responseCharacters": 33458,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 75,
+      "responseCharacters": 33359,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=19"
+      },
+      "durationMs": 727,
+      "responseCharacters": 29974,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2065,
+      "responseCharacters": 33684,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 55,
+      "responseCharacters": 33585,
+      "ok": true
+    },
+    {
+      "name": "browser_navigate",
+      "args": {
+        "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=20"
+      },
+      "durationMs": 692,
+      "responseCharacters": 29637,
+      "ok": true
+    },
+    {
+      "name": "browser_wait_for",
+      "args": {
+        "time": 2
+      },
+      "durationMs": 2073,
+      "responseCharacters": 33347,
+      "ok": true
+    },
+    {
+      "name": "browser_snapshot",
+      "args": {},
+      "durationMs": 62,
+      "responseCharacters": 33248,
+      "ok": true
+    }
+  ],
+  "analysis": {
+    "targetUrl": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=1",
+    "goal": "Create one generated semantic read-only collection tool whose finite scope is exactly Steam search result pages 1 through 20 for this query. It must start from page 1, paginate pages 2 through 20 (20 total pages), inspect every linked /app/ result card in scope, collect up to 500 unique records, deduplicate apps by app URL while ignoring tracking query parameters for URL comparison, and return the top 50 unique apps satisfying: displayed discount 50% through 80% inclusive; displayed original price at least $0.99 USD; displayed sale price at most $0.49 USD. Use only values explicitly displayed in each result card. Result fields must be named exactly app_id, app_url, discount_pct, original_price_usd, sale_price_usd. Parse app_id from numeric path segment after /app/. Rank by displayed sale price ascending, displayed discount descending, displayed original price descending, then absolute app URL ascending. Do not stop on 50 matches; scan all 20 pages to resolve ties. Completion means all 20 pages scanned and makes no claim beyond page 20.",
+    "snapshotCharacters": 28582,
+    "snapshotSha256": "b41ffd3cd624b0cd5053e3a3a95bcae435ac825fad92efa058b5eda02e77e6fd",
+    "durationMs": 6.026,
+    "summary": {
+      "controls": 114,
+      "buttons": 40,
+      "inputs": 4,
+      "links": 70,
+      "collections": 1,
+      "candidates": 12,
+      "discoveredCandidates": 39,
+      "omittedCandidates": 27
+    },
+    "warnings": [
+      "Found 39 candidate workflows. Returned 12 using goal-token relevance and omitted 27; ties preserve document order.",
+      "2 buttons had no accessible name and could not become reliable tools.",
+      "2 dropdowns did not expose their choices and were omitted from generated tool inputs.",
+      "1 input could not be associated with a named search or submit action. The caller must inspect and operate that control directly unless the source owner gives its submit action an accessible name."
+    ]
+  },
+  "authoredDefinitions": [
+    {
+      "capability_ids": [
+        "mcp_collection_1_list_app"
+      ],
+      "name": "list_steam_page_1_20_price_matches",
+      "description": "Scan exactly Steam search result pages 1 through 20 for the analyzed Windows specials query, inspect every linked /app/ result card, deduplicate apps by canonical app URL, filter solely on the discount and prices displayed in each card, and return the top 50 unique qualifying apps ordered by sale price ascending, discount descending, original price descending, then absolute app URL ascending.",
+      "risk": "read",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 50,
+            "maximum": 50,
+            "description": "The fixed number of ranked qualifying apps to return."
+          }
+        },
+        "required": [
+          "limit"
+        ],
+        "additionalProperties": false
+      },
+      "sample_args": {
+        "limit": 50
+      },
+      "executor": {
+        "type": "mcp-collection",
+        "item": {
+          "urlContains": "/app/",
+          "minTextLength": 20
+        },
+        "fields": [
+          {
+            "name": "app_id",
+            "source": "url",
+            "parser": {
+              "type": "number-after",
+              "marker": "/app/"
+            },
+            "required": true
+          },
+          {
+            "name": "app_url",
+            "source": "url",
+            "parser": {
+              "type": "identity"
+            },
+            "required": true
+          },
+          {
+            "name": "discount_pct",
+            "source": "text",
+            "parser": {
+              "type": "number-before",
+              "marker": "% off"
+            },
+            "required": true
+          },
+          {
+            "name": "original_price_usd",
+            "source": "text",
+            "parser": {
+              "type": "currency",
+              "occurrence": 0
+            },
+            "required": true
+          },
+          {
+            "name": "sale_price_usd",
+            "source": "text",
+            "parser": {
+              "type": "currency",
+              "occurrence": 1
+            },
+            "required": true
+          }
+        ],
+        "filters": [
+          {
+            "field": "discount_pct",
+            "operator": "gte",
+            "value": {
+              "value": 50
+            }
+          },
+          {
+            "field": "discount_pct",
+            "operator": "lte",
+            "value": {
+              "value": 80
+            }
+          },
+          {
+            "field": "original_price_usd",
+            "operator": "gte",
+            "value": {
+              "value": 0.99
+            }
+          },
+          {
+            "field": "sale_price_usd",
+            "operator": "lte",
+            "value": {
+              "value": 0.49
+            }
+          }
+        ],
+        "computed": [],
+        "sort": [
+          {
+            "field": "sale_price_usd",
+            "direction": "asc"
+          },
+          {
+            "field": "discount_pct",
+            "direction": "desc"
+          },
+          {
+            "field": "original_price_usd",
+            "direction": "desc"
+          },
+          {
+            "field": "app_url",
+            "direction": "asc"
+          }
+        ],
+        "limit": {
+          "input": "limit",
+          "default": 50,
+          "maximum": 50
+        },
+        "maxItems": 500,
+        "pageCapture": {
+          "snapshotAfterNavigate": true,
+          "waitSeconds": 2
+        },
+        "pagination": {
+          "type": "page-template",
+          "urlTemplate": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page={{page}}",
+          "startPage": 2,
+          "maxPages": 20
+        }
+      }
+    }
+  ],
+  "authoredTools": [
+    {
+      "id": "authored_1_list_steam_page_1_20_price_matches",
+      "kind": "agent-authored",
+      "name": "list_steam_page_1_20_price_matches",
+      "title": "list steam page 1 20 price matches",
+      "description": "Scan exactly Steam search result pages 1 through 20 for the analyzed Windows specials query, inspect every linked /app/ result card, deduplicate apps by canonical app URL, filter solely on the discount and prices displayed in each card, and return the top 50 unique qualifying apps ordered by sale price ascending, discount descending, original price descending, then absolute app URL ascending.",
+      "risk": "read",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 50,
+            "maximum": 50,
+            "description": "The fixed number of ranked qualifying apps to return."
+          }
+        },
+        "required": [
+          "limit"
+        ],
+        "additionalProperties": false
+      },
+      "sampleArgs": {
+        "limit": 50
+      },
+      "evidence": [
+        {
+          "type": "collection-item",
+          "ref": "e305",
+          "label": "Apewar Mar 24, 2023 51% off. $0.99 normally, discounted to $0.49",
+          "url": "https://store.steampowered.com/app/2306590/Apewar/?snr=1_7_7_2300_150_1"
+        },
+        {
+          "type": "collection-item",
+          "ref": "e322",
+          "label": "UBERMOSH Includes 8 games Aug 13, 2015 90% off. $4.99 normally, discounted to $0.49",
+          "url": "https://store.steampowered.com/app/357070/UBERMOSH/?snr=1_7_7_2300_150_1"
+        },
+        {
+          "type": "collection-item",
+          "ref": "e341",
+          "label": "Barro Racing Sep 11, 2020 90% off. $4.99 normally, discounted to $0.49",
+          "url": "https://store.steampowered.com/app/1307090/Barro_Racing/?snr=1_7_7_2300_150_1"
+        },
+        {
+          "type": "collection-item",
+          "ref": "e358",
+          "label": "F*ck the HELL out Jun 23, 2024 90% off. $4.99 normally, discounted to $0.49",
+          "url": "https://store.steampowered.com/app/3028290/Fck_the_HELL_out/?snr=1_7_7_2300_150_1"
+        },
+        {
+          "type": "collection-item",
+          "ref": "e375",
+          "label": "My Furry Stepmom 🐾 Jul 15, 2023 90% off. $4.99 normally, discounted to $0.49",
+          "url": "https://store.steampowered.com/app/2082060/My_Furry_Stepmom/?snr=1_7_7_2300_150_1"
+        },
+        {
+          "type": "pagination-link",
+          "ref": "e738",
+          "label": "2",
+          "url": "https://store.steampowered.com/search/?sort_by=Price_ASC&sort_order=ASC&specials=1&os=win&page=2"
+        }
+      ],
+      "executor": {
+        "type": "mcp-collection",
+        "item": {
+          "urlContains": "/app/",
+          "minTextLength": 20
+        },
+        "fields": [
+          {
+            "name": "app_id",
+            "source": "url",
+            "parser": {
+              "type": "number-after",
+              "marker": "/app/"
+            },
+            "required": true
+          },
+          {
+            "name": "app_url",
+            "source": "url",
+            "parser": {
+              "type": "identity"
+            },
+            "required": true
+          },
+          {
+            "name": "discount_pct",
+            "source": "text",
+            "parser": {
+              "type": "number-before",
+              "marker": "% off"
+            },
+            "required": true
+          },
+          {
+            "name": "original_price_usd",
+            "source": "text",
+            "parser": {
+              "type": "currency",
+              "occurrence": 0
+            },
+            "required": true
+          },
+          {
+            "name": "sale_price_usd",
+            "source": "text",
+            "parser": {
+              "type": "currency",
+              "occurrence": 1
+            },
+            "required": true
+          }
+        ],
+        "filters": [
+          {
+            "field": "discount_pct",
+            "operator": "gte",
+            "value": {
+              "value": 50
+            }
+          },
+          {
+            "field": "discount_pct",
+            "operator": "lte",
+            "value": {
+              "value": 80
+            }
+          },
+          {
+            "field": "original_price_usd",
+            "operator": "gte",
+            "value": {
+              "value": 0.99
+            }
+          },
+          {
+            "field": "sale_price_usd",
+            "operator": "lte",
+            "value": {
+              "value": 0.49
+            }
+          }
+        ],
+        "computed": [],
+        "sort": [
+          {
+            "field": "sale_price_usd",
+            "direction": "asc"
+          },
+          {
+            "field": "discount_pct",
+            "direction": "desc"
+          },
+          {
+            "field": "original_price_usd",
+            "direction": "desc"
+          },
+          {
+            "field": "app_url",
+            "direction": "asc"
+          }
+        ],
+        "limit": {
+          "input": "limit",
+          "default": 50,
+          "maximum": 50
+        },
+        "maxItems": 500,
+        "pageCapture": {
+          "snapshotAfterNavigate": true,
+          "waitSeconds": 2
+        },
+        "pagination": {
+          "type": "page-template",
+          "urlTemplate": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page={{page}}",
+          "startPage": 2,
+          "maxPages": 20
+        },
+        "scope": {
+          "origin": "https://store.steampowered.com",
+          "pathPrefix": "/search"
+        },
+        "startUrl": "https://store.steampowered.com/search/?sort_by=Price_ASC&os=win&specials=1&ndl=1&cc=us&l=english&page=1"
+      }
+    }
+  ],
+  "execution": {
+    "tool": "list_steam_page_1_20_price_matches",
+    "input": {
+      "limit": 50
+    },
+    "durationMs": 56890,
+    "complete": false,
+    "terminationReason": "maximum item limit reached",
+    "pagesScanned": 20,
+    "recordsScanned": 500,
+    "matchedRecords": 235,
+    "resultCount": 50,
+    "results": [
+      {
+        "app_id": 1066290,
+        "app_url": "https://store.steampowered.com/app/1066290/_/?snr=1_7_7_2300_150_11",
+        "discount_pct": 75,
+        "original_price_usd": 1.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1097550,
+        "app_url": "https://store.steampowered.com/app/1097550/_fantastic_kingdom/?snr=1_7_7_2300_150_15",
+        "discount_pct": 75,
+        "original_price_usd": 1.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 948770,
+        "app_url": "https://store.steampowered.com/app/948770/2018/?snr=1_7_7_2300_150_3",
+        "discount_pct": 75,
+        "original_price_usd": 1.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1028711,
+        "app_url": "https://store.steampowered.com/app/1028711/FateEXTELLA_LINK__Brave_Kings_Surf_Shorts/?snr=1_7_7_2300_150_14",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1029412,
+        "app_url": "https://store.steampowered.com/app/1029412/FateEXTELLA_LINK__Black_Elegance/?snr=1_7_7_2300_150_14",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1029450,
+        "app_url": "https://store.steampowered.com/app/1029450/FateEXTELLA_LINK__Candy_Pink/?snr=1_7_7_2300_150_14",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1031920,
+        "app_url": "https://store.steampowered.com/app/1031920/_/?snr=1_7_7_2300_150_13",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1047680,
+        "app_url": "https://store.steampowered.com/app/1047680/_ALILIA/?snr=1_7_7_2300_150_18",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1060180,
+        "app_url": "https://store.steampowered.com/app/1060180/Cyber_Driver/?snr=1_7_7_2300_150_14",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1060300,
+        "app_url": "https://store.steampowered.com/app/1060300/Homeless_Simulator/?snr=1_7_7_2300_150_18",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1069740,
+        "app_url": "https://store.steampowered.com/app/1069740/Seen/?snr=1_7_7_2300_150_12",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1070330,
+        "app_url": "https://store.steampowered.com/app/1070330/Russian_Life_Simulator/?snr=1_7_7_2300_150_12",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1073220,
+        "app_url": "https://store.steampowered.com/app/1073220/Teeth_Brushing_Simulator/?snr=1_7_7_2300_150_17",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1091210,
+        "app_url": "https://store.steampowered.com/app/1091210/Kissing_Simulator/?snr=1_7_7_2300_150_17",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1094290,
+        "app_url": "https://store.steampowered.com/app/1094290/_ButterflyRin/?snr=1_7_7_2300_150_19",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1144860,
+        "app_url": "https://store.steampowered.com/app/1144860/Flying_Sword/?snr=1_7_7_2300_150_14",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1145130,
+        "app_url": "https://store.steampowered.com/app/1145130/_Cute_Bully_Nyanbaba/?snr=1_7_7_2300_150_17",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1150620,
+        "app_url": "https://store.steampowered.com/app/1150620/Bed_Lying_Simulator_2020/?snr=1_7_7_2300_150_15",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1157310,
+        "app_url": "https://store.steampowered.com/app/1157310/Craft_The_World__Grottoes/?snr=1_7_7_2300_150_13",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1184160,
+        "app_url": "https://store.steampowered.com/app/1184160/RUSSIAPHOBIA/?snr=1_7_7_2300_150_15",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1191770,
+        "app_url": "https://store.steampowered.com/app/1191770/_Cute_Chaos_Demon_Nyanbaba/?snr=1_7_7_2300_150_17",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1216640,
+        "app_url": "https://store.steampowered.com/app/1216640/____Online/?snr=1_7_7_2300_150_15",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1243560,
+        "app_url": "https://store.steampowered.com/app/1243560/Vaporwave_World/?snr=1_7_7_2300_150_20",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1305350,
+        "app_url": "https://store.steampowered.com/app/1305350/C4/?snr=1_7_7_2300_150_20",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1341640,
+        "app_url": "https://store.steampowered.com/app/1341640/Hard_Driver/?snr=1_7_7_2300_150_19",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1355400,
+        "app_url": "https://store.steampowered.com/app/1355400/The_Line/?snr=1_7_7_2300_150_16",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1392060,
+        "app_url": "https://store.steampowered.com/app/1392060/Erzurum/?snr=1_7_7_2300_150_17",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1395560,
+        "app_url": "https://store.steampowered.com/app/1395560/Kandidatos/?snr=1_7_7_2300_150_15",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1412580,
+        "app_url": "https://store.steampowered.com/app/1412580/Sword_of_Destiny/?snr=1_7_7_2300_150_17",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1415140,
+        "app_url": "https://store.steampowered.com/app/1415140/Kandidatos_Kart/?snr=1_7_7_2300_150_16",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1430120,
+        "app_url": "https://store.steampowered.com/app/1430120/Moving_Letters/?snr=1_7_7_2300_150_19",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1497020,
+        "app_url": "https://store.steampowered.com/app/1497020/Paint_Girl__Middle_Ages/?snr=1_7_7_2300_150_18",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1498590,
+        "app_url": "https://store.steampowered.com/app/1498590/Fat_Prisoner_Simulator_3/?snr=1_7_7_2300_150_14",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1503390,
+        "app_url": "https://store.steampowered.com/app/1503390/Drunk_Soccer_is_the_Best_Soccer/?snr=1_7_7_2300_150_15",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1508650,
+        "app_url": "https://store.steampowered.com/app/1508650/_/?snr=1_7_7_2300_150_20",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1528110,
+        "app_url": "https://store.steampowered.com/app/1528110/Athena_the_rabbit__Jigsaw_Puzzle/?snr=1_7_7_2300_150_20",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1534520,
+        "app_url": "https://store.steampowered.com/app/1534520/STRAY_KITTEN/?snr=1_7_7_2300_150_16",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1542840,
+        "app_url": "https://store.steampowered.com/app/1542840/PuzzlePet__Feed_your_cat/?snr=1_7_7_2300_150_15",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1544510,
+        "app_url": "https://store.steampowered.com/app/1544510/_/?snr=1_7_7_2300_150_16",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1548930,
+        "app_url": "https://store.steampowered.com/app/1548930/Viking_Story/?snr=1_7_7_2300_150_19",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1553910,
+        "app_url": "https://store.steampowered.com/app/1553910/My_Friend_Stalin/?snr=1_7_7_2300_150_12",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1564090,
+        "app_url": "https://store.steampowered.com/app/1564090/Landlord_of_the_Woods/?snr=1_7_7_2300_150_10",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1572810,
+        "app_url": "https://store.steampowered.com/app/1572810/_/?snr=1_7_7_2300_150_17",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1578220,
+        "app_url": "https://store.steampowered.com/app/1578220/Mister_Furry_Hot_Muscles/?snr=1_7_7_2300_150_7",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1579490,
+        "app_url": "https://store.steampowered.com/app/1579490/Dangerous_Chris/?snr=1_7_7_2300_150_18",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1596610,
+        "app_url": "https://store.steampowered.com/app/1596610/Dead_Night/?snr=1_7_7_2300_150_20",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1598710,
+        "app_url": "https://store.steampowered.com/app/1598710/Wild_world/?snr=1_7_7_2300_150_20",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1599250,
+        "app_url": "https://store.steampowered.com/app/1599250/BORIS_RUSSIAN_BEAR/?snr=1_7_7_2300_150_14",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1600890,
+        "app_url": "https://store.steampowered.com/app/1600890/_Go_Back_to_Hell/?snr=1_7_7_2300_150_20",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      },
+      {
+        "app_id": 1600900,
+        "app_url": "https://store.steampowered.com/app/1600900/_Ghost_Party_Nyanbaba/?snr=1_7_7_2300_150_13",
+        "discount_pct": 51,
+        "original_price_usd": 0.99,
+        "sale_price_usd": 0.49
+      }
+    ]
+  },
+  "authoringValidationMs": 3.009
+}

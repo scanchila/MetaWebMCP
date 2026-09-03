@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "captured_at", "source_url", "results", "limitations"],
+  "properties": {
+    "status": { "type": "string", "enum": ["completed", "partial", "failed"] },
+    "captured_at": { "type": "string" },
+    "source_url": { "type": "string", "minLength": 1 },
+    "results": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rank", "url", "rent_cop", "bedrooms", "area_m2"],
+        "properties": {
+          "rank": { "type": "integer", "minimum": 1, "maximum": 10 },
+          "url": { "type": "string", "minLength": 1 },
+          "rent_cop": { "type": "integer", "minimum": 0 },
+          "bedrooms": { "type": "number", "minimum": 2 },
+          "area_m2": { "type": "number", "minimum": 45, "maximum": 100 }
+        }
+      }
+    },
+    "limitations": { "type": "array", "items": { "type": "string" } }
+  }
+}

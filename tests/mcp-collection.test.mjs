@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  COLLECTION_AUTHORING_GUIDE,
   extractSnapshotLinks,
   runMcpCollection,
   validateCollectionExecutor,
@@ -78,6 +79,19 @@ const INPUT_SCHEMA = {
   additionalProperties: false,
 };
 
+test('collection authoring guide publishes exact stopping and lazy-capture shapes', () => {
+  assert.deepEqual(Object.keys(COLLECTION_AUTHORING_GUIDE.pagination.stopWhen.shape), [
+    'type',
+    'sourceField',
+    'resultField',
+    'rank',
+  ]);
+  assert.deepEqual(Object.keys(COLLECTION_AUTHORING_GUIDE.pageCapture.shape), [
+    'snapshotAfterNavigate',
+    'waitSeconds',
+  ]);
+});
+
 test('snapshot links retain the richest accessible name for each absolute URL', () => {
   assert.deepEqual(extractSnapshotLinks(PAGE_ONE, 'https://homes.example/rentals'), [
     {
@@ -150,6 +164,69 @@ test('collection tools paginate internally and return filtered typed records in 
       total_monthly: 900000,
     },
   ]);
+});
+
+test('collection tools can wait for lazy results and parse a fresh post-navigation snapshot', async () => {
+  const executor = {
+    type: 'mcp-collection',
+    scope: { origin: 'https://homes.example', pathPrefix: '/rentals' },
+    startUrl: 'https://homes.example/rentals',
+    pageCapture: { snapshotAfterNavigate: true, waitSeconds: 2 },
+    item: { urlContains: '/listing/', minTextLength: 10 },
+    fields: [
+      { name: 'url', source: 'url', parser: { type: 'identity' }, required: true },
+      { name: 'price', source: 'text', parser: { type: 'currency' }, required: true },
+    ],
+    filters: [],
+    computed: [],
+    sort: [{ field: 'price', direction: 'asc' }],
+    limit: { default: 1, maximum: 1 },
+    maxItems: 10,
+  };
+  const calls = [];
+  const result = await runMcpCollection({
+    executor,
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    input: {},
+    availableTools: ['browser_navigate', 'browser_wait_for', 'browser_snapshot'],
+    callTool: async (name, args) => {
+      calls.push({ name, args });
+      if (name === 'browser_navigate') return { content: [{ type: 'text', text: 'loading' }] };
+      if (name === 'browser_wait_for') return { content: [{ type: 'text', text: 'waited' }] };
+      return { content: [{
+        type: 'text',
+        text: '- link "$ 700 Apartment A" [ref=r1]:\n  - /url: /listing/a',
+      }] };
+    },
+    resultText: (value) => value.content[0].text,
+  });
+
+  assert.deepEqual(calls, [
+    { name: 'browser_navigate', args: { url: 'https://homes.example/rentals' } },
+    { name: 'browser_wait_for', args: { time: 2 } },
+    { name: 'browser_snapshot', args: {} },
+  ]);
+  assert.equal(result.complete, true);
+  assert.deepEqual(result.results, [{ url: 'https://homes.example/listing/a', price: 700 }]);
+});
+
+test('collection page capture is bounded and requires its browser tools', async () => {
+  assert.throws(
+    () => validateCollectionExecutor({ ...EXECUTOR, pageCapture: { snapshotAfterNavigate: true, waitSeconds: 11 } }, { inputSchema: INPUT_SCHEMA }),
+    /waitSeconds from 0 to 10/,
+  );
+
+  await assert.rejects(
+    () => runMcpCollection({
+      executor: { ...EXECUTOR, pageCapture: { snapshotAfterNavigate: true, waitSeconds: 1 } },
+      inputSchema: INPUT_SCHEMA,
+      input: {},
+      availableTools: ['browser_navigate', 'browser_snapshot'],
+      callTool: async () => ({ content: [{ type: 'text', text: '' }] }),
+      resultText: (value) => value.content[0].text,
+    }),
+    /requires browser_wait_for/,
+  );
 });
 
 test('collection pagination is bounded to the analyzed origin and path', () => {

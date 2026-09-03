@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "metrocuadrado-cheapest-visible-v1",
+  "arm": "metawebmcp-cold-agent",
+  "trial": 1,
+  "repositoryBaselineCommit": "643db6c8e80e4e0f489c5d17d5a6b9bfb77ace20",
+  "startedAt": "2026-09-03T20:40:36.273Z",
+  "completedAt": "2026-09-03T20:43:15.951Z",
+  "environment": {
+    "codexCli": "0.150.1",
+    "model": "gpt-5.6-sol",
+    "reasoningEffort": "max",
+    "node": "v24.5.0",
+    "browser": "Google Chrome 147.0.7727.116",
+    "playwrightMcp": "0.0.55",
+    "viewport": "1280x20000"
+  },
+  "isolation": {
+    "ephemeral": true,
+    "emptyWorkingDirectory": true,
+    "userConfigurationLoaded": false,
+    "repositoryInstructionsLoaded": false,
+    "appsEnabled": false,
+    "preExistingDomainTool": false,
+    "warmToolTrial": false
+  },
+  "inputs": {
+    "promptSha256": "cce77d6314ef90af65b0d62840106f562c5e3090d47cabb68c29914e042928cc",
+    "resultSchemaSha256": "06486ccb8bf6f439535e6f7f68ccdbc972bbb6239f683410d492602aed083f8f",
+    "mcpBridgeSha256": "500d46a8a56f8c62dfbd5b164d79be59adc28a8c0c2d67d3aa1d4721b59280d8",
+    "collectionRuntimeSha256": "1dfd18f17e2a734869733aea75c0731a770c5f52b99b6174c281756918fb4f5b",
+    "resultSha256": "4ba48344d6addcb3fa7dd70ce1d267463629e2cb2b35724807f17933879bf2a6",
+    "scoreSha256": "54c260ab67590c19c5300c36157187e558eda0c31293f7a079a325c2b9e13aee",
+    "oracleSha256": "4f467f34255cf7357eee13c517ae5b503cdde9d17c5ebcb53799a6de9bb791ab",
+    "traceSha256": "62fe2b57be60401394b37f31bfddf7586a4c788234c4f76e80ded5a38fc29c83",
+    "rawEventLogSha256": "435a4beb7ee1abef4b204b01b02126e416b85c02a45cf36a2ca9da55a95a51e6"
+  },
+  "result": {
+    "status": "completed",
+    "qualityGatePassed": true,
+    "results": 10,
+    "exactUrls": 10,
+    "exactFields": 10,
+    "exactRanks": 10,
+    "duplicates": 0,
+    "pagesVisited": 1
+  },
+  "timing": {
+    "wallMs": 159678,
+    "analysisCalls": 2,
+    "analysisCallsTotalMs": 8898,
+    "lastLocalAnalysisMs": 6.665,
+    "firstAnalysisToValidContractMs": 81968,
+    "lastAnalysisToValidContractMs": 38226,
+    "localAuthoringValidationMs": 2.755,
+    "collectionExecutionMs": 5859
+  },
+  "agent": {
+    "mcpOnly": true,
+    "nonMcpToolCalls": 0,
+    "metaToolCalls": 7,
+    "toolNames": [
+      "meta_analyze_site",
+      "meta_get_state",
+      "meta_create_webmcp",
+      "meta_activate_webmcp",
+      "meta_invoke_webmcp"
+    ],
+    "authoringAttempts": 1,
+    "failedAuthoringAttempts": 0,
+    "semanticResponseCharacters": 133952,
+    "tokenUsage": {
+      "input": 313914,
+      "cachedInput": 273536,
+      "output": 5954,
+      "reasoningOutput": 3424,
+      "processedTotal": 319868,
+      "nonCachedTotal": 46332
+    }
+  },
+  "browser": {
+    "internalCalls": 7,
+    "navigate": 3,
+    "wait": 1,
+    "snapshot": 3,
+    "internalResponseCharacters": 932547
+  },
+  "execution": {
+    "tool": "cheapest_bogota_apartments_first_page",
+    "pagesScanned": 1,
+    "recordsScanned": 53,
+    "matchedRecords": 16,
+    "complete": true,
+    "terminationReason": "single page collection"
+  },
+  "oracle": {
+    "startedAt": "2026-09-03T20:44:11.298Z",
+    "completedAt": "2026-09-03T20:44:16.730Z",
+    "capturedAfterArm": true,
+    "rawListingsSeen": 53,
+    "uniqueListingsSeen": 53,
+    "qualifyingListingsSeen": 16,
+    "completeVisibleTop10": true
+  },
+  "comparisonToDirectBrowser": {
+    "directWallMs": 114470,
+    "metaWebMcpWallTimeFactor": 1.3949,
+    "directFasterByMs": 45208,
+    "directProcessedTokens": 147997,
+    "metaWebMcpProcessedTokenFactor": 2.1613,
+    "directNonCachedTokens": 59421,
+    "nonCachedTokenReductionFactor": 1.2825,
+    "directModelFacingResponseCharacters": 549894,
+    "modelFacingResponseReductionFactor": 4.1052,
+    "directBrowserCalls": 5
+  },
+  "limitations": [
+    "This is one matched trial per arm, not a repeated statistical estimate.",
+    "The scope is every linked card rendered on one public results page, not every listing on the site.",
+    "Both arms used the same unusually tall fixed viewport because Metrocuadrado lazy-renders below-fold cards.",
+    "The generated tool preserved src_url tracking queries; the managing agent removed them in its final schema-constrained response, so URL canonicalization was end-to-end rather than encoded in the captured ToolSpec.",
+    "The corrected oracle was captured 55 seconds after the cold result. Its expected rows were unchanged in the direct arm's later adjacent oracle.",
+    "Processed token totals include cached input on every model turn. Non-cached totals subtract cached input but are not a monetary cost calculation."
+  ]
+}
