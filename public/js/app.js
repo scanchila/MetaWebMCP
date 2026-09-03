@@ -71,6 +71,7 @@ const state = {
   contracts: [],
   selectedCapabilityIds: new Set(),
   activated: false,
+  verificationComplete: false,
   evals: [],
   export: null,
   trace: [],
@@ -224,6 +225,7 @@ function clearBuildState({ keepTrace = true } = {}) {
   state.contracts = [];
   state.selectedCapabilityIds = new Set();
   state.activated = false;
+  state.verificationComplete = false;
   state.evals = [];
   state.export = null;
   state.selectedToolName = null;
@@ -536,6 +538,7 @@ async function createWebMcp(input = {}) {
   registry.unregisterOrigin(GENERATED_ORIGIN);
   state.contracts = tools;
   state.activated = false;
+  state.verificationComplete = false;
   state.evals = [];
   state.export = null;
   elements.downloadLink.classList.add('hidden');
@@ -576,6 +579,8 @@ async function activateWebMcp() {
   }
 
   state.activated = true;
+  state.verificationComplete = false;
+  state.evals = [];
   setPhase(3);
   renderActions();
   renderRegistry();
@@ -668,16 +673,33 @@ async function testWebMcp(input = {}) {
 
   state.evals = evals;
   const failures = evals.filter((item) => item.status === 'failed');
-  setPhase(4);
+  const skipped = evals.filter((item) => item.status === 'skipped');
+  const evaluatedAll = tools.length === state.contracts.length;
+  const complete = evaluatedAll && failures.length === 0 && skipped.length === 0;
+  state.verificationComplete = complete;
+  setPhase(complete ? (state.export ? 5 : 4) : 3);
   renderActions();
+  const traceTitle = failures.length
+    ? 'Runtime evaluation found failures'
+    : complete ? 'Runtime evaluation complete' : 'Runtime evaluation incomplete';
+  const traceStatus = failures.length ? 'error' : complete ? 'success' : 'warning';
   addTrace(
-    failures.length ? 'Runtime evaluation found failures' : 'Runtime evaluation complete',
-    `${evals.filter((item) => item.status === 'passed').length} passed, ${evals.filter((item) => item.status === 'skipped').length} reviewed/skipped, ${failures.length} failed.`,
-    failures.length ? 'error' : 'success',
+    traceTitle,
+    `${evals.filter((item) => item.status === 'passed').length} passed, ${skipped.length} skipped, ${failures.length} failed, ${state.contracts.length - tools.length} not run.`,
+    traceStatus,
   );
   return {
-    ok: failures.length === 0,
+    ok: complete,
+    complete,
     scope: 'Deterministic registration, schema, execution, and visible-state checks. Agent intent-selection prompts are included in the exported manual eval plan.',
+    coverage: {
+      contracts: state.contracts.length,
+      evaluated: tools.length,
+      notRun: state.contracts.length - tools.length,
+      passed: evals.filter((item) => item.status === 'passed').length,
+      skipped: skipped.length,
+      failed: failures.length,
+    },
     results: clone(evals),
   };
 }
@@ -725,8 +747,12 @@ async function exportWebMcp(input = {}) {
   elements.downloadName.textContent = payload.fileName;
   elements.downloadMeta.textContent = `${payload.fileCount} files · ${Math.max(1, Math.round(payload.bytes / 1024))} KB · expires in ${Math.round(payload.expiresInSeconds / 60)} min`;
   elements.downloadLink.classList.remove('hidden');
-  setPhase(5);
-  addTrace('Native integration exported', `${payload.fileName} contains directly registered WebMCP code, the tool manifest, evidence report, and manual agent evals.`);
+  setPhase(state.verificationComplete ? 5 : Math.min(state.phase, 3));
+  addTrace(
+    state.verificationComplete ? 'Verified integration exported' : 'Integration exported with verification pending',
+    `${payload.fileName} contains directly registered WebMCP code, the tool manifest, evidence report, and manual agent evals.`,
+    state.verificationComplete ? 'success' : 'warning',
+  );
   return clone(payload);
 }
 
@@ -740,6 +766,7 @@ function getMetaState() {
     capabilityCount: state.analysis?.capabilities?.length || 0,
     contracts: state.contracts.map(({ name, description, risk, inputSchema, evidence, executor }) => ({ name, description, risk, inputSchema, evidence, executor })),
     registry: compactRegistryState(registry),
+    verificationComplete: state.verificationComplete,
     evals: clone(state.evals),
     export: clone(state.export),
     recentTrace: clone(state.trace.slice(-10)),
