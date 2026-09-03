@@ -3,6 +3,9 @@ import { readFile } from 'node:fs/promises';
 
 const { generateLocator } = await import('./node_modules/@cloudflare/playwright-mcp/lib/esm/src/tools/utils.js');
 const { PageSnapshot } = await import('./node_modules/@cloudflare/playwright-mcp/lib/esm/src/pageSnapshot.js');
+const { default: screenshotTools } = await import(
+  './node_modules/@cloudflare/playwright-mcp/lib/esm/src/tools/screenshot.js'
+);
 
 let snapshotOptions;
 const snapshot = await PageSnapshot.create({
@@ -64,6 +67,38 @@ await assert.rejects(
   'legacy stale-reference errors should retain their actionable message',
 );
 
+const screenshotTool = screenshotTools.find((tool) => tool.schema.name === 'browser_take_screenshot');
+assert.ok(screenshotTool, 'the screenshot tool should remain available');
+let screenshotOptions;
+const screenshotAction = await screenshotTool.handle(
+  {
+    currentTabOrDie: () => ({
+      snapshotOrDie: () => ({}),
+      page: {
+        screenshot: async (options) => {
+          screenshotOptions = options;
+          return Buffer.from('inline screenshot');
+        },
+      },
+    }),
+    clientSupportsImages: () => true,
+  },
+  { raw: true, filename: 'evidence.png' },
+);
+const screenshotResult = await screenshotAction.action();
+assert.equal(
+  Object.hasOwn(screenshotOptions, 'path'),
+  false,
+  'Cloudflare screenshots should stay in memory instead of requesting persistent filesystem output',
+);
+assert.deepEqual(screenshotResult.content, [
+  {
+    type: 'image',
+    data: Buffer.from('inline screenshot').toString('base64'),
+    mimeType: 'image/png',
+  },
+]);
+
 const commonJsPatch = await readFile(
   './node_modules/@cloudflare/playwright-mcp/lib/cjs/src/tools/utils.js',
   'utf8',
@@ -72,6 +107,11 @@ assert.match(
   commonJsPatch,
   /typeof locator\?\._generateLocatorString === "function"/,
   'the CommonJS build should receive the same guarded compatibility patch',
+);
+assert.doesNotMatch(
+  await readFile('./node_modules/@cloudflare/playwright-mcp/lib/cjs/src/tools/screenshot.js', 'utf8'),
+  /config\.outputFile|path: fileName/,
+  'the CommonJS screenshot tool should also avoid persistent filesystem output',
 );
 
 console.log('Cloudflare Playwright MCP compatibility checks passed.');

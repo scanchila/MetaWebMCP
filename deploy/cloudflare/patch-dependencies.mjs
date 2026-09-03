@@ -48,3 +48,40 @@ for (const file of locatorFiles) {
   if (!source.includes(originalLocatorGenerator)) throw new Error(`Unexpected Playwright MCP locator generator in ${file}.`);
   await writeFile(file, source.replace(originalLocatorGenerator, compatibleLocatorGenerator));
 }
+
+const screenshotFiles = [
+  {
+    file: 'node_modules/@cloudflare/playwright-mcp/lib/esm/src/tools/screenshot.js',
+    configImport: "import { outputFile } from '../config.js';\n",
+    originalSetup: '    const fileName = await outputFile(context.config, params.filename ?? `page-${(/* @__PURE__ */ new Date()).toISOString()}.${fileType}`);\n    const options = { type: fileType, quality: fileType === "png" ? void 0 : 50, scale: "css", path: fileName };',
+  },
+  {
+    file: 'node_modules/@cloudflare/playwright-mcp/lib/cjs/src/tools/screenshot.js',
+    configImport: "const config = require('../config.js');\n",
+    originalSetup: '    const fileName = await config.outputFile(context.config, params.filename ?? `page-${(/* @__PURE__ */ new Date()).toISOString()}.${fileType}`);\n    const options = { type: fileType, quality: fileType === "png" ? void 0 : 50, scale: "css", path: fileName };',
+  },
+];
+const compatibleScreenshotSetup = '    const options = { type: fileType, quality: fileType === "png" ? void 0 : 50, scale: "css" };';
+const originalScreenshotCode = '    const code = [\n      `// Screenshot ${isElementScreenshot ? params.element : "viewport"} and save it as ${fileName}`\n    ];';
+const compatibleScreenshotCode = '    const code = [\n      `// Capture ${isElementScreenshot ? params.element : "viewport"} screenshot and return it inline`\n    ];';
+const originalFilenameDescription = 'File name to save the screenshot to. Defaults to `page-{timestamp}.{png|jpeg}` if not specified.';
+const compatibleFilenameDescription = 'Suggested screenshot name for compatible clients. Cloudflare returns the image inline.';
+
+for (const { file, configImport, originalSetup } of screenshotFiles) {
+  const installedSource = await readFile(file, 'utf8');
+  let source = installedSource;
+  if (source.includes(configImport)) source = source.replace(configImport, '');
+  if (!source.includes(compatibleScreenshotSetup)) {
+    if (!source.includes(originalSetup)) throw new Error(`Unexpected Playwright MCP screenshot setup in ${file}.`);
+    source = source.replace(originalSetup, compatibleScreenshotSetup);
+  }
+  if (!source.includes(compatibleScreenshotCode)) {
+    if (!source.includes(originalScreenshotCode)) throw new Error(`Unexpected Playwright MCP screenshot trace in ${file}.`);
+    source = source.replace(originalScreenshotCode, compatibleScreenshotCode);
+  }
+  if (!source.includes(compatibleFilenameDescription)) {
+    if (!source.includes(originalFilenameDescription)) throw new Error(`Unexpected Playwright MCP screenshot schema in ${file}.`);
+    source = source.replace(originalFilenameDescription, compatibleFilenameDescription);
+  }
+  if (source !== installedSource) await writeFile(file, source);
+}
