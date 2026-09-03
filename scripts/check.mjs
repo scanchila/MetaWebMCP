@@ -17,6 +17,7 @@ async function walk(directory) {
   const result = [];
   for (const name of await readdir(directory)) {
     if (['.git', '.playwright-mcp', '.wrangler', 'node_modules'].includes(name)) continue;
+    if (name === '.env' || name === '.DS_Store' || name.endsWith('.log')) continue;
     const full = path.join(directory, name);
     const info = await stat(full);
     if (info.isDirectory()) result.push(...await walk(full));
@@ -25,11 +26,24 @@ async function walk(directory) {
   return result;
 }
 
+function repositoryFiles() {
+  const listed = spawnSync(
+    'git',
+    ['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
+    { cwd: root, encoding: 'utf8' },
+  );
+  if (listed.status !== 0) return null;
+  return listed.stdout
+    .split('\0')
+    .filter(Boolean)
+    .map((name) => path.join(root, name));
+}
+
 for (const relative of required) {
   await stat(path.join(root, relative)).catch(() => { throw new Error(`Required file is missing: ${relative}`); });
 }
 
-const files = await walk(root);
+const files = repositoryFiles() || await walk(root);
 for (const file of files.filter((name) => /\.(?:mjs|js)$/.test(name))) {
   const checked = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
   if (checked.status !== 0) throw new Error(`Syntax check failed for ${path.relative(root, file)}:\n${checked.stderr}`);
@@ -43,4 +57,4 @@ if (!generator.includes('document.modelContext.registerTool({')) throw new Error
 
 const packageJson = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
 if (packageJson.dependencies && Object.keys(packageJson.dependencies).length) throw new Error('Core app must remain dependency-free.');
-console.log(`Static checks passed for ${files.length} files.`);
+console.log(`Static checks passed for ${files.length} repository files.`);
