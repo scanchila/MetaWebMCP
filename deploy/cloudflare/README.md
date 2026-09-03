@@ -30,7 +30,7 @@ The checked-in configuration publishes `metawebmcp.neuryta.com`. Change `routes`
 
 ## Compatibility pins
 
-`@cloudflare/playwright-mcp` is the current Cloudflare MCP package, but its published dependency range resolves an obsolete Browser Run client. The deployment overrides that client with `@cloudflare/playwright@1.3.6`. The current client returns `{ full, incremental }` from `_snapshotForAI()`, while the MCP formatter expects the former string result, so the postinstall check applies that narrow return-shape adaptation. Installation fails if the upstream formatter changes instead of silently applying an unsafe patch.
+`@cloudflare/playwright-mcp` is the current Cloudflare MCP package, but its published dependency range resolves an obsolete Browser Run client. The deployment overrides that client with `@cloudflare/playwright@1.3.6`. The current client requires response tracking to keep accessibility refs actionable and returns `{ full, incremental }` from `_snapshotForAI()`, while the MCP package expects the former untracked string result. Current locators also resolve tracked refs through `_resolveSelector()` and expose a public string representation instead of the package's former private `_generateLocatorString()` helper. The postinstall check applies those narrow adaptations to the package's ESM and CommonJS builds, and installation fails if the upstream shapes change instead of silently applying an unsafe patch.
 
 The filesystem shim covers a legacy import in the MCP package. It throws if reached; the configured CDP browser-context path does not use persistent filesystem access.
 
