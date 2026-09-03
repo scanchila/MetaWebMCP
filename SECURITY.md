@@ -49,6 +49,7 @@ A public same-origin MCP route is a powerful resource even when the product UI e
 - Generated `AGENTS.md` guidance is fixed text; target metadata remains in JSON data files and is normalized when displayed in other Markdown artifacts.
 - Bundled owner files cannot replace generated repository policy, manifest, runtime, report, or evaluation paths.
 - Risk inference is visible and explicitly documented as requiring review.
+- Reviewed risk overrides can only preserve or increase the inferred severity; callers cannot downgrade write or consequential actions.
 - Dynamic generated tools can be removed independently via `AbortController`.
 
 ### Browser application
