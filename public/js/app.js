@@ -149,8 +149,21 @@ async function invoke(name, input = {}) {
   }
 }
 
+function selectedCardsFromUi() {
+  return [...elements.capabilityList.querySelectorAll('.capability-card')]
+    .filter((card) => card.querySelector('input[type="checkbox"]')?.checked);
+}
+
 function selectedIdsFromUi() {
-  return [...elements.capabilityList.querySelectorAll('input[type="checkbox"]:checked')].map((input) => input.value);
+  return selectedCardsFromUi().map((card) => card.dataset.capabilityId);
+}
+
+function reviewedOverridesFromUi() {
+  return selectedCardsFromUi().map((card) => ({
+    capability_id: card.dataset.capabilityId,
+    name: card.querySelector('[data-review-name]').value.trim(),
+    description: card.querySelector('[data-review-description]').value.trim(),
+  }));
 }
 
 function defaultProjectName() {
@@ -230,18 +243,55 @@ function clearBuildState({ keepTrace = true } = {}) {
 
 function capabilitySummary(capability) {
   const evidence = capability.evidence?.length || 0;
-  return `${capability.description} ${evidence} evidence reference${evidence === 1 ? '' : 's'}.`;
+  return `${capability.description} ${evidence} untrusted page reference${evidence === 1 ? '' : 's'} available for review.`;
+}
+
+function evidenceSummary(item) {
+  return [
+    item.type,
+    item.label ? `label: ${item.label}` : '',
+    item.selector ? `selector: ${item.selector}` : '',
+    item.ref ? `reference: ${item.ref}` : '',
+    item.item ? `item: ${item.item}` : '',
+    item.itemId ? `item ID: ${item.itemId}` : '',
+  ].filter(Boolean).join(' · ');
+}
+
+function reviewField(labelText, control) {
+  const label = document.createElement('label');
+  label.className = 'review-field';
+  const title = document.createElement('span');
+  title.textContent = labelText;
+  label.append(title, control);
+  return label;
+}
+
+function reviewCode(labelText, value) {
+  const section = document.createElement('section');
+  section.className = 'review-code';
+  const title = document.createElement('strong');
+  title.textContent = labelText;
+  const code = document.createElement('pre');
+  code.textContent = JSON.stringify(value, null, 2);
+  section.append(title, code);
+  return section;
 }
 
 function renderCapabilities() {
   elements.capabilityList.replaceChildren();
   for (const capability of state.analysis?.capabilities || []) {
-    const label = document.createElement('label');
-    label.className = 'capability-card';
+    const card = document.createElement('article');
+    card.className = 'capability-card';
+    card.dataset.capabilityId = capability.id;
+    const heading = document.createElement('div');
+    heading.className = 'capability-card-head';
+    const selection = document.createElement('label');
+    selection.className = 'capability-choice';
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.value = capability.id;
     checkbox.checked = state.selectedCapabilityIds.has(capability.id);
+    checkbox.setAttribute('aria-label', `Include ${capability.name}`);
     checkbox.addEventListener('change', () => {
       if (checkbox.checked) state.selectedCapabilityIds.add(capability.id);
       else state.selectedCapabilityIds.delete(capability.id);
@@ -249,14 +299,63 @@ function renderCapabilities() {
     const copy = document.createElement('span');
     const title = document.createElement('strong');
     title.textContent = capability.name;
+    const observed = document.createElement('span');
+    observed.className = 'observed-label';
+    observed.textContent = `Observed label: ${capability.title}`;
     const description = document.createElement('p');
     description.textContent = capabilitySummary(capability);
-    copy.append(title, description);
+    copy.append(title, observed, description);
     const risk = document.createElement('span');
     risk.className = `kind-chip ${capability.risk}`;
     risk.textContent = capability.risk;
-    label.append(checkbox, copy, risk);
-    elements.capabilityList.append(label);
+    selection.append(checkbox, copy);
+    heading.append(selection, risk);
+
+    const details = document.createElement('details');
+    details.className = 'capability-detail';
+    const summary = document.createElement('summary');
+    summary.textContent = 'Inspect evidence and edit tool metadata';
+    const body = document.createElement('div');
+    body.className = 'capability-detail-body';
+    const trust = document.createElement('p');
+    trust.className = 'trust-note';
+    trust.textContent = 'Page labels, locators, and observed values are untrusted evidence. The tool name and description below are the reviewed metadata that will be registered.';
+    const evidenceTitle = document.createElement('strong');
+    evidenceTitle.textContent = 'Observed interface evidence';
+    const evidenceList = document.createElement('ul');
+    evidenceList.className = 'evidence-list';
+    for (const item of capability.evidence || []) {
+      const row = document.createElement('li');
+      row.textContent = evidenceSummary(item);
+      evidenceList.append(row);
+    }
+    const name = document.createElement('input');
+    name.type = 'text';
+    name.value = capability.name;
+    name.required = true;
+    name.maxLength = 64;
+    name.dataset.reviewName = '';
+    name.autocomplete = 'off';
+    const reviewedDescription = document.createElement('textarea');
+    reviewedDescription.value = capability.description;
+    reviewedDescription.required = true;
+    reviewedDescription.minLength = 8;
+    reviewedDescription.maxLength = 600;
+    reviewedDescription.rows = 2;
+    reviewedDescription.dataset.reviewDescription = '';
+    const metadata = document.createElement('div');
+    metadata.className = 'metadata-review';
+    metadata.append(reviewField('Reviewed tool name', name), reviewField('Reviewed description', reviewedDescription));
+    const contract = document.createElement('div');
+    contract.className = 'contract-review-grid';
+    contract.append(
+      reviewCode('Input schema and sample', { inputSchema: capability.inputSchema, sampleArgs: capability.sampleArgs }),
+      reviewCode('Executor and expected state source', capability.executor),
+    );
+    body.append(trust, evidenceTitle, evidenceList, metadata, contract);
+    details.append(summary, body);
+    card.append(heading, details);
+    elements.capabilityList.append(card);
   }
   elements.capabilitySection.open = true;
   elements.capabilitySection.classList.toggle('hidden', !state.analysis?.capabilities?.length);
@@ -409,6 +508,13 @@ async function createWebMcp(input = {}) {
   const overrides = input.overrides || [];
   overrides.forEach((override) => validateOverride(override, knownIds));
   const byCapability = new Map(overrides.map((override) => [override.capability_id, override]));
+  if (state.analysis.source?.kind !== 'demo') {
+    const missingReview = ids.find((id) => {
+      const override = byCapability.get(id);
+      return !override?.name?.trim() || !override?.description?.trim();
+    });
+    if (missingReview) throw new Error(`Review the tool name and description before creating external-target contract ${missingReview}.`);
+  }
   const tools = ids.map((id) => {
     const capability = state.analysis.capabilities.find((candidate) => candidate.id === id);
     const override = byCapability.get(id) || {};
@@ -673,7 +779,7 @@ const metaTools = [
   {
     spec: {
       name: 'meta_create_webmcp',
-      description: 'Turn selected capability candidates into narrow WebMCP tool contracts, optionally renaming or refining them after reviewing the evidence.',
+      description: 'Turn selected capability candidates into narrow WebMCP tool contracts after reviewing their untrusted page evidence. External targets require an explicit reviewed name and description for every selected capability.',
       risk: 'write',
       inputSchema: {
         type: 'object',
@@ -682,6 +788,7 @@ const metaTools = [
           overrides: {
             type: 'array',
             maxItems: 12,
+            description: 'Reviewed tool metadata. A name and description are required for every selected capability from an external or supplied target.',
             items: {
               type: 'object',
               properties: {
@@ -815,7 +922,10 @@ function bindEvents() {
     state.selectedCapabilityIds = new Set(shouldSelect ? boxes.map((box) => box.value) : []);
     elements.selectAllButton.textContent = shouldSelect ? 'Clear all' : 'Select all';
   });
-  elements.createButton.addEventListener('click', () => invoke('meta_create_webmcp', { capability_ids: selectedIdsFromUi() }).catch(() => {}));
+  elements.createButton.addEventListener('click', () => invoke('meta_create_webmcp', {
+    capability_ids: selectedIdsFromUi(),
+    overrides: reviewedOverridesFromUi(),
+  }).catch(() => {}));
   elements.activateButton.addEventListener('click', () => invoke('meta_activate_webmcp', {}).catch(() => {}));
   elements.testButton.addEventListener('click', () => invoke('meta_test_webmcp', {}).catch(() => {}));
   elements.exportButton.addEventListener('click', () => invoke('meta_export_webmcp', {}).catch(() => {}));
