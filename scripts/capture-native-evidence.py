@@ -15,14 +15,14 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 from playwright.sync_api import sync_playwright
-from evidence_provenance import configured_source_commit, verified_deployment_identity
+from evidence_provenance import browser_identity, configured_source_commit, verified_deployment_identity
 
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = Path(os.environ.get('META_WEBMCP_EVIDENCE_OUT', ROOT / 'evidence'))
 APP_URL = os.environ.get('META_WEBMCP_APP_URL', 'https://metawebmcp.neuryta.com')
 EXPECTED_DEPLOYMENT_VERSION = os.environ.get('META_WEBMCP_DEPLOYMENT_VERSION', '').strip()
-BROWSER_ARGS = ['--no-sandbox', '--disable-dev-shm-usage', '--enable-blink-features=WebMCPTesting']
+BROWSER_ARGS = ['--no-sandbox', '--disable-dev-shm-usage', '--enable-features=WebMCPTesting']
 PROVENANCE_HELPER = Path(__file__).with_name('evidence_provenance.py')
 
 
@@ -230,6 +230,7 @@ def main():
             args=BROWSER_ARGS,
         )
         try:
+            captured_browser_identity = browser_identity(CHROME, browser.version)
             page = browser.new_page(viewport={'width': 1840, 'height': 1215}, device_scale_factor=1)
             page.set_default_timeout(20_000)
             page.on('console', lambda message: console_errors.append(message.text) if message.type == 'error' else None)
@@ -238,6 +239,11 @@ def main():
             response = page.goto(APP_URL, wait_until='networkidle', timeout=30_000)
             if not response or response.status != 200:
                 raise RuntimeError(f"MetaWebMCP returned {response.status if response else 'no response'}")
+            if not page.evaluate('Boolean(document.modelContext)'):
+                raise RuntimeError(
+                    'Chrome did not expose document.modelContext. '
+                    'Headless evidence capture requires Chrome 152+ with WebMCPTesting enabled.'
+                )
             page.locator('#native-status', has_text='WebMCP active').wait_for(state='visible')
 
             browser_api = page.evaluate(
@@ -379,7 +385,7 @@ def main():
                 'captureScript': Path(__file__).name,
                 'captureScriptSha256': CAPTURE_SCRIPT_SHA256,
                 'captureDependencies': {PROVENANCE_HELPER.name: PROVENANCE_HELPER_SHA256},
-                'browser': f'Google Chrome {browser.version} beta',
+                'browser': captured_browser_identity,
                 'browserLaunch': {
                     'executable': Path(CHROME).name,
                     'headless': True,

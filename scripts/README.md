@@ -1,6 +1,6 @@
 # Release evidence scripts
 
-The capture scripts reproduce the native WebMCP, hosted public-site, and deployment-security records in `evidence/`. The browser journeys require Python Playwright and a Chrome build that supports the `WebMCPTesting` feature. Each script queries `/health` before capture and rejects a source or optional Worker-version mismatch. Retained results record the live Worker identity, capture script and helper SHA-256 digests, browser launch configuration, and deployed asset digests so a rerun can be tied to its inputs.
+The capture scripts reproduce the native WebMCP, hosted public-site, and deployment-security records in `evidence/`. The browser journeys require Python Playwright and Chrome 152 or newer for headless `WebMCPTesting` support. Each script queries `/health` before capture and rejects a source or optional Worker-version mismatch. Retained results record the live Worker identity, capture script and helper SHA-256 digests, browser launch configuration, and deployed asset digests so a rerun can be tied to its inputs.
 
 Set the exact deployed source commit before capture. `META_WEBMCP_DEPLOYMENT_VERSION` is an optional additional assertion; the retained value always comes from the live Worker:
 
@@ -22,7 +22,7 @@ Retain complete Lighthouse JSON before generating the compact summaries:
 
 ```bash
 npx --yes lighthouse@13.4.1 https://metawebmcp.neuryta.com \
-  --chrome-flags="--headless --no-sandbox --enable-blink-features=WebMCPTesting" \
+  --chrome-flags="--headless --no-sandbox --enable-features=WebMCPTesting" \
   --output=json \
   --output-path=evidence/lighthouse-production-report.json
 

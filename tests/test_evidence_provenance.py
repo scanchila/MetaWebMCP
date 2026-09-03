@@ -12,7 +12,7 @@ from evidence_append_provenance import (  # noqa: E402
     apply_browser_capture_provenance,
     apply_static_capture_provenance,
 )
-from evidence_provenance import configured_source_commit, verified_deployment_identity  # noqa: E402
+from evidence_provenance import browser_identity, configured_source_commit, verified_deployment_identity  # noqa: E402
 
 
 SOURCE_COMMIT = 'a' * 40
@@ -25,11 +25,11 @@ STATIC_PROVENANCE = {
     },
 }
 BROWSER_PROVENANCE = {
-    'browser': 'Google Chrome 154.0.8037.0 beta',
+    'browser': 'Google Chrome 154.0.8037.0',
     'browserLaunch': {
         'executable': 'google-chrome-beta',
         'headless': True,
-        'args': ['--no-sandbox', '--enable-blink-features=WebMCPTesting'],
+        'args': ['--no-sandbox', '--enable-features=WebMCPTesting'],
         'viewport': {'width': 1840, 'height': 1120},
         'deviceScaleFactor': 1,
     },
@@ -56,6 +56,56 @@ def opener(payload, calls):
 
 
 class EvidenceProvenanceTest(unittest.TestCase):
+    def test_browser_identity_preserves_the_executable_product_name(self):
+        identities = (
+            'Google Chrome Beta 152.0.7977.75',
+            'Google Chrome for Testing 152.0.7977.75',
+            'Chromium 152.0.7977.75',
+        )
+        for expected in identities:
+            with self.subTest(identity=expected):
+                calls = []
+
+                def runner(command, **options):
+                    calls.append((command, options))
+                    return type('Completed', (), {
+                        'returncode': 0,
+                        'stdout': f'{expected}\n',
+                        'stderr': '',
+                    })()
+
+                self.assertEqual(browser_identity('/browser', '152.0.7977.75', runner=runner), expected)
+                self.assertEqual(calls, [(
+                    ['/browser', '--version'],
+                    {'capture_output': True, 'text': True, 'timeout': 10, 'check': False},
+                )])
+
+    def test_browser_identity_rejects_a_mismatched_runtime_version(self):
+        def runner(_command, **_options):
+            return type('Completed', (), {
+                'returncode': 0,
+                'stdout': 'Chromium 151.0.0.0\n',
+                'stderr': '',
+            })()
+
+        with self.assertRaisesRegex(RuntimeError, 'does not match'):
+            browser_identity('/browser', '152.0.7977.75', runner=runner)
+
+    def test_capture_scripts_use_the_current_headless_webmcp_feature_flag(self):
+        for script_name in ('capture-native-evidence.py', 'capture-public-evidence.py'):
+            source = (ROOT / 'scripts' / script_name).read_text()
+            with self.subTest(script=script_name):
+                self.assertIn("'--enable-features=WebMCPTesting'", source)
+                self.assertNotIn('--enable-blink-features=WebMCPTesting', source)
+                self.assertIn('Headless evidence capture requires Chrome 152+', source)
+
+    def test_native_capture_checks_browser_identity_before_creating_a_page(self):
+        source = (ROOT / 'scripts' / 'capture-native-evidence.py').read_text()
+        main_source = source[source.index('def main():'):]
+        identity_check = 'captured_browser_identity = browser_identity(CHROME, browser.version)'
+        self.assertLess(main_source.index(identity_check), main_source.index('page = browser.new_page'))
+        self.assertIn("'browser': captured_browser_identity", main_source)
+
     def test_requires_an_explicit_full_source_commit(self):
         self.assertEqual(configured_source_commit({'META_WEBMCP_SOURCE_COMMIT': SOURCE_COMMIT.upper()}), SOURCE_COMMIT)
         with self.assertRaisesRegex(RuntimeError, 'exact full deployed commit'):
@@ -140,7 +190,7 @@ class EvidenceProvenanceTest(unittest.TestCase):
         changed_launch = deepcopy(BROWSER_PROVENANCE)
         changed_launch['browserLaunch']['args'].append('--disable-dev-shm-usage')
         mismatches = {
-            'browser': {**BROWSER_PROVENANCE, 'browser': 'Google Chrome 155.0.8100.0 beta'},
+            'browser': {**BROWSER_PROVENANCE, 'browser': 'Google Chrome 155.0.8100.0'},
             'browserLaunch': changed_launch,
         }
         for field, current_provenance in mismatches.items():
