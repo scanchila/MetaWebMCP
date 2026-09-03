@@ -157,6 +157,43 @@ ${options}
   assert.deepEqual(search.executor.steps.slice(0, 2).map((step) => step.arguments.ref), ['e1', 'e2']);
 });
 
+test('HTML capability limits retain a goal-relevant action found after the first twelve', () => {
+  const unrelated = Array.from(
+    { length: 13 },
+    (_, index) => `<button id="panel-${index + 1}">Open panel ${index + 1}</button>`,
+  ).join('\n');
+  const html = `<main>${unrelated}<button id="download-audit">Download audit report</button></main>`;
+  const result = analyzeHtml({ html, url: 'https://example.com/', goal: 'Download the audit reports.' });
+  const titles = result.capabilities.map((capability) => capability.title);
+
+  assert.equal(result.capabilities.length, 12);
+  assert.equal(result.summary.discoveredCandidates, 14);
+  assert.equal(result.summary.omittedCandidates, 2);
+  assert.equal(titles.at(-1), 'Download audit report');
+  assert.equal(titles.includes('Open panel 12'), false);
+  assert.equal(titles.includes('Open panel 13'), false);
+  assert.match(result.warnings[0], /goal-token relevance.*omitted 2/);
+});
+
+test('snapshot capability limits use the same deterministic goal ranking', () => {
+  const unrelated = Array.from(
+    { length: 13 },
+    (_, index) => `- button "Open panel ${index + 1}" [ref=e${index + 1}]`,
+  ).join('\n');
+  const snapshot = `${unrelated}\n- button "Download audit report" [ref=e14]`;
+  const input = { snapshot, url: 'https://example.com/', goal: 'Download the audit reports.' };
+  const result = analyzeAccessibilitySnapshot(input);
+  const repeated = analyzeAccessibilitySnapshot(input);
+  const titles = result.capabilities.map((capability) => capability.title);
+
+  assert.deepEqual(repeated.capabilities.map((capability) => capability.id), result.capabilities.map((capability) => capability.id));
+  assert.equal(result.capabilities.length, 12);
+  assert.equal(result.summary.discoveredCandidates, 14);
+  assert.equal(result.summary.omittedCandidates, 2);
+  assert.equal(titles.at(-1), 'Download audit report');
+  assert.match(result.warnings[0], /goal-token relevance.*omitted 2/);
+});
+
 test('repeated snapshot actions become one item-scoped tool with a bounded ref mapping', async () => {
   const snapshot = `- list "Books" [ref=e0]
   - listitem [ref=e1]

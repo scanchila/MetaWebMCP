@@ -48,6 +48,8 @@ Every capability carries:
 - Sample arguments for runtime evaluation.
 - One deterministic executor.
 
+When a page exposes more than twelve candidates, the analyzer scores every discovered workflow by normalized token overlap with the stated goal, selects the strongest twelve with document order as the deterministic tie-breaker, and reports the omitted count.
+
 Supported executor types:
 
 - `dom-form`
