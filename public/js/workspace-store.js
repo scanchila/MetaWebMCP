@@ -56,7 +56,10 @@ function openWorkspaceDatabase(indexedDb) {
   });
 }
 
-export function createWorkspaceStore(indexedDb = globalThis.indexedDB) {
+export function createWorkspaceStore(indexedDb = globalThis.indexedDB, workspaceKey = CURRENT_WORKSPACE_KEY) {
+  if (typeof workspaceKey !== 'string' || !/^[a-zA-Z0-9:_-]{1,96}$/.test(workspaceKey)) {
+    throw new Error('A valid browser-local workspace key is required.');
+  }
   let databasePromise;
   const database = () => {
     databasePromise ||= openWorkspaceDatabase(indexedDb);
@@ -68,7 +71,7 @@ export function createWorkspaceStore(indexedDb = globalThis.indexedDB) {
       return (await transactionResult(
         await database(),
         'readonly',
-        (store) => store.get(CURRENT_WORKSPACE_KEY),
+        (store) => store.get(workspaceKey),
       )) || null;
     },
 
@@ -79,7 +82,7 @@ export function createWorkspaceStore(indexedDb = globalThis.indexedDB) {
       await transactionResult(
         await database(),
         'readwrite',
-        (store) => store.put(workspace, CURRENT_WORKSPACE_KEY),
+        (store) => store.put(workspace, workspaceKey),
       );
     },
 
@@ -87,7 +90,7 @@ export function createWorkspaceStore(indexedDb = globalThis.indexedDB) {
       await transactionResult(
         await database(),
         'readwrite',
-        (store) => store.delete(CURRENT_WORKSPACE_KEY),
+        (store) => store.delete(workspaceKey),
       );
     },
   });

@@ -10,12 +10,14 @@ import {
   verifyBrowserCapabilityCookie,
 } from '../../lib/browser-capability.mjs';
 import { generateProjectZip } from '../../lib/generator.mjs';
+import { DEFAULT_SHARED_WORKSPACE_TTL_MS } from '../../lib/shared-workspace.mjs';
 import {
   browserDirectNetworkInitScript,
   proxyBrowserRequest,
 } from './browser-egress-proxy.mjs';
 import { ExportStore } from './export-store.mjs';
 import { MAX_EXPORT_ARCHIVE_BYTES } from './export-store-core.mjs';
+import { SharedWorkspaceStore } from './shared-workspace-store.mjs';
 import {
   BROWSER_MCP_TOOL_NAMES,
   hostedBrowserEngine,
@@ -31,7 +33,7 @@ const ANALYSIS_TIMEOUT_MS = 12_000;
 const SOURCE_COMMIT_PATTERN = /^[0-9a-f]{40,64}$/;
 const EXPORT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
-export { ExportStore };
+export { ExportStore, SharedWorkspaceStore };
 
 const browserEndpoint = hostedBrowserEngine(runtimeEnv) === 'kitesurf'
   ? endpointURLString(runtimeEnv.BROWSER, { browser: 'kitesurf' })
@@ -195,6 +197,18 @@ async function analysisRequestWithinLimit(request, bindings) {
   return result.success;
 }
 
+async function sharedWorkspaceRequestWithinLimit(request, bindings) {
+  const key = request.headers.get('cf-connecting-ip') || 'local';
+  const result = await bindings.SHARED_WORKSPACE_RATE_LIMITER.limit({ key });
+  return result.success;
+}
+
+async function sharedWorkspaceAccessWithinLimit(request, bindings) {
+  const key = request.headers.get('cf-connecting-ip') || 'local';
+  const result = await bindings.SHARED_WORKSPACE_ACCESS_RATE_LIMITER.limit({ key });
+  return result.success;
+}
+
 function browserCapabilitySecret(bindings) {
   if (typeof bindings.MCP_CAPABILITY_SECRET !== 'string' || bindings.MCP_CAPABILITY_SECRET.length < 32) {
     const error = new Error('Browser capability secret is not configured.');
@@ -208,6 +222,22 @@ function base64Url(bytes) {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function randomToken() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return base64Url(bytes);
+}
+
+function bearerToken(request) {
+  const match = /^Bearer ([a-zA-Z0-9_-]{43})$/.exec(request.headers.get('authorization') || '');
+  return match?.[1] || null;
+}
+
+async function sharedWorkspaceTokenHash(token) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
 async function exportSourceKey(request, bindings) {
@@ -335,6 +365,66 @@ async function handleApi(request, bindings, pathname, browserCapability) {
     return json({ ok: true, analysis });
   }
 
+  if (pathname === '/api/shared-workspaces' && request.method === 'POST') {
+    if (!sameOrigin(request)) return json({ ok: false, error: 'Same-origin workspace creation required.' }, { status: 403 });
+    if (!await sharedWorkspaceRequestWithinLimit(request, bindings)) {
+      return json({ ok: false, error: 'Shared workspace creation limit reached. Try again in a minute.' }, { status: 429 });
+    }
+    const id = crypto.randomUUID();
+    const writeToken = randomToken();
+    const readToken = randomToken();
+    const store = bindings.SHARED_WORKSPACE_STORE.get(bindings.SHARED_WORKSPACE_STORE.idFromName(id));
+    const created = await store.fetch('https://shared-workspace.internal/create', {
+      method: 'POST',
+      headers: {
+        'x-metawebmcp-workspace-id': id,
+        'x-metawebmcp-write-token-hash': await sharedWorkspaceTokenHash(writeToken),
+        'x-metawebmcp-read-token-hash': await sharedWorkspaceTokenHash(readToken),
+        'x-metawebmcp-ttl-ms': String(DEFAULT_SHARED_WORKSPACE_TTL_MS),
+      },
+    });
+    if (!created.ok) throw new Error('Shared workspace could not be created.');
+    const metadata = await created.json();
+    return json({
+      ok: true,
+      id,
+      writeToken,
+      readToken,
+      expiresAt: metadata.expiresAt,
+    }, { status: 201, headers: { 'cache-control': 'no-store' } });
+  }
+  if (pathname === '/api/shared-workspaces') {
+    return json({ ok: false, error: 'Method not allowed.' }, { status: 405 });
+  }
+
+  const sharedWorkspaceRoute = /^\/api\/shared-workspaces\/([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/.exec(pathname);
+  if (sharedWorkspaceRoute) {
+    if (!['GET', 'PUT'].includes(request.method)) {
+      return json({ ok: false, error: 'Method not allowed.' }, { status: 405 });
+    }
+    if (!await sharedWorkspaceAccessWithinLimit(request, bindings)) {
+      return json({ ok: false, error: 'Shared workspace request limit reached. Try again shortly.' }, { status: 429 });
+    }
+    const token = bearerToken(request);
+    if (!token) return json({ ok: false, error: 'Shared workspace not found or expired.' }, { status: 404 });
+    const id = sharedWorkspaceRoute[1].toLowerCase();
+    const store = bindings.SHARED_WORKSPACE_STORE.get(bindings.SHARED_WORKSPACE_STORE.idFromName(id));
+    const after = new URL(request.url).searchParams.get('after');
+    const internalUrl = new URL('https://shared-workspace.internal/workspace');
+    if (after !== null) internalUrl.searchParams.set('after', after);
+    const headers = {
+      'x-metawebmcp-token-hash': await sharedWorkspaceTokenHash(token),
+    };
+    const body = request.method === 'PUT'
+      ? JSON.stringify({ workspace: (await readJson(request)).workspace })
+      : undefined;
+    return store.fetch(internalUrl, { method: request.method, headers, body });
+  }
+
+  if (pathname.startsWith('/api/shared-workspaces/')) {
+    return json({ ok: false, error: 'Shared workspace not found or expired.' }, { status: 404 });
+  }
+
   if (pathname === '/api/export' && request.method === 'POST') {
     if (!await exportRequestWithinLimit(request, bindings)) {
       return json({ ok: false, error: 'Export request limit reached. Try again in a minute.' }, { status: 429 });
@@ -435,7 +525,8 @@ export default {
         || pathname === '/sse/message'
         || pathname.startsWith('/api/mcp/')
         || pathname === '/api/export'
-        || pathname.startsWith('/api/download/');
+        || pathname.startsWith('/api/download/')
+        || (pathname === '/api/shared-workspaces' && request.method === 'POST');
       const browserCapability = protectedPath
         ? await requireBrowserCapability(request, bindings)
         : null;

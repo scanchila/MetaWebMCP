@@ -48,6 +48,22 @@
         "limit": 30,
         "period": 60
       }
+    },
+    {
+      "name": "SHARED_WORKSPACE_RATE_LIMITER",
+      "namespace_id": "1004",
+      "simple": {
+        "limit": 12,
+        "period": 60
+      }
+    },
+    {
+      "name": "SHARED_WORKSPACE_ACCESS_RATE_LIMITER",
+      "namespace_id": "1005",
+      "simple": {
+        "limit": 240,
+        "period": 60
+      }
     }
   ],
   "assets": {
@@ -65,6 +81,10 @@
       {
         "name": "EXPORT_STORE",
         "class_name": "ExportStore"
+      },
+      {
+        "name": "SHARED_WORKSPACE_STORE",
+        "class_name": "SharedWorkspaceStore"
       }
     ]
   },
@@ -76,6 +96,10 @@
     {
       "tag": "v2",
       "new_sqlite_classes": ["ExportStore"]
+    },
+    {
+      "tag": "v3",
+      "new_sqlite_classes": ["SharedWorkspaceStore"]
     }
   ],
   "observability": {

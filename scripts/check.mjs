@@ -6,14 +6,17 @@ const root = path.resolve(new URL('..', import.meta.url).pathname);
 const required = [
   'server.mjs',
   'egress-proxy.mjs',
+  'lib/shared-workspace.mjs',
   'scripts/capture-deployment-security-gates.py',
   'scripts/evidence_provenance.py',
   'public/index.html',
   'public/js/app.js',
   'public/js/webmcp-runtime.js',
   'public/js/workspace-store.js',
+  'public/js/shared-workspace.js',
   'public/js/network-policy.js',
   'public/demo/index.html',
+  'deploy/cloudflare/shared-workspace-store.mjs',
   'README.md',
   'LICENSE',
 ];

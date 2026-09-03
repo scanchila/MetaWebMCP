@@ -13,6 +13,13 @@ import {
 } from './lib/browser-capability.mjs';
 import { generateProjectZip } from './lib/generator.mjs';
 import { McpHttpClient, flattenMcpText } from './lib/mcp-http-client.mjs';
+import {
+  createSharedWorkspaceSession,
+  DEFAULT_SHARED_WORKSPACE_TTL_MS,
+  MAX_SHARED_WORKSPACE_TTL_MS,
+  readSharedWorkspaceSession,
+  updateSharedWorkspaceSession,
+} from './lib/shared-workspace.mjs';
 import { fetchTargetHtml, validateBrowserTarget } from './lib/security.mjs';
 import { runMcpRecipe } from './public/js/mcp-recipe.js';
 import { runMcpCollection } from './public/js/mcp-collection.js';
@@ -49,6 +56,12 @@ const MAX_EXPORT_ARCHIVE_BYTES = positiveIntegerSetting('MAX_EXPORT_ARCHIVE_BYTE
 const EXPORT_RATE_LIMIT_PER_MINUTE = positiveIntegerSetting('EXPORT_RATE_LIMIT_PER_MINUTE', 12);
 const ANALYSIS_RATE_LIMIT_PER_MINUTE = positiveIntegerSetting('ANALYSIS_RATE_LIMIT_PER_MINUTE', 30);
 const MAX_CONCURRENT_ANALYSES = positiveIntegerSetting('MAX_CONCURRENT_ANALYSES', 4);
+const MAX_SHARED_WORKSPACES = positiveIntegerSetting('MAX_SHARED_WORKSPACES', 32);
+const SHARED_WORKSPACE_RATE_LIMIT_PER_MINUTE = positiveIntegerSetting('SHARED_WORKSPACE_RATE_LIMIT_PER_MINUTE', 12);
+const SHARED_WORKSPACE_TTL_MS = positiveIntegerSetting('SHARED_WORKSPACE_TTL_MS', DEFAULT_SHARED_WORKSPACE_TTL_MS);
+if (SHARED_WORKSPACE_TTL_MS > MAX_SHARED_WORKSPACE_TTL_MS) {
+  throw new Error(`SHARED_WORKSPACE_TTL_MS must not exceed ${MAX_SHARED_WORKSPACE_TTL_MS}.`);
+}
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -65,12 +78,15 @@ const MIME = {
 
 const downloads = new Map();
 const mcpClients = new Map();
+const sharedWorkspaces = new Map();
 let pendingDownloadBytes = 0;
 let exportRateWindowStartedAt = Date.now();
 let exportsInCurrentWindow = 0;
 let analysisRateWindowStartedAt = Date.now();
 let analysesInCurrentWindow = 0;
 let activeAnalyses = 0;
+let workspaceRateWindowStartedAt = Date.now();
+let workspacesCreatedInCurrentWindow = 0;
 
 function securityHeaders(contentType = '') {
   const headers = {
@@ -158,6 +174,46 @@ async function requireBrowserCapability(req) {
     throw error;
   }
   return capability;
+}
+
+function sharedWorkspaceTokenHash(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+function bearerToken(req) {
+  const match = /^Bearer ([a-zA-Z0-9_-]{43})$/.exec(String(req.headers.authorization || ''));
+  return match?.[1] || null;
+}
+
+function pruneSharedWorkspaces(now = Date.now()) {
+  for (const [id, session] of sharedWorkspaces) {
+    if (session.expiresAtMs > now) continue;
+    sharedWorkspaces.delete(id);
+  }
+}
+
+function claimSharedWorkspaceSlot() {
+  pruneSharedWorkspaces();
+  const now = Date.now();
+  if (now - workspaceRateWindowStartedAt >= 60_000) {
+    workspaceRateWindowStartedAt = now;
+    workspacesCreatedInCurrentWindow = 0;
+  }
+  if (sharedWorkspaces.size >= MAX_SHARED_WORKSPACES) {
+    const error = new Error('Shared workspace storage is at capacity. Try again later.');
+    error.statusCode = 429;
+    throw error;
+  }
+  if (workspacesCreatedInCurrentWindow >= SHARED_WORKSPACE_RATE_LIMIT_PER_MINUTE) {
+    const error = new Error('Shared workspace creation limit reached. Try again in a minute.');
+    error.statusCode = 429;
+    throw error;
+  }
+  workspacesCreatedInCurrentWindow += 1;
+}
+
+function sharedWorkspaceNotFound(res) {
+  return sendError(res, 404, new Error('Shared workspace not found or expired.'));
 }
 
 function workspaceKey(value, capabilityId) {
@@ -339,6 +395,8 @@ function removeDownload(id) {
 
 const downloadPruneTimer = setInterval(pruneDownloads, 60_000);
 downloadPruneTimer.unref?.();
+const sharedWorkspacePruneTimer = setInterval(pruneSharedWorkspaces, 60_000);
+sharedWorkspacePruneTimer.unref?.();
 
 async function handleApi(req, res, pathname, searchParams) {
   if (pathname === '/health' && req.method === 'GET') {
@@ -370,6 +428,7 @@ async function handleApi(req, res, pathname, searchParams) {
   const browserCapability = pathname.startsWith('/api/mcp/')
     || pathname === '/api/export'
     || pathname.startsWith('/api/download/')
+    || (pathname === '/api/shared-workspaces' && req.method === 'POST')
     ? await requireBrowserCapability(req)
     : null;
 
@@ -380,6 +439,71 @@ async function handleApi(req, res, pathname, searchParams) {
       browserMcpEndpoint: '',
       allowPrivateTargets: process.env.ALLOW_PRIVATE_TARGETS === '1',
     });
+  }
+
+  if (pathname === '/api/shared-workspaces' && req.method === 'POST') {
+    if (!sameOriginPageRequest(req)) return sendError(res, 403, new Error('Same-origin workspace creation required.'));
+    claimSharedWorkspaceSlot();
+    const id = crypto.randomUUID();
+    const writeToken = crypto.randomBytes(32).toString('base64url');
+    const readToken = crypto.randomBytes(32).toString('base64url');
+    const session = createSharedWorkspaceSession({
+      id,
+      writeTokenHash: sharedWorkspaceTokenHash(writeToken),
+      readTokenHash: sharedWorkspaceTokenHash(readToken),
+      ttlMs: SHARED_WORKSPACE_TTL_MS,
+    });
+    sharedWorkspaces.set(id, session);
+    return sendJson(res, 201, {
+      ok: true,
+      id,
+      writeToken,
+      readToken,
+      expiresAt: new Date(session.expiresAtMs).toISOString(),
+    }, { 'cache-control': 'no-store' });
+  }
+  if (pathname === '/api/shared-workspaces') {
+    return sendError(res, 405, new Error('Method not allowed.'));
+  }
+
+  const sharedWorkspaceRoute = /^\/api\/shared-workspaces\/([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/.exec(pathname);
+  if (sharedWorkspaceRoute) {
+    const id = sharedWorkspaceRoute[1].toLowerCase();
+    const token = bearerToken(req);
+    const session = sharedWorkspaces.get(id);
+    if (!token || !session) return sharedWorkspaceNotFound(res);
+    const tokenHash = sharedWorkspaceTokenHash(token);
+
+    if (req.method === 'GET') {
+      const afterValue = searchParams.get('after');
+      const afterRevision = afterValue === null ? -1 : Number(afterValue);
+      const result = readSharedWorkspaceSession(session, { tokenHash, afterRevision });
+      if (result.status === 'expired') sharedWorkspaces.delete(id);
+      if (result.status === 'not-authorized' || result.status === 'expired') {
+        return sharedWorkspaceNotFound(res);
+      }
+      if (result.status === 'not-modified') {
+        res.writeHead(204, { ...securityHeaders('application/json'), 'cache-control': 'no-store' });
+        return res.end();
+      }
+      return sendJson(res, 200, { ok: true, ...result.value }, { 'cache-control': 'no-store' });
+    }
+
+    if (req.method === 'PUT') {
+      const body = await readJson(req);
+      const result = updateSharedWorkspaceSession(session, {
+        tokenHash,
+        workspace: body.workspace,
+      });
+      if (result.status === 'expired') sharedWorkspaces.delete(id);
+      if (result.status === 'not-authorized' || result.status === 'expired') {
+        return sharedWorkspaceNotFound(res);
+      }
+      sharedWorkspaces.set(id, result.session);
+      return sendJson(res, 200, { ok: true, ...result.value }, { 'cache-control': 'no-store' });
+    }
+
+    return sendError(res, 405, new Error('Method not allowed.'));
   }
 
   if (pathname === '/api/analyze' && req.method === 'POST') {
@@ -591,6 +715,7 @@ async function shutdown() {
   server.close();
   clearInterval(mcpPruneTimer);
   clearInterval(downloadPruneTimer);
+  clearInterval(sharedWorkspacePruneTimer);
   const clients = [...mcpClients.values()].map((entry) => entry.client);
   mcpClients.clear();
   await Promise.allSettled(clients.map((client) => client.close()));

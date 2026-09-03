@@ -146,9 +146,15 @@
         <span id="native-status" class="status-pill"><i></i>Checking WebMCP</span>
         <span id="storage-status" class="storage-status" aria-live="polite" title="Workspace drafts and recipes are saved only in this browser.">Local save…</span>
         <span id="tool-count" class="tool-count">0 tools</span>
+        <button id="share-button" class="ghost-button" type="button" title="Create an expiring, read-only presentation link for the controlled demo.">Share demo</button>
         <button id="reset-button" class="ghost-button" type="button" title="Clear the current workspace and its browser-local saved copy.">Reset</button>
       </div>
     </header>
+
+    <div id="shared-workspace-banner" class="shared-workspace-banner hidden" role="status">
+      <strong id="shared-workspace-title">Shared workspace</strong>
+      <span id="shared-workspace-copy">Waiting for the author browser.</span>
+    </div>
 
     <main id="workspace" class="workspace" tabindex="-1">
       <section class="target-column" aria-labelledby="target-title">
@@ -316,6 +322,25 @@
       </aside>
     </main>
   </div>
+
+  <dialog id="share-dialog" class="share-dialog" aria-labelledby="share-dialog-title">
+    <div class="share-dialog-heading">
+      <div><span class="eyebrow">Cloud handoff</span><h2 id="share-dialog-title">Share the controlled demo.</h2></div>
+      <form method="dialog"><button class="ghost-button" type="submit" aria-label="Close sharing dialog">Close</button></form>
+    </div>
+    <p>Create a one-hour presentation session. Give the author URL to the agent and open the read-only viewer URL in the browser you record.</p>
+    <p class="share-boundary">Only the controlled Relay Sessions workspace is synchronized. Pasted HTML, accessibility snapshots, browser sessions, screenshots, and export download links stay private to the author browser.</p>
+    <button id="create-share-button" class="primary-button" type="button"><span>Create presentation session</span></button>
+    <p id="share-error" class="share-error hidden" role="alert"></p>
+    <div id="share-result" class="share-result hidden">
+      <label class="share-link"><span>Agent author URL</span><input id="share-author-url" type="text" readonly></label>
+      <button class="secondary-button" type="button" data-copy-share="share-author-url">Copy author URL</button>
+      <label class="share-link"><span>Presenter viewer URL</span><input id="share-viewer-url" type="text" readonly></label>
+      <button class="secondary-button" type="button" data-copy-share="share-viewer-url">Copy viewer URL</button>
+      <a id="open-share-viewer" class="primary-button" href="#" target="_blank" rel="noreferrer">Open viewer</a>
+      <small id="share-expiry"></small>
+    </div>
+  </dialog>
 
   <script type="module" src="/js/app.js"></script>
 </body>

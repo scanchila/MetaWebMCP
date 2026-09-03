@@ -70,8 +70,10 @@ A public same-origin MCP route is a powerful resource even when the product UI e
 - The top-level page has no inline script or external CDN dependency.
 - Generated target labels are inserted with `textContent`, not HTML.
 - One versioned workspace is stored in same-origin IndexedDB. It can include tool-supplied HTML or accessibility observations, reviewed metadata, recipes, and evaluation results; callers must not include credentials or secrets in those inputs. Hosted page images are transient and excluded from the record.
+- Cloud presentation sharing is explicit, limited to the controlled demo, capped at 512 KB, and expires after one hour. Its allowlisted projection removes pasted HTML, accessibility snapshots, unknown top-level data, screenshots, browser sessions, and export URLs.
+- Presentation author and viewer capabilities use independent 256-bit random bearer tokens carried in URL fragments and API authorization headers. Only SHA-256 token hashes are stored. The viewer capability cannot update the shared record, and viewer-side tool handlers reject mutations.
 - Restored records are shape-checked before use, restored generated ToolSpecs pass through the normal registry validation, and control-plane name collisions or duplicate tool names fail closed.
-- Reset deletes the browser-local workspace. IndexedDB is not synchronized server-side, and storage failure falls back to the in-memory workflow.
+- Reset deletes the browser-local workspace and publishes a pristine revision when presentation mode is active. Outside explicit presentation mode, IndexedDB is not synchronized server-side, and storage failure falls back to the in-memory workflow.
 - Temporary export URLs and hosted browser sessions are never restored from IndexedDB.
 - Static file paths are normalized and constrained to the public root.
 - Export creation and download require the page's signed capability. Download URLs are bound to their creating page; retained archive bytes are deleted following a successful retrieval.

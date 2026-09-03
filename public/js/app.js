@@ -2,6 +2,7 @@ import { analyzeAgentSnapshot, analyzeControlledDemo, analyzeStaticSource, analy
 import { ToolRegistry, compactRegistryState, executeGeneratedSpec } from './webmcp-runtime.js';
 import { browserMcpSession } from './browser-mcp-session.js';
 import { COLLECTION_AUTHORING_GUIDE } from './mcp-collection.js';
+import { parseSharedWorkspaceLocation, SharedWorkspaceClient } from './shared-workspace.js';
 import { buildAuthoredToolSpecs } from './tool-authoring.js';
 import { createWorkspaceStore } from './workspace-store.js';
 
@@ -13,7 +14,19 @@ const elements = {
   nativeStatus: $('#native-status'),
   storageStatus: $('#storage-status'),
   toolCount: $('#tool-count'),
+  shareButton: $('#share-button'),
   resetButton: $('#reset-button'),
+  sharedWorkspaceBanner: $('#shared-workspace-banner'),
+  sharedWorkspaceTitle: $('#shared-workspace-title'),
+  sharedWorkspaceCopy: $('#shared-workspace-copy'),
+  shareDialog: $('#share-dialog'),
+  createShareButton: $('#create-share-button'),
+  shareError: $('#share-error'),
+  shareResult: $('#share-result'),
+  shareAuthorUrl: $('#share-author-url'),
+  shareViewerUrl: $('#share-viewer-url'),
+  openShareViewer: $('#open-share-viewer'),
+  shareExpiry: $('#share-expiry'),
   urlField: $('#url-field'),
   targetUrl: $('#target-url'),
   useDemoButton: $('#use-demo-button'),
@@ -73,6 +86,15 @@ const HOSTED_BROWSER_GUIDE_CODES = new Set([
   'HOSTED_BROWSER_RATE_LIMITED',
   'HOSTED_BROWSER_RESOURCE_LIMIT',
 ]);
+let sharedWorkspaceLocation = null;
+let sharedWorkspaceLocationError = null;
+try {
+  sharedWorkspaceLocation = parseSharedWorkspaceLocation();
+} catch (error) {
+  sharedWorkspaceLocationError = error instanceof Error ? error.message : String(error);
+}
+const isSharedAuthor = sharedWorkspaceLocation?.role === 'author';
+const isSharedViewer = sharedWorkspaceLocation?.role === 'viewer';
 const PERSISTED_META_MUTATIONS = new Set([
   'meta_analyze_site',
   'meta_create_webmcp',
@@ -81,7 +103,13 @@ const PERSISTED_META_MUTATIONS = new Set([
   'meta_export_webmcp',
 ]);
 const registry = new ToolRegistry();
-const workspaceStore = createWorkspaceStore();
+const workspaceStore = createWorkspaceStore(
+  globalThis.indexedDB,
+  isSharedAuthor ? `shared:${sharedWorkspaceLocation.id}` : 'current',
+);
+const sharedWorkspaceClient = new SharedWorkspaceClient({
+  ensureCapability: () => browserMcpSession.ensureCapability(),
+});
 const workspaceId = (() => {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
   const bytes = new Uint8Array(16);
@@ -120,15 +148,22 @@ const persistence = {
   queue: Promise.resolve(),
 };
 
+const sharing = {
+  revision: -1,
+  error: sharedWorkspaceLocationError,
+  pollTimer: null,
+  polling: false,
+};
+
 function syncPrimaryView({ focus = false } = {}) {
-  const workspaceOpen = location.hash === '#workspace';
+  const workspaceOpen = location.hash === '#workspace' || location.hash.startsWith('#workspace?');
   elements.landingView.hidden = workspaceOpen;
   elements.workspaceApp.hidden = !workspaceOpen;
   document.body.classList.toggle('workspace-open', workspaceOpen);
   document.title = workspaceOpen
     ? 'MetaWebMCP Workspace — WebMCP builds WebMCP'
     : 'MetaWebMCP — WebMCP builds WebMCP';
-  if (workspaceOpen && !state.browserMcp.checked && !state.browserMcp.checking) checkBrowserMcp();
+  if (workspaceOpen && !isSharedViewer && !state.browserMcp.checked && !state.browserMcp.checking) checkBrowserMcp();
 
   if (!focus) {
     if (workspaceOpen) requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
@@ -144,7 +179,9 @@ function syncPrimaryView({ focus = false } = {}) {
 function revealWorkspaceForActivity() {
   if (!elements.workspaceApp.hidden) return;
   const url = new URL(location.href);
-  url.hash = 'workspace';
+  url.hash = sharedWorkspaceLocation
+    ? `workspace?shared=${sharedWorkspaceLocation.id}&role=${sharedWorkspaceLocation.role}&token=${sharedWorkspaceLocation.token}`
+    : 'workspace';
   history.replaceState(null, '', url);
   syncPrimaryView({ focus: true });
 }
@@ -170,7 +207,32 @@ function persistenceState() {
     restored: persistence.restored,
     savedAt: persistence.savedAt,
     ...(persistence.error ? { error: persistence.error } : {}),
+    ...(sharedWorkspaceLocation ? {
+      shared: {
+        id: sharedWorkspaceLocation.id,
+        role: sharedWorkspaceLocation.role,
+        revision: sharing.revision,
+        ...(sharing.error ? { error: sharing.error } : {}),
+      },
+    } : {}),
   };
+}
+
+function renderSharingBanner() {
+  elements.sharedWorkspaceBanner.classList.toggle('hidden', !sharedWorkspaceLocation);
+  if (!sharedWorkspaceLocation) return;
+  elements.sharedWorkspaceTitle.textContent = isSharedViewer ? 'Read-only live mirror' : 'Agent author workspace';
+  if (sharing.error) {
+    elements.sharedWorkspaceCopy.textContent = sharing.error;
+  } else if (sharing.revision < 0) {
+    elements.sharedWorkspaceCopy.textContent = isSharedViewer
+      ? 'Waiting for the first controlled-demo update.'
+      : 'The controlled demo will be synchronized after each change.';
+  } else {
+    elements.sharedWorkspaceCopy.textContent = isSharedViewer
+      ? `Showing shared revision ${sharing.revision}; checking for updates automatically.`
+      : `Shared revision ${sharing.revision} is available to the presenter.`;
+  }
 }
 
 function currentReviewDrafts() {
@@ -254,29 +316,77 @@ function enqueuePersistence(operation) {
   return pending;
 }
 
+function canPublishSharedWorkspace(record) {
+  return record.workspace.sourceKind === 'demo'
+    || (record.workspace.analysis === null && record.workspace.contracts.length === 0);
+}
+
+async function publishSharedWorkspace(record) {
+  if (!isSharedAuthor) return false;
+  if (!canPublishSharedWorkspace(record)) {
+    sharing.error = 'Cloud sharing is limited to the controlled Relay Sessions demo.';
+    renderSharingBanner();
+    return false;
+  }
+  const saved = await sharedWorkspaceClient.save({
+    id: sharedWorkspaceLocation.id,
+    token: sharedWorkspaceLocation.token,
+    workspace: record,
+  });
+  sharing.revision = saved.revision;
+  sharing.error = null;
+  renderSharingBanner();
+  return true;
+}
+
 async function persistWorkspace() {
   if (persistence.timer) clearTimeout(persistence.timer);
   persistence.timer = null;
-  if (!persistence.ready || !persistence.available || persistence.paused) return false;
+  if (!persistence.ready || persistence.paused || isSharedViewer) return false;
   const record = workspaceRecord();
-  setPersistenceStatus('Saving locally…', 'saving');
-  try {
-    await enqueuePersistence(() => workspaceStore.save(record));
-    persistence.savedAt = record.savedAt;
-    persistence.error = null;
-    setPersistenceStatus('Saved locally', 'ready', 'Workspace drafts and recipes are saved only in this browser. Reset removes them.');
-    return true;
-  } catch (error) {
-    persistence.available = false;
-    persistence.error = error instanceof Error ? error.message : String(error);
-    setPersistenceStatus('Local save unavailable', 'unavailable', persistence.error);
-    return false;
-  }
+  setPersistenceStatus(isSharedAuthor ? 'Saving shared…' : 'Saving locally…', 'saving');
+  return enqueuePersistence(async () => {
+    let localSaved = false;
+    let sharedSaved = false;
+    if (persistence.available) {
+      try {
+        await workspaceStore.save(record);
+        localSaved = true;
+        persistence.savedAt = record.savedAt;
+        persistence.error = null;
+      } catch (error) {
+        persistence.available = false;
+        persistence.error = error instanceof Error ? error.message : String(error);
+      }
+    }
+    if (isSharedAuthor) {
+      try {
+        sharedSaved = await publishSharedWorkspace(record);
+      } catch (error) {
+        sharing.error = error instanceof Error ? error.message : String(error);
+        renderSharingBanner();
+      }
+    }
+    if (sharedSaved) {
+      setPersistenceStatus(
+        'Shared live',
+        'ready',
+        persistence.available
+          ? 'This controlled demo is saved locally and mirrored to the expiring presentation workspace.'
+          : 'The presentation workspace is live, but browser-local save is unavailable.',
+      );
+    } else if (localSaved) {
+      setPersistenceStatus('Saved locally', 'ready', 'Workspace drafts and recipes are saved only in this browser. Reset removes them.');
+    } else if (!persistence.available) {
+      setPersistenceStatus('Local save unavailable', 'unavailable', persistence.error || sharing.error || 'Workspace save failed.');
+    }
+    return localSaved || sharedSaved;
+  });
 }
 
 function scheduleWorkspaceSave() {
   persistence.paused = false;
-  if (!persistence.ready || !persistence.available) return;
+  if (!persistence.ready || isSharedViewer || (!persistence.available && !isSharedAuthor)) return;
   if (persistence.timer) clearTimeout(persistence.timer);
   setPersistenceStatus('Saving locally…', 'saving');
   persistence.timer = setTimeout(() => { persistWorkspace(); }, 250);
@@ -288,17 +398,30 @@ async function clearPersistedWorkspace() {
   persistence.restored = false;
   persistence.savedAt = null;
   persistence.paused = true;
-  if (!persistence.available) return false;
+  if (isSharedViewer) return false;
+  let localCleared = false;
   try {
-    await enqueuePersistence(() => workspaceStore.clear());
-    setPersistenceStatus('Local workspace cleared', 'ready', 'The browser-local workspace has been removed. New changes will be saved automatically.');
-    return true;
+    if (persistence.available) {
+      await enqueuePersistence(() => workspaceStore.clear());
+      localCleared = true;
+    }
   } catch (error) {
     persistence.available = false;
     persistence.error = error instanceof Error ? error.message : String(error);
-    setPersistenceStatus('Local save unavailable', 'unavailable', persistence.error);
-    return false;
   }
+  let sharedCleared = false;
+  if (isSharedAuthor) {
+    try {
+      sharedCleared = await publishSharedWorkspace(workspaceRecord());
+    } catch (error) {
+      sharing.error = error instanceof Error ? error.message : String(error);
+      renderSharingBanner();
+    }
+  }
+  if (sharedCleared) setPersistenceStatus('Shared workspace reset', 'ready', 'The presenter now sees the reset workspace.');
+  else if (localCleared) setPersistenceStatus('Local workspace cleared', 'ready', 'The browser-local workspace has been removed. New changes will be saved automatically.');
+  else setPersistenceStatus('Workspace clear unavailable', 'unavailable', persistence.error || sharing.error || 'Workspace clear failed.');
+  return localCleared || sharedCleared;
 }
 
 function nowLabel() {
@@ -556,6 +679,7 @@ function renderCapabilities() {
     checkbox.type = 'checkbox';
     checkbox.value = capability.id;
     checkbox.checked = state.selectedCapabilityIds.has(capability.id);
+    checkbox.disabled = isSharedViewer;
     checkbox.setAttribute('aria-label', `Include ${capability.name}`);
     checkbox.addEventListener('change', () => {
       if (checkbox.checked) state.selectedCapabilityIds.add(capability.id);
@@ -601,6 +725,7 @@ function renderCapabilities() {
     name.maxLength = 64;
     name.dataset.reviewName = '';
     name.autocomplete = 'off';
+    name.readOnly = isSharedViewer;
     const reviewedDescription = document.createElement('textarea');
     reviewedDescription.value = capability.description;
     reviewedDescription.required = true;
@@ -608,6 +733,7 @@ function renderCapabilities() {
     reviewedDescription.maxLength = 600;
     reviewedDescription.rows = 2;
     reviewedDescription.dataset.reviewDescription = '';
+    reviewedDescription.readOnly = isSharedViewer;
     const metadata = document.createElement('div');
     metadata.className = 'metadata-review';
     metadata.append(reviewField('Reviewed tool name', name), reviewField('Reviewed description', reviewedDescription));
@@ -650,32 +776,29 @@ function restoredPhase() {
   return 0;
 }
 
-async function restoreWorkspace() {
-  let record;
-  try {
-    record = await workspaceStore.load();
-  } catch (error) {
-    persistence.ready = true;
-    persistence.available = false;
-    persistence.error = error instanceof Error ? error.message : String(error);
-    setPersistenceStatus('Local save unavailable', 'unavailable', persistence.error);
-    return false;
-  }
+async function applyControlledDemoState() {
+  if (state.sourceKind !== 'demo' || !state.latestTargetState) return;
+  const restore = () => {
+    const apply = elements.targetFrame.contentWindow?.demoApp?.restore;
+    if (typeof apply !== 'function') return false;
+    apply(state.latestTargetState);
+    return true;
+  };
+  if (restore()) return;
+  await new Promise((resolve) => {
+    const timeout = setTimeout(resolve, 3000);
+    elements.targetFrame.addEventListener('load', () => {
+      clearTimeout(timeout);
+      restore();
+      resolve();
+    }, { once: true });
+  });
+}
 
-  persistence.ready = true;
-  if (!record) {
-    setPersistenceStatus('Local autosave', 'ready', 'Workspace drafts and recipes will be saved only in this browser.');
-    return false;
-  }
-
-  if (!validWorkspaceRecord(record)) {
-    await workspaceStore.clear().catch(() => {});
-    setPersistenceStatus('Local workspace reset', 'ready', 'An incompatible browser-local workspace was removed.');
-    addTrace('Saved workspace ignored', 'The browser-local record was incompatible or malformed, so MetaWebMCP started clean.', 'warning');
-    return false;
-  }
-
+async function applyWorkspaceRecord(record, { readOnly = false } = {}) {
+  if (!validWorkspaceRecord(record)) throw new Error('Shared workspace record is incompatible or malformed.');
   const saved = record.workspace;
+  registry.unregisterOrigin(GENERATED_ORIGIN);
   applySavedDraft(record.draft);
   state.mode = saved.mode;
   state.sourceKind = saved.sourceKind;
@@ -703,13 +826,14 @@ async function restoreWorkspace() {
   const hostedSessionCannotResume = saved.activated && state.analysis?.source?.kind === 'browser_mcp';
   if (saved.activated && state.contracts.length && !hostedSessionCannotResume) {
     try {
-      await registerGeneratedContracts();
+      await registerGeneratedContracts({ readOnly });
       state.activated = true;
       state.verificationComplete = Boolean(saved.verificationComplete);
     } catch (error) {
       registry.unregisterOrigin(GENERATED_ORIGIN);
       state.selectedToolName = null;
-      addTrace('Generated tools need review', error instanceof Error ? error.message : String(error), 'warning');
+      if (readOnly) sharing.error = error instanceof Error ? error.message : String(error);
+      else addTrace('Generated tools need review', error instanceof Error ? error.message : String(error), 'warning');
     }
   }
 
@@ -735,21 +859,106 @@ async function restoreWorkspace() {
 
   persistence.restored = true;
   persistence.savedAt = record.savedAt;
+  await applyControlledDemoState();
+  return true;
+}
+
+async function restoreLocalWorkspace() {
+  let record;
+  try {
+    record = await workspaceStore.load();
+  } catch (error) {
+    persistence.available = false;
+    persistence.error = error instanceof Error ? error.message : String(error);
+    setPersistenceStatus('Local save unavailable', 'unavailable', persistence.error);
+    return false;
+  }
+  if (!record) return false;
+  if (!validWorkspaceRecord(record)) {
+    await workspaceStore.clear().catch(() => {});
+    setPersistenceStatus('Local workspace reset', 'ready', 'An incompatible browser-local workspace was removed.');
+    addTrace('Saved workspace ignored', 'The browser-local record was incompatible or malformed, so MetaWebMCP started clean.', 'warning');
+    return false;
+  }
+  await applyWorkspaceRecord(record);
   setPersistenceStatus('Restored locally', 'ready', 'This workspace was restored from this browser. Reset removes the saved copy.');
   addTrace(
     'Browser-local workspace restored',
-    saved.hadTemporaryExport
+    record.workspace.hadTemporaryExport
       ? 'Analysis and recipes were restored. The expired, single-use export link was not; export again when needed.'
       : 'Analysis, review state, and generated recipes were restored from this browser.',
   );
   return true;
 }
 
+async function loadSharedWorkspace(afterRevision = -1) {
+  return sharedWorkspaceClient.load({
+    id: sharedWorkspaceLocation.id,
+    token: sharedWorkspaceLocation.token,
+    afterRevision,
+  });
+}
+
+async function applySharedWorkspacePayload(payload) {
+  if (!payload.changed) return false;
+  sharing.revision = payload.revision;
+  sharing.error = null;
+  if (payload.workspace) await applyWorkspaceRecord(payload.workspace, { readOnly: isSharedViewer });
+  renderSharingBanner();
+  return Boolean(payload.workspace);
+}
+
+async function restoreWorkspace() {
+  persistence.ready = true;
+  renderSharingBanner();
+  if (sharedWorkspaceLocation) {
+    try {
+      const payload = await loadSharedWorkspace();
+      const restored = await applySharedWorkspacePayload(payload);
+      if (isSharedViewer) {
+        persistence.available = false;
+        setPersistenceStatus(
+          restored ? 'Watching shared' : 'Waiting for author',
+          restored ? 'ready' : 'saving',
+          'This read-only browser is loading revisions from the expiring presentation workspace.',
+        );
+        return restored;
+      }
+      if (restored) {
+        setPersistenceStatus('Restored shared', 'ready', 'This author page restored the latest cloud revision and will continue sharing changes.');
+        return true;
+      }
+    } catch (error) {
+      sharing.error = error instanceof Error ? error.message : String(error);
+      renderSharingBanner();
+      if (isSharedViewer) {
+        persistence.available = false;
+        setPersistenceStatus('Shared load failed', 'unavailable', sharing.error);
+        return false;
+      }
+    }
+  }
+
+  const restored = await restoreLocalWorkspace();
+  if (!restored && persistence.available) {
+    setPersistenceStatus(
+      isSharedAuthor ? 'Shared author ready' : 'Local autosave',
+      'ready',
+      isSharedAuthor
+        ? 'Select the controlled sample; changes will be saved locally and to the presentation workspace.'
+        : 'Workspace drafts and recipes will be saved only in this browser.',
+    );
+  }
+  return restored;
+}
+
 function renderActions() {
-  elements.activateButton.disabled = state.contracts.length === 0;
-  elements.testButton.disabled = !state.activated;
-  elements.exportButton.disabled = state.contracts.length === 0;
-  elements.createButton.disabled = !state.analysis?.capabilities?.length;
+  elements.activateButton.disabled = isSharedViewer || state.contracts.length === 0;
+  elements.testButton.disabled = isSharedViewer || !state.activated;
+  elements.exportButton.disabled = isSharedViewer || state.contracts.length === 0;
+  elements.createButton.disabled = isSharedViewer || !state.analysis?.capabilities?.length;
+  elements.selectAllButton.disabled = isSharedViewer;
+  elements.labRunButton.disabled = isSharedViewer || !state.selectedToolName;
 }
 
 function renderRegistry() {
@@ -780,7 +989,15 @@ function renderRegistry() {
   }
 
   const nativeCount = tools.filter((tool) => tool.nativeRegistered).length;
-  if (registry.nativeSupported && nativeCount === tools.length && tools.length) {
+  if (isSharedViewer && registry.nativeSupported && nativeCount === tools.length && tools.length) {
+    elements.nativeStatus.className = 'status-pill native';
+    elements.nativeStatus.innerHTML = '<i></i>WebMCP mirror';
+    elements.clientStatusCopy.textContent = `${nativeCount} tools are registered through this browser’s native WebMCP client with read-only presentation handlers.`;
+  } else if (isSharedViewer) {
+    elements.nativeStatus.className = 'status-pill preview';
+    elements.nativeStatus.innerHTML = '<i></i>Read-only mirror';
+    elements.clientStatusCopy.textContent = 'The numbered controls expose the shared tools for inspection, while all workspace mutations remain disabled.';
+  } else if (registry.nativeSupported && nativeCount === tools.length && tools.length) {
     elements.nativeStatus.className = 'status-pill native';
     elements.nativeStatus.innerHTML = '<i></i>WebMCP active';
     elements.clientStatusCopy.textContent = `${nativeCount} tools are registered through this browser’s native WebMCP client.`;
@@ -993,7 +1210,7 @@ function getTargetDocument() {
   return state.analysis?.source?.kind === 'demo' ? elements.targetFrame.contentDocument : null;
 }
 
-async function registerGeneratedContracts() {
+async function registerGeneratedContracts({ readOnly = false } = {}) {
   registry.unregisterOrigin(GENERATED_ORIGIN);
   const names = new Set();
   try {
@@ -1003,6 +1220,7 @@ async function registerGeneratedContracts() {
       names.add(spec.name);
       await registry.register(spec, async (input, context) => {
         revealWorkspaceForActivity();
+        if (readOnly) throw new Error('This presentation viewer is read-only. Run generated tools in the author workspace.');
         const result = await executeGeneratedSpec(spec, input, {
           ...context,
           getTargetDocument,
@@ -1406,6 +1624,9 @@ async function registerMetaTools() {
     META_TOOL_NAMES.add(spec.name);
     await registry.register(spec, async (input, context) => {
       if (spec.name !== 'meta_get_state') revealWorkspaceForActivity();
+      if (isSharedViewer && spec.name !== 'meta_get_state') {
+        throw new Error('This presentation viewer is read-only. Run builder tools in the author workspace.');
+      }
       const result = await execute(input, context);
       if (spec.name === 'meta_reset_workspace') await clearPersistedWorkspace();
       else if (PERSISTED_META_MUTATIONS.has(spec.name)) {
@@ -1442,9 +1663,101 @@ async function checkBrowserMcp() {
   }
 }
 
+function configureSharedWorkspaceMode() {
+  const shared = Boolean(sharedWorkspaceLocation);
+  elements.shareButton.classList.toggle('hidden', shared);
+  renderSharingBanner();
+  if (!isSharedViewer) return;
+  document.body.classList.add('shared-viewer');
+  elements.resetButton.disabled = true;
+  elements.useDemoButton.disabled = true;
+  elements.targetUrl.readOnly = true;
+  elements.goal.readOnly = true;
+  elements.analyzeButton.disabled = true;
+  elements.labInput.readOnly = true;
+  elements.stageOpenTarget.classList.add('hidden');
+  elements.targetFrame.inert = true;
+  elements.targetFrame.tabIndex = -1;
+  elements.targetFrame.setAttribute('aria-disabled', 'true');
+  renderActions();
+}
+
+function scheduleSharedViewerPoll(delay = 800) {
+  if (!isSharedViewer) return;
+  if (sharing.pollTimer) clearTimeout(sharing.pollTimer);
+  sharing.pollTimer = setTimeout(pollSharedWorkspace, delay);
+}
+
+async function pollSharedWorkspace() {
+  if (!isSharedViewer || sharing.polling) return;
+  sharing.polling = true;
+  try {
+    const payload = await loadSharedWorkspace(sharing.revision);
+    const recovered = Boolean(sharing.error);
+    sharing.error = null;
+    if (payload.changed) {
+      await applySharedWorkspacePayload(payload);
+      setPersistenceStatus(
+        payload.workspace ? 'Watching shared' : 'Waiting for author',
+        payload.workspace ? 'ready' : 'saving',
+        'This read-only browser is loading revisions from the expiring presentation workspace.',
+      );
+      configureSharedWorkspaceMode();
+    } else if (recovered) {
+      renderSharingBanner();
+      setPersistenceStatus(
+        sharing.revision > 0 ? 'Watching shared' : 'Waiting for author',
+        sharing.revision > 0 ? 'ready' : 'saving',
+        'The shared presentation connection recovered and is checking for updates.',
+      );
+    }
+  } catch (error) {
+    sharing.error = error instanceof Error ? error.message : String(error);
+    renderSharingBanner();
+    setPersistenceStatus('Shared load failed', 'unavailable', sharing.error);
+  } finally {
+    sharing.polling = false;
+    scheduleSharedViewerPoll(sharing.error ? 2500 : 800);
+  }
+}
+
+function showShareDialog() {
+  elements.shareError.classList.add('hidden');
+  elements.shareDialog.showModal();
+}
+
+async function createSharedPresentation() {
+  elements.createShareButton.disabled = true;
+  elements.shareError.classList.add('hidden');
+  try {
+    const created = await sharedWorkspaceClient.create();
+    elements.shareAuthorUrl.value = created.links.authorUrl;
+    elements.shareViewerUrl.value = created.links.viewerUrl;
+    elements.openShareViewer.href = created.links.viewerUrl;
+    elements.shareExpiry.textContent = `Expires ${new Date(created.expiresAt).toLocaleString()}.`;
+    elements.shareResult.classList.remove('hidden');
+  } catch (error) {
+    elements.shareError.textContent = error instanceof Error ? error.message : String(error);
+    elements.shareError.classList.remove('hidden');
+  } finally {
+    elements.createShareButton.disabled = false;
+  }
+}
+
+async function copySharedLink(input) {
+  const value = input.value;
+  try {
+    await navigator.clipboard.writeText(value);
+  } catch {
+    input.focus();
+    input.select();
+    document.execCommand('copy');
+  }
+}
+
 function bindEvents() {
   window.addEventListener('hashchange', () => {
-    const viewChanged = ['#workspace', '#home', ''].includes(location.hash);
+    const viewChanged = location.hash.startsWith('#workspace') || ['#home', ''].includes(location.hash);
     syncPrimaryView({ focus: viewChanged });
   });
   document.addEventListener('click', (event) => {
@@ -1461,6 +1774,14 @@ function bindEvents() {
     const viewChanged = ['#workspace', '#home'].includes(targetHash);
     syncPrimaryView({ focus: viewChanged });
     if (!viewChanged) document.querySelector(targetHash)?.scrollIntoView();
+  });
+  elements.shareButton.addEventListener('click', showShareDialog);
+  elements.createShareButton.addEventListener('click', createSharedPresentation);
+  elements.shareDialog.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-copy-share]');
+    if (!button) return;
+    const input = document.getElementById(button.dataset.copyShare);
+    if (input) copySharedLink(input);
   });
   elements.useDemoButton.addEventListener('click', async () => {
     await browserMcpSession.reset(workspaceId).catch(() => {});
@@ -1515,7 +1836,7 @@ function bindEvents() {
     }
   });
   window.addEventListener('message', (event) => {
-    if (event.origin !== location.origin || event.data?.type !== 'relay-state') return;
+    if (isSharedViewer || event.origin !== location.origin || event.data?.type !== 'relay-state') return;
     state.latestTargetState = clone(event.data.state);
     scheduleWorkspaceSave();
   });
@@ -1525,6 +1846,7 @@ function bindEvents() {
   elements.capabilityList.addEventListener('input', scheduleWorkspaceSave);
   elements.capabilityList.addEventListener('change', scheduleWorkspaceSave);
   window.addEventListener('pagehide', () => {
+    if (sharing.pollTimer) clearTimeout(sharing.pollTimer);
     persistWorkspace();
     browserMcpSession.closeOnPageHide();
   });
@@ -1546,13 +1868,16 @@ async function initialize() {
   syncPrimaryView();
   bindEvents();
   renderSourceControls();
-  setPersistenceStatus('Checking local save…', 'saving');
+  configureSharedWorkspaceMode();
+  setPersistenceStatus(sharedWorkspaceLocation ? 'Checking shared…' : 'Checking local save…', 'saving');
   addTrace('MetaWebMCP ready', 'Enter a public URL to inspect it here, or use the visible sample. The permanent control plane is registering now.');
+  if (sharedWorkspaceLocationError) addTrace('Shared workspace link ignored', sharedWorkspaceLocationError, 'warning');
   registry.addEventListener('registrychange', renderRegistry);
   await registerMetaTools();
   const restored = await restoreWorkspace();
   renderRegistry();
   renderActions();
+  configureSharedWorkspaceMode();
   if (!restored) setPhase(0);
   window.MetaWebMCP = Object.freeze({
     registry,
@@ -1560,6 +1885,7 @@ async function initialize() {
     execute: (name, input = {}) => registry.execute(name, input),
   });
   window.dispatchEvent(new CustomEvent('metawebmcp-ready'));
+  if (isSharedViewer) scheduleSharedViewerPoll();
 }
 
 initialize().catch((error) => {

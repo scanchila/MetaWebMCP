@@ -170,6 +170,7 @@ The controlled fallback needs no account, credentials, model API, or external se
 - Reusable collection parsers, filters, computed fields, stable sorting, deduplication, bounded lazy-page capture, pagination, and ordered stopping proofs.
 - Agent/API inputs for URL, HTML, and caller-controlled accessibility observations without exposing raw snapshot entry in the human interface.
 - Browser-local IndexedDB autosave for drafts, analysis, reviewed contracts, recipes, evaluation state, and active generated tools.
+- Expiring tokenized presentation workspaces that mirror the controlled demo from an agent browser into a separate read-only browser.
 - A Streamable HTTP client for the official Playwright MCP server. The Cloudflare deployment keeps one isolated target session in the open page; the local Node service supports an isolated server-side equivalent when configured.
 - SSRF defenses, an allowlisted browser recipe executor, risk annotations, and disabled consequential actions.
 - Node unit tests and a Chromium end-to-end test that drives the full recursive sequence through a WebMCP-shaped browser mock.
@@ -283,11 +284,35 @@ application functions as they harden the integration.
 
 ## Browser-local persistence
 
-MetaWebMCP automatically saves one workspace in IndexedDB for its current origin and browser profile. A reload restores input drafts, tool-supplied HTML or accessibility observations, analysis, capability selection and review drafts, generated ToolSpecs and recipes, evaluation history, trace history, and active generated tools. Nothing is synchronized between browsers or sent to a project database. Hosted browser images and sessions are intentionally transient; reopen the target to resume a live visual session.
+MetaWebMCP automatically saves one workspace in IndexedDB for its current origin and browser profile. A reload restores input drafts, tool-supplied HTML or accessibility observations, analysis, capability selection and review drafts, generated ToolSpecs and recipes, evaluation history, trace history, and active generated tools. Normal workspaces are not synchronized between browsers or sent to a project database. Hosted browser images and sessions are intentionally transient; reopen the target to resume a live visual session.
 
 Temporary export download links are deliberately not restored because their server-side archives are single-use and expire within twenty minutes. Hosted Browser MCP sessions are also not resumed; their saved contracts remain visible, but the target must be analyzed again before execution. **Reset** removes the browser-local record as well as the active generated tools. Clearing site data in the browser has the same effect. If IndexedDB is unavailable, the studio remains functional with in-memory state only.
 
 Snapshots and pasted HTML can contain sensitive visible text. Do not supply credentials or secrets; browser-local persistence is accessible to scripts running on the same origin.
+
+### Tokenized presentation handoff
+
+Choose **Share demo** from the workspace to create an expiring presentation
+session. The dialog returns two capability URLs:
+
+1. Give the author URL to the agent that will operate MetaWebMCP.
+2. Open the viewer URL in the browser used for the recording or presentation.
+3. Run the controlled Relay Sessions flow in the author browser. The viewer
+   loads new revisions automatically and shows the generated registry and
+   target state without gaining mutation authority.
+
+The two random bearer tokens are kept in URL fragments, so they are not sent in
+page requests or referrers. Only their SHA-256 hashes are retained server-side.
+The author token may read and update one workspace; the viewer token is
+read-only. Sessions expire after one hour, and each update is schema-checked and
+limited to 512 KB.
+
+Cloud sharing deliberately accepts only a pristine workspace or the controlled
+demo. The shared projection removes pasted HTML, accessibility snapshots, and
+unknown top-level fields. Browser MCP sessions, page images, and temporary
+export URLs are never transferred. Editable goals and reviewed tool metadata
+are synchronized, so do not place credentials or secrets in them. IndexedDB
+remains the author browser's local recovery path.
 
 Start the application, isolated browser, and guarded egress proxy with Docker Compose:
 
@@ -317,6 +342,9 @@ Browser operations also require a short-lived, signed, HttpOnly page capability,
 | `MAX_PENDING_EXPORT_BYTES` | `16000000` | Maximum total bytes retained across pending Node downloads |
 | `MAX_EXPORT_ARCHIVE_BYTES` | `3000000` | Maximum generated ZIP size accepted by the Node runtime |
 | `EXPORT_RATE_LIMIT_PER_MINUTE` | `12` | Process-wide Node export generation limit |
+| `MAX_SHARED_WORKSPACES` | `32` | Maximum concurrent expiring presentation workspaces in the Node runtime |
+| `SHARED_WORKSPACE_RATE_LIMIT_PER_MINUTE` | `12` | Process-wide Node presentation-session creation limit |
+| `SHARED_WORKSPACE_TTL_MS` | `3600000` | Presentation workspace lifetime from creation, capped at 24 hours |
 | `ALLOW_PRIVATE_TARGETS` | `0` | Local development override; never enable on a public deployment |
 | `BROWSER_ALLOWED_ORIGINS` | empty | Optional comma-separated initial target origin allowlist |
 
@@ -344,7 +372,8 @@ The end-to-end test launches the included server and an available Chromium build
 9. The human workspace exposes a URL-first website inspector rather than snapshot/HTML paste controls, and shows hosted page images plus the accessibility model in switchable views.
 10. A hosted generated-tool execution refreshes both the visible page image and accessibility result.
 11. A reviewed caller-browser workspace, including its generated execution plan, survives a real page reload; temporary export links do not, and Reset removes the saved record.
-12. The completed workspace remains usable from desktop down to a 390 px mobile viewport without horizontal overflow.
+12. Separate browser profiles receive controlled-demo registry and target-state updates through distinct read/write tokens, while the viewer remains read-only.
+13. The completed workspace remains usable from desktop down to a 390 px mobile viewport without horizontal overflow.
 
 The unit/integration suite verifies caller-supplied observation analysis, recipe and collection handoff, collection parsing and navigation bounds, and both hosted transport layouts: isolated server-side workspaces and one page-owned MCP session from analysis through generated-tool execution and visual capture.
 
@@ -387,6 +416,8 @@ public/js/mcp-recipe.js      shared allowlisted recipe interpreter
 public/js/mcp-collection.js  shared bounded collection interpreter and parsers
 public/js/tool-authoring.js  managing-agent ToolSpec validation and grounding
 public/js/workspace-store.js browser-local IndexedDB workspace record
+public/js/shared-workspace.js tokenized author/viewer transport
+lib/shared-workspace.mjs     shared record projection, authorization, and revision rules
 lib/security.mjs             URL, DNS, redirect, and network validation
 lib/zip.mjs                  dependency-free ZIP writer
 public/js/app.js             meta-tool control plane and UI state machine

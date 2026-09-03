@@ -24,9 +24,10 @@ Set `MCP_CAPABILITY_SECRET` to a randomly generated value of at least 32 bytes. 
 ## Runtime layout
 
 - Cloudflare Static Assets serves `public/` through the Worker so document security headers apply on every route.
-- The Worker handles `/health`, analysis, export, and expiring ZIP downloads.
+- The Worker handles `/health`, analysis, export, expiring ZIP downloads, and tokenized presentation workspaces.
 - `PlaywrightMCP` is a Durable Object backed by the Browser Run binding.
 - `ExportStore` is a SQLite-backed Durable Object that retains bounded, expiring ZIP archives with atomic owner claims.
+- `SharedWorkspaceStore` is a SQLite-backed Durable Object per presentation workspace. It retains one sanitized, revisioned controlled-demo snapshot for one hour and enforces separate author/viewer capability hashes.
 - The page uses the package's SSE endpoint so one control connection remains open for the life of the browser session.
 - The showcase sets `HOSTED_BROWSER_ENABLED=1` for the in-site viewer. Set it to `0` when a deployment does not have suitable Browser Run capacity and abuse monitoring; the controlled sample and tool-only observation inputs continue to work.
 - The showcase selects Chromium with `HOSTED_BROWSER_ENGINE=chromium`. Kitesurf remains available as an opt-in beta engine, but deployments should test target compatibility before selecting `HOSTED_BROWSER_ENGINE=kitesurf`.
@@ -34,6 +35,7 @@ Set `MCP_CAPABILITY_SECRET` to a randomly generated value of at least 32 bytes. 
 - Browser HTTP traffic is intercepted and fulfilled through the Worker's public-Internet `fetch()` path with manual redirects, a 20-second per-request deadline, a 2 MB request cap, and an 8 MB response cap. Worker contexts, service workers, and direct socket APIs are disabled rather than allowed to bypass that route.
 - Anonymous HTML and URL analysis is limited to 30 requests per source IP per minute. URL fetches share one 12-second deadline across redirects, and Worker fetches use public Internet routing rather than zone-origin routing.
 - Export creation and download require that same page capability. Creation has a separate limit of twelve requests per source IP per minute. The shared store retains at most eight archives and 16 MB, with a fair-share cap of two archives and 6 MB per keyed source. It rejects archives over 3 MB, expires them within twenty minutes, and atomically deletes each archive after its owner retrieves it.
+- Presentation creation requires a same-origin page capability and is limited to twelve requests per source IP per minute. Reads and writes have a separate 240-request limit and require the corresponding 256-bit bearer capability; raw tokens remain in URL fragments and are never stored by the Durable Object.
 - Generated recipes still pass through MetaWebMCP's narrow tool allowlist; the raw browser tool surface is not registered with WebMCP.
 
 ## Compatibility pins

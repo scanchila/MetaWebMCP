@@ -108,6 +108,7 @@ def build_browser_sources() -> tuple[str, str, str, str]:
     runtime_url = browser_module_url(runtime_source)
     analyzer_url = browser_module_url(analyzer_source)
     workspace_store_url = browser_module_url((ROOT / "public/js/workspace-store.js").read_text())
+    shared_workspace_url = browser_module_url((ROOT / "public/js/shared-workspace.js").read_text())
     app_source = (ROOT / "public/js/app.js").read_text()
     app_source = app_source.replace("'./demo-analyzer.js'", json.dumps(analyzer_url))
     app_source = app_source.replace("'./webmcp-runtime.js'", json.dumps(runtime_url))
@@ -115,6 +116,7 @@ def build_browser_sources() -> tuple[str, str, str, str]:
     app_source = app_source.replace("'./mcp-collection.js'", json.dumps(collection_url))
     app_source = app_source.replace("'./tool-authoring.js'", json.dumps(authoring_url))
     app_source = app_source.replace("'./workspace-store.js'", json.dumps(workspace_store_url))
+    app_source = app_source.replace("'./shared-workspace.js'", json.dumps(shared_workspace_url))
     return index_html, (ROOT / "public/styles.css").read_text(), demo_html, app_source
 
 
@@ -481,6 +483,106 @@ def main() -> int:
                 ) == 7
                 unavailable_storage_page.close()
                 result["checks"].append("workspace remains usable when IndexedDB is unavailable")
+
+                progress("testing tokenized cross-browser workspace handoff")
+                share_setup_page = context.new_page()
+                share_setup_page.goto(f"{base_url}/#workspace", wait_until="domcontentloaded")
+                share_setup_page.wait_for_function("window.MetaWebMCP")
+                share_setup_page.locator("#share-button").click()
+                expect(share_setup_page.locator("#share-dialog")).to_be_visible()
+                share_setup_page.locator("#create-share-button").click()
+                expect(share_setup_page.locator("#share-result")).to_be_visible()
+                author_url = share_setup_page.locator("#share-author-url").input_value()
+                viewer_url = share_setup_page.locator("#share-viewer-url").input_value()
+                assert "#workspace?shared=" in author_url
+                assert "&role=author&token=" in author_url
+                assert "&role=viewer&token=" in viewer_url
+                assert "token=" not in author_url.split("#", 1)[0]
+                assert "token=" not in viewer_url.split("#", 1)[0]
+                share_setup_page.close()
+
+                author_context = browser.new_context(viewport={"width": 1440, "height": 900})
+                viewer_context = browser.new_context(viewport={"width": 1440, "height": 900})
+                try:
+                    author_page = author_context.new_page()
+                    viewer_page = viewer_context.new_page()
+                    author_page.on(
+                        "console",
+                        lambda message: console_errors.append(f"shared author: {message.text}")
+                        if message.type == "error"
+                        else None,
+                    )
+                    viewer_page.on(
+                        "console",
+                        lambda message: console_errors.append(f"shared viewer: {message.text}")
+                        if message.type == "error"
+                        else None,
+                    )
+                    author_page.goto(author_url, wait_until="domcontentloaded")
+                    viewer_page.goto(viewer_url, wait_until="domcontentloaded")
+                    author_page.wait_for_function("window.MetaWebMCP")
+                    viewer_page.wait_for_function("window.MetaWebMCP")
+                    expect(author_page.locator("#shared-workspace-title")).to_have_text(
+                        "Agent author workspace"
+                    )
+                    expect(viewer_page.locator("#shared-workspace-title")).to_have_text(
+                        "Read-only live mirror"
+                    )
+                    expect(viewer_page.locator("#reset-button")).to_be_disabled()
+                    expect(viewer_page.locator("#target-frame")).to_have_attribute(
+                        "tabindex", "-1"
+                    )
+
+                    author_page.evaluate(
+                        """async () => {
+                          await window.MetaWebMCP.execute('meta_analyze_site', {
+                            source: 'demo',
+                            goal: 'Find sessions and build an itinerary.'
+                          });
+                          await window.MetaWebMCP.execute('meta_create_webmcp', {});
+                          await window.MetaWebMCP.execute('meta_activate_webmcp', {});
+                        }"""
+                    )
+                    expect(viewer_page.locator("#generated-tool-count")).to_have_text(
+                        "4", timeout=12_000
+                    )
+                    expect(viewer_page.locator("#tool-count")).to_have_text("11 tools")
+                    assert viewer_page.evaluate(
+                        "window.MetaWebMCP.getState().persistence.shared.role"
+                    ) == "viewer"
+                    read_only_error = viewer_page.evaluate(
+                        """async () => {
+                          try {
+                            await window.MetaWebMCP.execute('add_session_to_itinerary', {
+                              item_id: 'agent-evals-that-catch-regressions'
+                            });
+                            return '';
+                          } catch (error) {
+                            return String(error.message || error);
+                          }
+                        }"""
+                    )
+                    assert "read-only" in read_only_error
+
+                    author_page.evaluate(
+                        """async () => window.MetaWebMCP.execute('add_session_to_itinerary', {
+                          item_id: 'agent-evals-that-catch-regressions'
+                        })"""
+                    )
+                    expect(
+                        viewer_page.frame_locator("#target-frame").locator("#itinerary-status")
+                    ).to_have_text(re.compile(r"1 session · 0 conflicts"), timeout=12_000)
+                    expect(
+                        viewer_page.frame_locator("#target-frame").locator(
+                            '[data-itinerary-id="agent-evals-that-catch-regressions"]'
+                        )
+                    ).to_be_visible()
+                finally:
+                    author_context.close()
+                    viewer_context.close()
+                result["checks"].append(
+                    "separate browser profiles share generated tools and controlled target state through read/write tokens while the viewer remains read-only"
+                )
 
                 page = context.new_page()
                 page.set_default_timeout(12_000)
