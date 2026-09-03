@@ -1,7 +1,7 @@
 {
-  "capturedAt": "2026-09-03T00:42:03.940232Z",
+  "capturedAt": "2026-09-03T02:11:12.002792Z",
   "deployment": "https://metawebmcp.neuryta.com",
-  "deploymentVersion": "36b55862-be1d-45e2-a345-81ca2cf7f932",
+  "deploymentVersion": "98e48700-b5e5-4e7e-94f8-538a2b528947",
   "runtime": "Cloudflare Browser Run with Playwright MCP",
   "entrypoint": "native document.modelContext",
   "feature": "WebMCPTesting",
@@ -31,12 +31,14 @@
               "controls": 249,
               "buttons": 5,
               "inputs": 1,
-              "candidates": 5
+              "candidates": 5,
+              "discoveredCandidates": 5,
+              "omittedCandidates": 0
             },
             "warnings": [],
             "runtime": {
               "transport": "page",
-              "availableToolCount": 15,
+              "availableToolCount": 8,
               "sessionEstablished": true,
               "sessionReused": true
             },
@@ -165,7 +167,7 @@
           }
         }
       ],
-      "capturedAt": "2026-09-03T00:42:21.307163Z",
+      "capturedAt": "2026-09-03T02:11:38.556878Z",
       "postconditions": {
         "search:WebMCP": true
       },
@@ -175,7 +177,7 @@
         "stageCount": 1
       },
       "workspaceScreenshot": "wikipedia-search-workspace.png",
-      "workspaceScreenshotSha256": "e46ba968c0524d248746f6d74af9c9d53b309332cc34aaaeff4a310d0e212a4d",
+      "workspaceScreenshotSha256": "1e165745c3b476a84e0fc6db4f6de4249b2a63b619e56620d9ad6f267bd878ee",
       "targetScreenshot": "wikipedia-search-target.png",
       "targetScreenshotSha256": "25580a0a4cbe227dac5aa372d70e2844a7c86a115de082e4b7b2cdf3f88be995",
       "consoleErrors": []
@@ -196,12 +198,14 @@
               "controls": 3,
               "buttons": 1,
               "inputs": 2,
-              "candidates": 1
+              "candidates": 1,
+              "discoveredCandidates": 1,
+              "omittedCandidates": 0
             },
             "warnings": [],
             "runtime": {
               "transport": "page",
-              "availableToolCount": 15,
+              "availableToolCount": 8,
               "sessionEstablished": true,
               "sessionReused": true
             },
@@ -316,12 +320,14 @@
               "controls": 28,
               "buttons": 8,
               "inputs": 1,
-              "candidates": 3
+              "candidates": 3,
+              "discoveredCandidates": 3,
+              "omittedCandidates": 0
             },
             "warnings": [],
             "runtime": {
               "transport": "page",
-              "availableToolCount": 15,
+              "availableToolCount": 8,
               "sessionEstablished": true,
               "sessionReused": true
             },
@@ -433,8 +439,8 @@
           "export": {
             "fileName": "saucedemo-cart-webmcp.zip",
             "fileCount": 11,
-            "bytes": 29658,
-            "archiveSha256": "af8c75d2474f7344deb67229138174be5e7499d5d65d7688cff391c14b53c5df",
+            "bytes": 32293,
+            "archiveSha256": "147146ad1cbb74f225f5a030984be1cfe9502ccb0b630506a6cae1a0ebff99e3",
             "directRegisterTool": true,
             "unixFileMode": "0644",
             "toolNames": [
@@ -447,7 +453,7 @@
           }
         }
       ],
-      "capturedAt": "2026-09-03T00:44:44.847302Z",
+      "capturedAt": "2026-09-03T02:12:05.647338Z",
       "postconditions": {
         "login:Products": true,
         "add_to_cart:Sauce Labs Backpack": true,
@@ -459,7 +465,7 @@
         "stageCount": 2
       },
       "workspaceScreenshot": "saucedemo-cart-workspace.png",
-      "workspaceScreenshotSha256": "c41ab08dfa2e0c9fb804fbd58092523b96b83f5ccb2de757fb6d1a25fc7c7d9b",
+      "workspaceScreenshotSha256": "af8b7ada2c846c2077efea2b61b7b1ff0e764f951669deea8b0567e8b4a51358",
       "targetScreenshot": "saucedemo-cart-target.png",
       "targetScreenshotSha256": "c77d3a18d159252141a2fc37c039f6ea522aee8fbcfa8a4b452539e272c1e11a",
       "consoleErrors": []
@@ -480,12 +486,14 @@
               "controls": 2,
               "buttons": 1,
               "inputs": 0,
-              "candidates": 1
+              "candidates": 1,
+              "discoveredCandidates": 1,
+              "omittedCandidates": 0
             },
             "warnings": [],
             "runtime": {
               "transport": "page",
-              "availableToolCount": 15,
+              "availableToolCount": 8,
               "sessionEstablished": true,
               "sessionReused": true
             },
@@ -544,7 +552,7 @@
           }
         }
       ],
-      "capturedAt": "2026-09-03T00:46:28.049757Z",
+      "capturedAt": "2026-09-03T02:12:33.792827Z",
       "postconditions": {
         "add_element:Delete": true
       },
@@ -554,7 +562,7 @@
         "stageCount": 1
       },
       "workspaceScreenshot": "the-internet-add-element-workspace.png",
-      "workspaceScreenshotSha256": "27020e38aff56262382d12daa6761c2e10a7fbccf3d8eca9c4fa2351d82efd27",
+      "workspaceScreenshotSha256": "51af98e5adbb69b2e30c78cacf0e420be54721caead5f981088a134a672db266",
       "targetScreenshot": "the-internet-add-element-target.png",
       "targetScreenshotSha256": "f38d6e45f3bec0e541978360b436aa9875b77801d41b326452ee4267190e5837",
       "consoleErrors": []
@@ -567,14 +575,7 @@
     "availableTools": [
       "browser_click",
       "browser_close",
-      "browser_console_messages",
-      "browser_drag",
-      "browser_handle_dialog",
-      "browser_hover",
       "browser_navigate",
-      "browser_network_requests",
-      "browser_press_key",
-      "browser_resize",
       "browser_select_option",
       "browser_snapshot",
       "browser_take_screenshot",

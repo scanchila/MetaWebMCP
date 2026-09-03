@@ -35,7 +35,7 @@ The project does not need a separate model API. The WebMCP client is the reasoni
 - The live page exposed seven permanent tools through a real `document.modelContext`, dynamically expanded to eleven, and passed all four generated-tool checks.
 - Its 13-file export registered four native tools on an independently served page and completed search, itinerary mutation, and state inspection without MetaWebMCP as the runtime.
 - Through the same native entrypoint, the hosted, page-scoped Browser MCP path generated and executed semantic adapters for Wikipedia search, a two-stage SauceDemo sign-in and cart workflow, and a visible state change on The Internet test site.
-- The production page scored 96 for Lighthouse performance and 100 for accessibility, best practices, SEO, and agentic browsing; the independently served native export scored 100 in all five categories.
+- The production page and independently served native export each scored 100 for Lighthouse performance, accessibility, best practices, SEO, and agentic browsing, with zero layout shift and no console errors.
 
 The retained screenshots and redacted machine results are in `evidence/` in the public repository.
 
@@ -144,6 +144,6 @@ If native tools do not appear or the header reads **Preview registry**, use the 
 2. Review the evidence-backed candidates and select **Shape selected tools** (2).
 3. Select **Activate tools** (3) and confirm the registry grows from seven to eleven tools.
 4. Select **Run live checks** (4) and confirm that all four generated-tool checks pass.
-5. Select **Export native repository** (5), download the ZIP, and compare it with the [retained production evidence](https://github.com/scanchila/MetaWebMCP/tree/main/evidence).
+5. Select **Export native repository** (5), download the ZIP, and compare it with the [retained production export](https://github.com/scanchila/MetaWebMCP/blob/main/evidence/relay-sessions-webmcp.zip) and its [validation record](https://github.com/scanchila/MetaWebMCP/blob/main/evidence/native-webmcp-result.json).
 
 The controlled demo requires no account, credentials, model API, or external service. The live **Any public site** path uses the deployment's isolated Browser MCP runtime and is separate from this deterministic fallback.

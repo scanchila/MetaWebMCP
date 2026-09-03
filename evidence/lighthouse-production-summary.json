@@ -1,11 +1,11 @@
 {
   "url": "https://metawebmcp.neuryta.com/",
-  "capturedAt": "2026-09-03T00:49:38.469Z",
-  "deploymentVersion": "36b55862-be1d-45e2-a345-81ca2cf7f932",
+  "capturedAt": "2026-09-03T02:15:09.647Z",
+  "deploymentVersion": "98e48700-b5e5-4e7e-94f8-538a2b528947",
   "lighthouseVersion": "13.4.1",
-  "browser": "HeadlessChrome 147.0.0.0",
+  "browser": "HeadlessChrome 154.0.0.0",
   "categories": {
-    "performance": 96,
+    "performance": 100,
     "accessibility": 100,
     "bestPractices": 100,
     "seo": 100,

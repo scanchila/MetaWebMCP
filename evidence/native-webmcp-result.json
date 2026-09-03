@@ -21,6 +21,8 @@
       "inputs": 3,
       "links": 0,
       "candidates": 4,
+      "discoveredCandidates": 4,
+      "omittedCandidates": 0,
       "generatedFromLiveDom": true
     },
     "capabilities": [
@@ -177,10 +179,11 @@
   "exported": {
     "fileName": "relay-sessions-webmcp.zip",
     "fileCount": 13,
-    "bytes": 54322
+    "bytes": 56665
   },
   "exportedNativeValidation": {
-    "archiveSha256": "9e22cc71135a53a07fd156546db487251805fa4444cad66f492a4d2243951c3b",
+    "archive": "relay-sessions-webmcp.zip",
+    "archiveSha256": "51d5d0cba9c0fb4acdd35cd3f0ac2807fc78074a0a9d452e1a51e18022f468f1",
     "fileCount": 13,
     "unixFileMode": "0644",
     "directRegisterTool": true,
@@ -211,12 +214,12 @@
   },
   "uiStatus": "WebMCP active",
   "generatedToolCount": "4",
-  "capturedAt": "2026-09-03T00:48:59.014417Z",
+  "capturedAt": "2026-09-03T02:12:48.357122Z",
   "deployment": "https://metawebmcp.neuryta.com",
-  "deploymentVersion": "36b55862-be1d-45e2-a345-81ca2cf7f932",
+  "deploymentVersion": "98e48700-b5e5-4e7e-94f8-538a2b528947",
   "browser": "Google Chrome 154.0.8037.0 beta",
   "feature": "WebMCPTesting",
   "consoleErrors": [],
   "screenshot": "native-webmcp-recursive-workspace.png",
-  "screenshotSha256": "c20a79879b16c3b60f0ab625fa07267838354ee5d92ffc9de97624c9f238e39c"
+  "screenshotSha256": "1d60688f4d88f6e26355b57cfe3863317dc1b3fab68a3d8774eccbcfc3b0f6b2"
 }
