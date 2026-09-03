@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="690" viewBox="0 0 1500 690" role="img" aria-labelledby="chart-title chart-desc">
+<title id="chart-title">MetaWebMCP live-site benchmark comparison</title>
+<desc id="chart-desc">Direct browser usage divided by MetaWebMCP usage for wall time, processed tokens, non-cached tokens, and model-facing tool-response text. Higher is better. FincaRaíz has the highest value in all four columns. Metrocuadrado is below parity for wall time and processed tokens but above parity for non-cached tokens and tool-response text. Steam is above parity in all four columns.</desc>
+<defs>
+<filter id="shadow" x="-10%" y="-15%" width="120%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#17201e" flood-opacity="0.08"/></filter>
+</defs>
+<rect x="1" y="1" width="1498" height="688" rx="24" fill="#f7f5ee" stroke="#d2cfc5" stroke-width="2"/>
+<rect x="1" y="1" width="1498" height="8" rx="4" fill="#1747d1"/>
+<circle cx="58" cy="63" r="7" fill="#ff6738"/><circle cx="58" cy="63" r="14" fill="none" stroke="#ff6738" stroke-opacity="0.20" stroke-width="6"/>
+<text x="84" y="73" fill="#17201e" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="32" font-weight="750" letter-spacing="-0.7">Live-site benchmark</text>
+<text x="54" y="109" fill="#55615d" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="16">Direct browser ÷ MetaWebMCP · higher is better · 1× is parity</text>
+<rect x="1252" y="47" width="190" height="40" rx="20" fill="#eef2ff" stroke="#bdc9f7"/>
+<text x="1347" y="72" text-anchor="middle" fill="#1747d1" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="750">↑ HIGHER IS BETTER</text>
+<line x1="54" y1="139" x2="1446" y2="139" stroke="#d2cfc5"/>
+<text x="54" y="183" fill="#55615d" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="750" letter-spacing="1.2">BENCHMARK TASK</text>
+<text x="328" y="175" fill="#17201e" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="15" font-weight="800" letter-spacing="0.5">WALL TIME</text>
+<text x="328" y="198" fill="#5b6561" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">completion speed</text>
+<text x="604" y="175" fill="#17201e" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="15" font-weight="800" letter-spacing="0.5">PROCESSED TOKENS</text>
+<text x="604" y="198" fill="#5b6561" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">total token efficiency</text>
+<text x="880" y="175" fill="#17201e" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="15" font-weight="800" letter-spacing="0.5">NON-CACHED TOKENS</text>
+<text x="880" y="198" fill="#5b6561" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">new token efficiency</text>
+<text x="1156" y="175" fill="#17201e" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="15" font-weight="800" letter-spacing="0.5">TOOL-RESPONSE TEXT</text>
+<text x="1156" y="198" fill="#5b6561" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">context efficiency</text>
+<text x="54" y="262" fill="#17201e" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="21" font-weight="750">FincaRaíz average</text>
+<text x="54" y="290" fill="#5b6561" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14">2 matched runs · 13 pages each</text>
+<rect x="326" y="226" width="258" height="106" rx="14" fill="#1747d1" stroke="#0d328f" stroke-width="2" filter="url(#shadow)"/>
+<text x="346" y="269" fill="#ffffff" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.4">2.03×</text>
+<text x="346" y="291" fill="#dfe7ff" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="650">faster than direct parsing</text>
+<rect x="346" y="308" width="218" height="7" rx="3.5" fill="#466be0"/>
+<rect x="346" y="308" width="218" height="7" rx="3.5" fill="#ff9a77"/>
+<rect x="517" y="241" width="50" height="24" rx="12" fill="#fffdf8"/>
+<text x="542" y="257" text-anchor="middle" fill="#1747d1" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="850" letter-spacing="0.8">BEST</text>
+<rect x="602" y="226" width="258" height="106" rx="14" fill="#1747d1" stroke="#0d328f" stroke-width="2" filter="url(#shadow)"/>
+<text x="622" y="269" fill="#ffffff" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.4">13.00×</text>
+<text x="622" y="291" fill="#dfe7ff" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="650">fewer than direct parsing</text>
+<rect x="622" y="308" width="218" height="7" rx="3.5" fill="#466be0"/>
+<rect x="622" y="308" width="218" height="7" rx="3.5" fill="#ff9a77"/>
+<rect x="793" y="241" width="50" height="24" rx="12" fill="#fffdf8"/>
+<text x="818" y="257" text-anchor="middle" fill="#1747d1" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="850" letter-spacing="0.8">BEST</text>
+<rect x="878" y="226" width="258" height="106" rx="14" fill="#1747d1" stroke="#0d328f" stroke-width="2" filter="url(#shadow)"/>
+<text x="898" y="269" fill="#ffffff" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.4">5.68×</text>
+<text x="898" y="291" fill="#dfe7ff" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="650">fewer than direct parsing</text>
+<rect x="898" y="308" width="218" height="7" rx="3.5" fill="#466be0"/>
+<rect x="898" y="308" width="218" height="7" rx="3.5" fill="#ff9a77"/>
+<rect x="1069" y="241" width="50" height="24" rx="12" fill="#fffdf8"/>
+<text x="1094" y="257" text-anchor="middle" fill="#1747d1" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="850" letter-spacing="0.8">BEST</text>
+<rect x="1154" y="226" width="258" height="106" rx="14" fill="#1747d1" stroke="#0d328f" stroke-width="2" filter="url(#shadow)"/>
+<text x="1174" y="269" fill="#ffffff" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.4">40.77×</text>
+<text x="1174" y="291" fill="#dfe7ff" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="650">less than direct parsing</text>
+<rect x="1174" y="308" width="218" height="7" rx="3.5" fill="#466be0"/>
+<rect x="1174" y="308" width="218" height="7" rx="3.5" fill="#ff9a77"/>
+<rect x="1345" y="241" width="50" height="24" rx="12" fill="#fffdf8"/>
+<text x="1370" y="257" text-anchor="middle" fill="#1747d1" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="850" letter-spacing="0.8">BEST</text>
+<text x="54" y="396" fill="#17201e" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="21" font-weight="750">Metrocuadrado</text>
+<text x="54" y="424" fill="#5b6561" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14">1 lazy-loaded results page</text>
+<rect x="326" y="360" width="258" height="106" rx="14" fill="#fff2ed" stroke="#efb39d" stroke-width="1" filter="url(#shadow)"/>
+<text x="346" y="403" fill="#8f2f2b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.4">0.72×</text>
+<text x="346" y="425" fill="#9c5146" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="650">MetaWebMCP is 1.39× slower</text>
+<rect x="346" y="442" width="218" height="7" rx="3.5" fill="#f5d4c8"/>
+<rect x="346" y="442" width="77" height="7" rx="3.5" fill="#ff6738"/>
+<rect x="602" y="360" width="258" height="106" rx="14" fill="#fff2ed" stroke="#efb39d" stroke-width="1" filter="url(#shadow)"/>
+<text x="622" y="403" fill="#8f2f2b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.4">0.46×</text>
+<text x="622" y="425" fill="#9c5146" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="650">MetaWebMCP uses 2.16× more</text>
+<rect x="622" y="442" width="218" height="7" rx="3.5" fill="#f5d4c8"/>
+<rect x="622" y="442" width="8" height="7" rx="3.5" fill="#ff6738"/>
+<rect x="878" y="360" width="258" height="106" rx="14" fill="#fffdf8" stroke="#cbd3e8" stroke-width="1" filter="url(#shadow)"/>
+<text x="898" y="403" fill="#17201e" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.4">1.28×</text>
+<text x="898" y="425" fill="#55615d" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="650">fewer than direct parsing</text>
+<rect x="898" y="442" width="218" height="7" rx="3.5" fill="#e5e9f3"/>
+<rect x="898" y="442" width="49" height="7" rx="3.5" fill="#1747d1"/>
+<rect x="1154" y="360" width="258" height="106" rx="14" fill="#fffdf8" stroke="#cbd3e8" stroke-width="1" filter="url(#shadow)"/>
+<text x="1174" y="403" fill="#17201e" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.4">4.11×</text>
+<text x="1174" y="425" fill="#55615d" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="650">less than direct parsing</text>
+<rect x="1174" y="442" width="218" height="7" rx="3.5" fill="#e5e9f3"/>
+<rect x="1174" y="442" width="22" height="7" rx="3.5" fill="#1747d1"/>
+<text x="54" y="530" fill="#17201e" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="21" font-weight="750">Steam</text>
+<text x="54" y="558" fill="#5b6561" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14">20 pages · 500 result cards</text>
+<rect x="326" y="494" width="258" height="106" rx="14" fill="#fffdf8" stroke="#cbd3e8" stroke-width="1" filter="url(#shadow)"/>
+<text x="346" y="537" fill="#17201e" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.4">1.39×</text>
+<text x="346" y="559" fill="#55615d" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="650">faster than direct parsing</text>
+<rect x="346" y="576" width="218" height="7" rx="3.5" fill="#e5e9f3"/>
+<rect x="346" y="576" width="149" height="7" rx="3.5" fill="#1747d1"/>
+<rect x="602" y="494" width="258" height="106" rx="14" fill="#fffdf8" stroke="#cbd3e8" stroke-width="1" filter="url(#shadow)"/>
+<text x="622" y="537" fill="#17201e" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.4">10.58×</text>
+<text x="622" y="559" fill="#55615d" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="650">fewer than direct parsing</text>
+<rect x="622" y="576" width="218" height="7" rx="3.5" fill="#e5e9f3"/>
+<rect x="622" y="576" width="177" height="7" rx="3.5" fill="#1747d1"/>
+<rect x="878" y="494" width="258" height="106" rx="14" fill="#fffdf8" stroke="#cbd3e8" stroke-width="1" filter="url(#shadow)"/>
+<text x="898" y="537" fill="#17201e" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.4">5.15×</text>
+<text x="898" y="559" fill="#55615d" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="650">fewer than direct parsing</text>
+<rect x="898" y="576" width="218" height="7" rx="3.5" fill="#e5e9f3"/>
+<rect x="898" y="576" width="198" height="7" rx="3.5" fill="#1747d1"/>
+<rect x="1154" y="494" width="258" height="106" rx="14" fill="#fffdf8" stroke="#cbd3e8" stroke-width="1" filter="url(#shadow)"/>
+<text x="1174" y="537" fill="#17201e" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.4">18.84×</text>
+<text x="1174" y="559" fill="#55615d" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="650">less than direct parsing</text>
+<rect x="1174" y="576" width="218" height="7" rx="3.5" fill="#e5e9f3"/>
+<rect x="1174" y="576" width="101" height="7" rx="3.5" fill="#1747d1"/>
+<line x1="54" y1="626" x2="1446" y2="626" stroke="#d2cfc5"/>
+<text x="54" y="659" fill="#55615d" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14">All outputs passed their task-specific exactness gate. Cold analysis and tool authoring are included.</text>
+<text x="1446" y="659" text-anchor="end" fill="#5b6561" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12">2026-09-04 retained runs</text>
+</svg>

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "A WebMCP page that creates, activates, tests, and exports other WebMCP integrations.",
+  "description": "Build, test, and export WebMCP tools from live website workflows.",
   "engines": {
     "node": ">=20"
   },
