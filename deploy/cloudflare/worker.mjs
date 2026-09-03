@@ -18,6 +18,7 @@ import {
 const BODY_LIMIT = 2_000_000;
 const HTML_LIMIT = 1_500_000;
 const DOWNLOAD_TTL_SECONDS = 20 * 60;
+const MAX_EXPORT_ARCHIVE_BYTES = 3_000_000;
 
 export const PlaywrightMCP = createMcpAgent(runtimeEnv.BROWSER, {
   capabilities: ['core', 'wait'],
@@ -140,6 +141,12 @@ async function browserRequestWithinLimit(request, bindings) {
   return result.success;
 }
 
+async function exportRequestWithinLimit(request, bindings) {
+  const key = request.headers.get('cf-connecting-ip') || 'local';
+  const result = await bindings.EXPORT_RATE_LIMITER.limit({ key });
+  return result.success;
+}
+
 function browserCapabilitySecret(bindings) {
   if (typeof bindings.MCP_CAPABILITY_SECRET !== 'string' || bindings.MCP_CAPABILITY_SECRET.length < 32) {
     const error = new Error('Browser capability secret is not configured.');
@@ -177,7 +184,7 @@ async function validateBrowserTransportRequest(request) {
   }
 }
 
-async function handleApi(request, bindings, pathname) {
+async function handleApi(request, bindings, pathname, browserCapability) {
   if (pathname === '/health' && request.method === 'GET') {
     return json({ ok: true, service: 'MetaWebMCP', browserMcpConfigured: true, runtime: 'cloudflare' });
   }
@@ -219,15 +226,28 @@ async function handleApi(request, bindings, pathname) {
   }
 
   if (pathname === '/api/export' && request.method === 'POST') {
+    if (!await exportRequestWithinLimit(request, bindings)) {
+      return json({ ok: false, error: 'Export request limit reached. Try again in a minute.' }, { status: 429 });
+    }
     const body = await readJson(request);
     const archive = generateProjectZip(body);
+    if (archive.buffer.length > MAX_EXPORT_ARCHIVE_BYTES) {
+      const error = new Error(`Generated export exceeds ${MAX_EXPORT_ARCHIVE_BYTES} bytes.`);
+      error.statusCode = 413;
+      throw error;
+    }
     const id = crypto.randomUUID();
     const downloadUrl = new URL(`/api/download/${id}`, request.url);
+    const expiresInSeconds = Math.max(1, Math.min(
+      DOWNLOAD_TTL_SECONDS,
+      browserCapability.expiresAt - Math.floor(Date.now() / 1000),
+    ));
     const headers = new Headers({
       'content-type': 'application/zip',
       'content-disposition': `attachment; filename="${archive.fileName}"`,
-      'cache-control': `public, max-age=${DOWNLOAD_TTL_SECONDS}`,
+      'cache-control': `public, max-age=${expiresInSeconds}`,
       'x-content-type-options': 'nosniff',
+      'x-metawebmcp-capability-id': browserCapability.id,
     });
     await caches.default.put(new Request(downloadUrl), new Response(archive.buffer, { headers }));
     return json({
@@ -236,13 +256,20 @@ async function handleApi(request, bindings, pathname) {
       fileCount: archive.fileCount,
       bytes: archive.buffer.length,
       downloadUrl: downloadUrl.pathname,
-      expiresInSeconds: DOWNLOAD_TTL_SECONDS,
+      expiresInSeconds,
     }, { status: 201 });
   }
 
   if (pathname.startsWith('/api/download/') && request.method === 'GET') {
     const cached = await caches.default.match(new Request(request.url));
-    return cached || json({ ok: false, error: 'Export not found or expired.' }, { status: 404 });
+    if (!cached || cached.headers.get('x-metawebmcp-capability-id') !== browserCapability.id) {
+      return json({ ok: false, error: 'Export not found or expired.' }, { status: 404 });
+    }
+    await caches.default.delete(new Request(request.url));
+    const headers = new Headers(cached.headers);
+    headers.delete('x-metawebmcp-capability-id');
+    headers.set('cache-control', 'no-store');
+    return new Response(cached.body, { status: cached.status, statusText: cached.statusText, headers });
   }
 
   return null;
@@ -285,9 +312,15 @@ export default {
           },
         });
       }
-      if (pathname === '/mcp' || pathname === '/sse' || pathname === '/sse/message' || pathname.startsWith('/api/mcp/')) {
-        await requireBrowserCapability(request, bindings);
-      }
+      const protectedPath = pathname === '/mcp'
+        || pathname === '/sse'
+        || pathname === '/sse/message'
+        || pathname.startsWith('/api/mcp/')
+        || pathname === '/api/export'
+        || pathname.startsWith('/api/download/');
+      const browserCapability = protectedPath
+        ? await requireBrowserCapability(request, bindings)
+        : null;
       if (pathname === '/mcp') {
         if (!sameOrigin(request)) return json({ ok: false, error: 'Same-origin browser session required.' }, { status: 403 });
         if (!await browserRequestWithinLimit(request, bindings)) return json({ ok: false, error: 'Browser request limit reached.' }, { status: 429 });
@@ -300,7 +333,7 @@ export default {
         await validateBrowserTransportRequest(request);
         return PlaywrightMCP.serveSSE('/sse').fetch(request, bindings, context);
       }
-      const apiResponse = await handleApi(request, bindings, pathname);
+      const apiResponse = await handleApi(request, bindings, pathname, browserCapability);
       if (apiResponse) return apiResponse;
       if (!['GET', 'HEAD'].includes(request.method)) return json({ ok: false, error: 'Method not allowed.' }, { status: 405 });
       return serveAsset(request, bindings);
