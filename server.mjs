@@ -21,6 +21,7 @@ const PUBLIC_ROOT = path.join(ROOT, 'public');
 const PORT = Number(process.env.PORT || 8787);
 const HOST = process.env.HOST || '0.0.0.0';
 const BODY_LIMIT = 2_000_000;
+const MCP_SNAPSHOT_RESPONSE_LIMIT_BYTES = 2_000_000;
 const BROWSER_MCP_URL = process.env.BROWSER_MCP_URL || '';
 const BROWSER_MCP_EGRESS_ISOLATED = process.env.BROWSER_MCP_EGRESS_ISOLATED === '1';
 if (BROWSER_MCP_URL && !BROWSER_MCP_EGRESS_ISOLATED) {
@@ -223,7 +224,9 @@ async function analyzeWithBrowserMcp(body, capabilityId) {
     error.statusCode = 502;
     throw error;
   }
-  const snapshotResult = await client.callTool('browser_snapshot', {});
+  const snapshotResult = await client.callTool('browser_snapshot', {}, {
+    maxResponseBytes: MCP_SNAPSHOT_RESPONSE_LIMIT_BYTES,
+  });
   const snapshot = flattenMcpText(snapshotResult);
   const analysis = analyzeAccessibilitySnapshot({ snapshot, url: finalTarget.href, goal: String(body.goal || '') });
   return { ...analysis, mcp: { endpointConfigured: true, availableTools: [...names].sort() } };
@@ -376,9 +379,14 @@ async function handleApi(req, res, pathname, searchParams) {
   }
 
   if (pathname === '/api/mcp/analyze' && req.method === 'POST') {
-    const body = await readJson(req);
-    const analysis = await analyzeWithBrowserMcp(body, browserCapability.id);
-    return sendJson(res, 200, { ok: true, analysis });
+    const releaseAnalysisSlot = claimAnalysisSlot();
+    try {
+      const body = await readJson(req);
+      const analysis = await analyzeWithBrowserMcp(body, browserCapability.id);
+      return sendJson(res, 200, { ok: true, analysis });
+    } finally {
+      releaseAnalysisSlot();
+    }
   }
 
   if (pathname === '/api/mcp/analyze-snapshot' && req.method === 'POST') {

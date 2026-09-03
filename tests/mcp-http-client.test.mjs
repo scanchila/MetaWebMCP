@@ -67,6 +67,36 @@ test('concurrent operations are serialized behind a single initialization', asyn
   assert.equal(initializes, 1);
 });
 
+test('MCP Streamable HTTP client cancels a tool response at its byte limit', async () => {
+  let canceled = false;
+  const encoder = new TextEncoder();
+  const mockFetch = async (_url, options) => {
+    const request = JSON.parse(options.body);
+    if (request.method === 'initialize') {
+      return jsonResponse({ jsonrpc: '2.0', id: request.id, result: { protocolVersion: '2025-06-18' } });
+    }
+    if (request.method === 'notifications/initialized') return new Response(null, { status: 202 });
+    if (request.method === 'tools/call') {
+      return new Response(new ReadableStream({
+        pull(controller) {
+          controller.enqueue(encoder.encode('12345678'));
+        },
+        cancel() {
+          canceled = true;
+        },
+      }), { headers: { 'content-type': 'application/json' } });
+    }
+    throw new Error(`Unexpected request ${request.method}`);
+  };
+
+  const client = new McpHttpClient('https://mcp.example/mcp', { fetch: mockFetch });
+  await assert.rejects(
+    client.callTool('browser_snapshot', {}, { maxResponseBytes: 10 }),
+    /MCP response exceeds 10 bytes/,
+  );
+  assert.equal(canceled, true);
+});
+
 test('MCP SSE client keeps one event stream across initialization and tool calls', async () => {
   const calls = [];
   let controller;

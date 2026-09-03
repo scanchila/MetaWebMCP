@@ -312,6 +312,7 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
       PORT: String(appPort),
       BROWSER_MCP_URL: `http://127.0.0.1:${mcpPort}/mcp`,
       BROWSER_MCP_EGRESS_ISOLATED: '1',
+      ANALYSIS_RATE_LIMIT_PER_MINUTE: '3',
     },
     stdio: 'ignore',
   });
@@ -356,6 +357,17 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
   });
   assert.equal(redirected.status, 400);
   assert.match((await redirected.json()).error, /Private and reserved IP targets are blocked/);
+
+  const rateLimited = await fetch(`${base}/api/mcp/analyze-snapshot`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({
+      snapshot: '- button "Inspect" [ref=r1]',
+      url: 'https://8.8.8.8/',
+    }),
+  });
+  assert.equal(rateLimited.status, 429);
+  assert.match((await rateLimited.json()).error, /analysis request limit reached/i);
 
   const executed = await fetch(`${base}/api/mcp/execute`, {
     method: 'POST',

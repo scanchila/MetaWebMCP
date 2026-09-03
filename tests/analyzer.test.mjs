@@ -183,6 +183,20 @@ test('accessibility snapshot analysis rejects oversized and control-heavy input'
   );
 });
 
+test('duplicate snapshot action names remain bounded at the control limit', () => {
+  const label = '\ufdfa'.repeat(100);
+  const snapshot = Array.from(
+    { length: 2_000 },
+    (_, index) => `- button "${label}" [ref=e${index}]`,
+  ).join('\n');
+  const started = performance.now();
+  const result = analyzeAccessibilitySnapshot({ snapshot });
+  const elapsed = performance.now() - started;
+  assert.equal(result.summary.controls, 2_000);
+  assert.equal(new Set(result.capabilities.map((capability) => capability.name)).size, result.capabilities.length);
+  assert.ok(elapsed < 2_000, `duplicate-name analysis took ${elapsed.toFixed(1)}ms`);
+});
+
 test('snapshot form fields are bounded by the preceding button in one pass', () => {
   const result = analyzeAccessibilitySnapshot({
     snapshot: `- textbox "Unrelated" [ref=e1]
