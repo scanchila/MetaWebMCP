@@ -213,3 +213,14 @@ test('snapshot analysis shares the analysis rate limit', async (t) => {
   assert.equal(limited.status, 429);
   assert.match((await limited.json()).error, /analysis request limit reached/i);
 });
+
+test('Browser MCP API requests have an independent rate limit', async (t) => {
+  const base = await startApp(t, { MCP_REQUEST_RATE_LIMIT_PER_MINUTE: '2' });
+  const cookie = await capabilityCookie(base);
+  const url = `${base}/api/mcp/status?workspace_id=workspace_rate_123456`;
+  assert.equal((await fetch(url, { headers: { cookie } })).status, 200);
+  assert.equal((await fetch(url, { headers: { cookie } })).status, 200);
+  const limited = await fetch(url, { headers: { cookie } });
+  assert.equal(limited.status, 429);
+  assert.match((await limited.json()).error, /Browser MCP request limit reached/i);
+});

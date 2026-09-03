@@ -51,6 +51,11 @@ test('Browser MCP transport sessions are isolated by MetaWebMCP workspace', { ti
   const initializedSessions = [];
   const requestSessions = [];
   const deletedSessions = [];
+  let holdNextToolList = false;
+  let markHeldToolList;
+  let releaseHeldToolList;
+  const heldToolListArrived = new Promise((resolve) => { markHeldToolList = resolve; });
+  const heldToolListReleased = new Promise((resolve) => { releaseHeldToolList = resolve; });
 
   const mockMcp = http.createServer(async (req, res) => {
     if (req.method === 'DELETE') {
@@ -91,6 +96,11 @@ test('Browser MCP transport sessions are isolated by MetaWebMCP workspace', { ti
     }
 
     if (message.method === 'tools/list') {
+      if (holdNextToolList) {
+        holdNextToolList = false;
+        markHeldToolList();
+        await heldToolListReleased;
+      }
       json(res, 200, {
         jsonrpc: '2.0',
         id: message.id,
@@ -127,11 +137,15 @@ test('Browser MCP transport sessions are isolated by MetaWebMCP workspace', { ti
       PORT: String(appPort),
       BROWSER_MCP_URL: `http://127.0.0.1:${mcpPort}/mcp`,
       BROWSER_MCP_EGRESS_ISOLATED: '1',
+      MAX_MCP_CLIENTS: '3',
+      MAX_MCP_CLIENTS_PER_CAPABILITY: '2',
+      MAX_CONCURRENT_MCP_REQUESTS: '1',
     },
     stdio: 'ignore',
   });
 
   t.after(async () => {
+    releaseHeldToolList();
     child.kill('SIGTERM');
     await Promise.race([once(child, 'exit'), new Promise((resolve) => setTimeout(resolve, 2_000))]);
     await new Promise((resolve) => mockMcp.close(resolve));
@@ -173,11 +187,35 @@ test('Browser MCP transport sessions are isolated by MetaWebMCP workspace', { ti
   const listSessions = requestSessions.filter((item) => item.method === 'tools/list').map((item) => item.session);
   assert.deepEqual(listSessions, ['mock-session-1', 'mock-session-2', 'mock-session-1']);
 
+  const perCapabilityLimited = await fetch(`${base}/api/mcp/status?workspace_id=workspace_gamma_123456`, {
+    headers: { cookie },
+  });
+  assert.equal(perCapabilityLimited.status, 429);
+  assert.match((await perCapabilityLimited.json()).error, /workspace limit reached/i);
+  assert.deepEqual(initializedSessions, ['mock-session-1', 'mock-session-2']);
+
   const isolatedCapability = await fetch(`${base}/api/mcp/status?workspace_id=${alpha}`, {
     headers: { cookie: otherCookie },
   });
   assert.equal(isolatedCapability.status, 200);
   assert.deepEqual(initializedSessions, ['mock-session-1', 'mock-session-2', 'mock-session-3']);
+
+  const thirdCookie = await pageCapabilityCookie(base);
+  const globallyLimited = await fetch(`${base}/api/mcp/status?workspace_id=${alpha}`, {
+    headers: { cookie: thirdCookie },
+  });
+  assert.equal(globallyLimited.status, 429);
+  assert.match((await globallyLimited.json()).error, /session capacity reached/i);
+  assert.deepEqual(initializedSessions, ['mock-session-1', 'mock-session-2', 'mock-session-3']);
+
+  holdNextToolList = true;
+  const heldStatus = fetch(`${base}/api/mcp/status?workspace_id=${alpha}`, { headers: { cookie } });
+  await heldToolListArrived;
+  const concurrentStatus = await fetch(`${base}/api/mcp/status?workspace_id=${beta}`, { headers: { cookie } });
+  assert.equal(concurrentStatus.status, 429);
+  assert.match((await concurrentStatus.json()).error, /request capacity reached/i);
+  releaseHeldToolList();
+  assert.equal((await heldStatus).status, 200);
 
   const reset = await fetch(`${base}/api/mcp/reset`, {
     method: 'POST',

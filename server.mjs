@@ -47,6 +47,13 @@ const MAX_EXPORT_ARCHIVE_BYTES = positiveIntegerSetting('MAX_EXPORT_ARCHIVE_BYTE
 const EXPORT_RATE_LIMIT_PER_MINUTE = positiveIntegerSetting('EXPORT_RATE_LIMIT_PER_MINUTE', 12);
 const ANALYSIS_RATE_LIMIT_PER_MINUTE = positiveIntegerSetting('ANALYSIS_RATE_LIMIT_PER_MINUTE', 30);
 const MAX_CONCURRENT_ANALYSES = positiveIntegerSetting('MAX_CONCURRENT_ANALYSES', 4);
+const MAX_MCP_CLIENTS = positiveIntegerSetting('MAX_MCP_CLIENTS', 16);
+const MAX_MCP_CLIENTS_PER_CAPABILITY = positiveIntegerSetting('MAX_MCP_CLIENTS_PER_CAPABILITY', 4);
+const MCP_REQUEST_RATE_LIMIT_PER_MINUTE = positiveIntegerSetting('MCP_REQUEST_RATE_LIMIT_PER_MINUTE', 120);
+const MAX_CONCURRENT_MCP_REQUESTS = positiveIntegerSetting('MAX_CONCURRENT_MCP_REQUESTS', 8);
+if (MAX_MCP_CLIENTS_PER_CAPABILITY > MAX_MCP_CLIENTS) {
+  throw new Error('MAX_MCP_CLIENTS_PER_CAPABILITY cannot exceed MAX_MCP_CLIENTS.');
+}
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -69,6 +76,9 @@ let exportsInCurrentWindow = 0;
 let analysisRateWindowStartedAt = Date.now();
 let analysesInCurrentWindow = 0;
 let activeAnalyses = 0;
+let mcpRateWindowStartedAt = Date.now();
+let mcpRequestsInCurrentWindow = 0;
+let activeMcpRequests = 0;
 
 function securityHeaders(contentType = '') {
   const headers = {
@@ -167,21 +177,39 @@ function workspaceKey(value, capabilityId) {
 }
 
 function pruneMcpClients() {
-  const cutoff = Date.now() - MCP_SESSION_TTL_MS;
+  const now = Date.now();
+  const cutoff = now - MCP_SESSION_TTL_MS;
   for (const [key, entry] of mcpClients) {
-    if (entry.lastUsed > cutoff) continue;
+    if (entry.lastUsed > cutoff && entry.capabilityExpiresAt > now) continue;
     mcpClients.delete(key);
     entry.client.close().catch(() => {});
   }
 }
 
-function getMcpClient(workspaceId, capabilityId) {
+function getMcpClient(workspaceId, capability) {
   if (!BROWSER_MCP_URL) throw new Error('BROWSER_MCP_URL is not configured. Start the Playwright MCP service or use the built-in demo.');
-  const key = workspaceKey(workspaceId, capabilityId);
+  const key = workspaceKey(workspaceId, capability.id);
   pruneMcpClients();
   let entry = mcpClients.get(key);
   if (!entry) {
-    entry = { client: new McpHttpClient(BROWSER_MCP_URL), lastUsed: Date.now() };
+    if (mcpClients.size >= MAX_MCP_CLIENTS) {
+      const error = new Error('Browser MCP session capacity reached. Try again after closing another workspace.');
+      error.statusCode = 429;
+      throw error;
+    }
+    const capabilityClientCount = [...mcpClients.values()]
+      .filter((candidate) => candidate.capabilityId === capability.id).length;
+    if (capabilityClientCount >= MAX_MCP_CLIENTS_PER_CAPABILITY) {
+      const error = new Error('Browser MCP workspace limit reached for this page session.');
+      error.statusCode = 429;
+      throw error;
+    }
+    entry = {
+      client: new McpHttpClient(BROWSER_MCP_URL),
+      capabilityId: capability.id,
+      capabilityExpiresAt: capability.expiresAt * 1000,
+      lastUsed: Date.now(),
+    };
     mcpClients.set(key, entry);
   }
   entry.lastUsed = Date.now();
@@ -204,9 +232,9 @@ async function closeMcpClient(workspaceId, capabilityId) {
 const mcpPruneTimer = setInterval(pruneMcpClients, Math.min(MCP_SESSION_TTL_MS, 60_000));
 mcpPruneTimer.unref?.();
 
-async function analyzeWithBrowserMcp(body, capabilityId) {
+async function analyzeWithBrowserMcp(body, capability) {
   const parsed = await validateBrowserTarget(body.url, { allowPrivate: false });
-  const client = getMcpClient(body.workspaceId, capabilityId);
+  const client = getMcpClient(body.workspaceId, capability);
   const tools = await client.listTools();
   const names = new Set(tools.map((tool) => tool.name));
   for (const required of ['browser_navigate', 'browser_snapshot']) {
@@ -234,8 +262,8 @@ async function analyzeWithBrowserMcp(body, capabilityId) {
   return { ...analysis, mcp: { endpointConfigured: true, availableTools: [...names].sort() } };
 }
 
-async function executeMcpRecipe(body, capabilityId) {
-  const client = getMcpClient(body.workspaceId, capabilityId);
+async function executeMcpRecipe(body, capability) {
+  const client = getMcpClient(body.workspaceId, capability);
   const tools = await client.listTools();
   return runMcpRecipe({
     executor: body.executor,
@@ -288,6 +316,36 @@ function claimAnalysisSlot() {
   analysesInCurrentWindow += 1;
   activeAnalyses += 1;
   return () => { activeAnalyses -= 1; };
+}
+
+function claimMcpRequestSlot() {
+  if (activeMcpRequests >= MAX_CONCURRENT_MCP_REQUESTS) {
+    const error = new Error('Browser MCP request capacity reached. Try again shortly.');
+    error.statusCode = 429;
+    throw error;
+  }
+  const now = Date.now();
+  if (now - mcpRateWindowStartedAt >= 60_000) {
+    mcpRateWindowStartedAt = now;
+    mcpRequestsInCurrentWindow = 0;
+  }
+  if (mcpRequestsInCurrentWindow >= MCP_REQUEST_RATE_LIMIT_PER_MINUTE) {
+    const error = new Error('Browser MCP request limit reached. Try again in a minute.');
+    error.statusCode = 429;
+    throw error;
+  }
+  mcpRequestsInCurrentWindow += 1;
+  activeMcpRequests += 1;
+  return () => { activeMcpRequests -= 1; };
+}
+
+async function withMcpRequestSlot(operation) {
+  const release = claimMcpRequestSlot();
+  try {
+    return await operation();
+  } finally {
+    release();
+  }
 }
 
 function assertDownloadCapacity(additionalBytes = 0) {
@@ -375,47 +433,57 @@ async function handleApi(req, res, pathname, searchParams) {
   }
 
   if (pathname === '/api/mcp/status' && req.method === 'GET') {
-    if (!BROWSER_MCP_URL) return sendJson(res, 200, { ok: true, configured: false, tools: [] });
-    const tools = await getMcpClient(searchParams.get('workspace_id'), browserCapability.id).listTools();
-    return sendJson(res, 200, { ok: true, configured: true, tools: tools.map((tool) => tool.name).sort() });
+    return withMcpRequestSlot(async () => {
+      if (!BROWSER_MCP_URL) return sendJson(res, 200, { ok: true, configured: false, tools: [] });
+      const tools = await getMcpClient(searchParams.get('workspace_id'), browserCapability).listTools();
+      return sendJson(res, 200, { ok: true, configured: true, tools: tools.map((tool) => tool.name).sort() });
+    });
   }
 
   if (pathname === '/api/mcp/analyze' && req.method === 'POST') {
-    const releaseAnalysisSlot = claimAnalysisSlot();
-    try {
-      const body = await readJson(req);
-      const analysis = await analyzeWithBrowserMcp(body, browserCapability.id);
-      return sendJson(res, 200, { ok: true, analysis });
-    } finally {
-      releaseAnalysisSlot();
-    }
+    return withMcpRequestSlot(async () => {
+      const releaseAnalysisSlot = claimAnalysisSlot();
+      try {
+        const body = await readJson(req);
+        const analysis = await analyzeWithBrowserMcp(body, browserCapability);
+        return sendJson(res, 200, { ok: true, analysis });
+      } finally {
+        releaseAnalysisSlot();
+      }
+    });
   }
 
   if (pathname === '/api/mcp/analyze-snapshot' && req.method === 'POST') {
-    const releaseAnalysisSlot = claimAnalysisSlot();
-    try {
-      const body = await readJson(req);
-      const parsed = await validateBrowserTarget(body.url, { allowPrivate: false });
-      const analysis = analyzeAccessibilitySnapshot({
-        snapshot: String(body.snapshot || ''),
-        url: parsed.href,
-        goal: String(body.goal || ''),
-      });
-      return sendJson(res, 200, { ok: true, analysis });
-    } finally {
-      releaseAnalysisSlot();
-    }
+    return withMcpRequestSlot(async () => {
+      const releaseAnalysisSlot = claimAnalysisSlot();
+      try {
+        const body = await readJson(req);
+        const parsed = await validateBrowserTarget(body.url, { allowPrivate: false });
+        const analysis = analyzeAccessibilitySnapshot({
+          snapshot: String(body.snapshot || ''),
+          url: parsed.href,
+          goal: String(body.goal || ''),
+        });
+        return sendJson(res, 200, { ok: true, analysis });
+      } finally {
+        releaseAnalysisSlot();
+      }
+    });
   }
 
   if (pathname === '/api/mcp/execute' && req.method === 'POST') {
-    const body = await readJson(req);
-    return sendJson(res, 200, await executeMcpRecipe(body, browserCapability.id));
+    return withMcpRequestSlot(async () => {
+      const body = await readJson(req);
+      return sendJson(res, 200, await executeMcpRecipe(body, browserCapability));
+    });
   }
 
   if (pathname === '/api/mcp/reset' && req.method === 'POST') {
-    const body = await readJson(req);
-    await closeMcpClient(body.workspaceId, browserCapability.id);
-    return sendJson(res, 200, { ok: true });
+    return withMcpRequestSlot(async () => {
+      const body = await readJson(req);
+      await closeMcpClient(body.workspaceId, browserCapability.id);
+      return sendJson(res, 200, { ok: true });
+    });
   }
 
   if (pathname === '/api/export' && req.method === 'POST') {
