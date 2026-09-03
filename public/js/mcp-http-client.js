@@ -120,7 +120,7 @@ export class McpHttpClient {
     this._queue = Promise.resolve();
   }
 
-  async _post(payload, { initialization = false, maxResponseBytes } = {}) {
+  async _post(payload, { initialization = false, maxResponseBytes, signal } = {}) {
     const headers = {
       accept: 'application/json, text/event-stream',
       'content-type': 'application/json',
@@ -134,6 +134,7 @@ export class McpHttpClient {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
+      signal,
     });
     const returnedSession = response.headers.get('mcp-session-id');
     if (returnedSession) this.sessionId = returnedSession;
@@ -154,7 +155,7 @@ export class McpHttpClient {
     return response.result;
   }
 
-  async initialize() {
+  async initialize({ signal } = {}) {
     if (this.initialized) return;
     const id = this.nextId++;
     const response = await this._post(
@@ -168,12 +169,12 @@ export class McpHttpClient {
           clientInfo: this.clientInfo,
         },
       },
-      { initialization: true },
+      { initialization: true, signal },
     );
     if (response?.error) throw new Error(`MCP initialize failed: ${response.error.message || JSON.stringify(response.error)}`);
     if (!response?.result) throw new Error('MCP initialize returned no result.');
     this.negotiatedVersion = response.result.protocolVersion || this.protocolVersion;
-    await this._post({ jsonrpc: '2.0', method: 'notifications/initialized', params: {} });
+    await this._post({ jsonrpc: '2.0', method: 'notifications/initialized', params: {} }, { signal });
     this.initialized = true;
   }
 
@@ -183,17 +184,17 @@ export class McpHttpClient {
     return next;
   }
 
-  async listTools() {
+  async listTools(options = {}) {
     return this.run(async () => {
-      await this.initialize();
-      const result = await this._request('tools/list', {});
+      await this.initialize({ signal: options.signal });
+      const result = await this._request('tools/list', {}, options);
       return result?.tools ?? [];
     });
   }
 
   async callTool(name, args = {}, options = {}) {
     return this.run(async () => {
-      await this.initialize();
+      await this.initialize({ signal: options.signal });
       return checkedToolResult(name, await this._request('tools/call', { name, arguments: args }, options));
     });
   }
@@ -211,7 +212,7 @@ export class McpHttpClient {
     return true;
   }
 
-  async close() {
+  async close({ signal } = {}) {
     if (!this.sessionId) return;
     try {
       await this.fetch(this.endpoint, {
@@ -221,6 +222,7 @@ export class McpHttpClient {
           'mcp-session-id': this.sessionId,
           'mcp-protocol-version': this.negotiatedVersion || this.protocolVersion,
         },
+        signal,
       });
     } finally {
       this.sessionId = null;
