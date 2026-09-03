@@ -344,9 +344,38 @@ def main() -> int:
                 assert reviewed_contract["description"] == (
                     "Submit the reviewed profile form and return its visible status."
                 )
+                page.evaluate("async () => window.__callNative('meta_activate_webmcp', {})")
+                incomplete_evaluation = page.evaluate(
+                    "async () => window.__callNative('meta_test_webmcp', {})"
+                )
+                assert incomplete_evaluation["ok"] is False
+                assert incomplete_evaluation["complete"] is False
+                assert incomplete_evaluation["coverage"] == {
+                    "contracts": 1,
+                    "evaluated": 1,
+                    "notRun": 0,
+                    "passed": 0,
+                    "skipped": 1,
+                    "failed": 0,
+                }
+                assert incomplete_evaluation["results"][0]["status"] == "skipped"
+                incomplete_state = page.evaluate("window.MetaWebMCP.getState()")
+                assert incomplete_state["phase"] == 3
+                assert incomplete_state["verificationComplete"] is False
+                assert page.locator("#pipeline-test.current").count() == 1
+                page.evaluate(
+                    """async () => window.__callNative('meta_export_webmcp', {
+                      project_name: 'reviewed-profile-webmcp'
+                    })"""
+                )
+                exported_unverified_state = page.evaluate("window.MetaWebMCP.getState()")
+                assert exported_unverified_state["export"]["fileName"] == "reviewed-profile-webmcp.zip"
+                assert exported_unverified_state["phase"] == 3
+                assert exported_unverified_state["verificationComplete"] is False
+                assert page.locator("#pipeline-export.complete").count() == 0
                 page.evaluate("async () => window.__callNative('meta_reset_workspace', {})")
                 result["checks"].append(
-                    "fallback exposes untrusted evidence and requires reviewed external tool metadata"
+                    "fallback exposes untrusted evidence, requires reviewed metadata, and keeps skipped verification incomplete after export"
                 )
 
                 progress("meta-tools registered")
@@ -460,8 +489,16 @@ def main() -> int:
                 result["checks"].append("generated tools execute against real target state")
 
                 progress("invoking meta_test_webmcp")
+                subset_evaluation = page.evaluate(
+                    "async () => window.__callNative('meta_test_webmcp', { tool_names: ['find_sessions'] })"
+                )
+                assert subset_evaluation["ok"] is False, subset_evaluation
+                assert subset_evaluation["complete"] is False, subset_evaluation
+                assert subset_evaluation["coverage"]["notRun"] == 3, subset_evaluation
+                assert page.evaluate("window.MetaWebMCP.getState().phase") == 3
                 evaluation = page.evaluate("async () => window.__callNative('meta_test_webmcp', {})")
                 assert evaluation["ok"] is True, evaluation
+                assert evaluation["complete"] is True, evaluation
                 assert len(evaluation["results"]) == 4
                 assert all(item["status"] == "passed" for item in evaluation["results"]), evaluation
                 result["checks"].append("four deterministic runtime evaluations")
