@@ -49,21 +49,21 @@ The retained screenshots and redacted machine results are in `evidence/` in the 
 - Dynamic lifecycle management unregisters generated tools without removing the builder control plane.
 - The core server and ZIP generator have no runtime package dependencies.
 
-## Three-minute video script
+## Under-three-minute video script (2:48 target)
 
-### 0:00–0:18 — Problem
+### 0:00–0:15 — Problem
 
 “Most websites can already perform useful work, but agents see either a page made for humans or a large set of low-level browser controls. Adding a good semantic WebMCP surface still requires substantial design and testing.”
 
 Show the Relay Sessions target. Point out the visible “Legacy UI · no WebMCP” label.
 
-### 0:18–0:35 — Recursive premise
+### 0:15–0:30 — Recursive premise
 
 “MetaWebMCP is a WebMCP application whose tools create other WebMCP tools.”
 
 Open the top-level page in ChatGPT's supported browser. Show the seven discovered `meta_*` tools.
 
-### 0:35–1:02 — Analyze
+### 0:30–0:54 — Analyze
 
 Prompt:
 
@@ -71,7 +71,7 @@ Prompt:
 
 Show ChatGPT call `meta_analyze_site`. Briefly display the four evidence-backed candidates and their read/write classifications.
 
-### 1:02–1:25 — Create and activate
+### 0:54–1:15 — Create and activate
 
 Prompt:
 
@@ -79,7 +79,7 @@ Prompt:
 
 Show `meta_create_webmcp`, then `meta_activate_webmcp`. Emphasize that the registry changes from seven to eleven top-level tools.
 
-### 1:25–1:55 — Use the generated WebMCP
+### 1:15–1:43 — Use the generated WebMCP
 
 Prompt:
 
@@ -87,7 +87,7 @@ Prompt:
 
 Show calls to `find_sessions`, `add_session_to_itinerary`, and `inspect_itinerary`. Keep the live target visible as its state changes.
 
-### 1:55–2:20 — Verify
+### 1:43–2:05 — Verify
 
 Prompt:
 
@@ -95,7 +95,7 @@ Prompt:
 
 Show deterministic discovery, schema, execution, and post-state checks. State precisely that intent-selection prompts are included in the export rather than claiming the deterministic suite evaluates an LLM.
 
-### 2:20–2:46 — Ship native
+### 2:05–2:35 — Ship native
 
 Prompt:
 
@@ -105,7 +105,7 @@ Download/open the generated repository. Search for `document.modelContext.regist
 
 Run the exported repository and briefly show that the same four tools register from its own top-level page and can still update the itinerary without MetaWebMCP acting as the runtime.
 
-### 2:46–2:59 — Close
+### 2:35–2:48 — Close
 
 “MetaWebMCP lets an agent use the web as it exists, while giving site owners a direct path from observed interface to reviewed native WebMCP. WebMCP builds WebMCP.”
 
@@ -129,12 +129,13 @@ Run the generated WebMCP evaluation suite and export a repository named relay-se
 
 ## Judge setup
 
-### Native Site Tools path
+### Native WebMCP path
 
-1. In the latest ChatGPT desktop app, open the deployed HTTPS URL as a top-level page in the built-in browser.
-2. Use ChatGPT Work or Codex with GPT‑5.6 Sol or Terra. Site Tools are disabled on Luna and unavailable in ChatGPT Enterprise and Edu. Availability is still rolling out and can differ between otherwise eligible workspaces; the current requirements are in the [Site Tools setup reference](https://learn.chatgpt.com/docs/webmcp).
-3. Confirm that the page header reads **WebMCP active** and the seven `meta_*` tools appear.
-4. Run the prompt sequence above.
+1. Choose a native client:
+   - **ChatGPT Site Tools:** In the latest ChatGPT desktop app, open the deployed HTTPS URL as a top-level page in the built-in browser. Use ChatGPT Work or Codex with GPT‑5.6 Sol or Terra. Site Tools are disabled on Luna and unavailable in ChatGPT Enterprise and Edu. Availability is still rolling out and can differ between otherwise eligible workspaces; the current requirements are in the [Site Tools setup reference](https://learn.chatgpt.com/docs/webmcp).
+   - **Google Chrome 149 or later:** Open `chrome://flags/#enable-webmcp-testing`, enable the WebMCP testing flag, restart Chrome, then open the deployed HTTPS URL as a top-level page.
+2. Confirm that the page header reads **WebMCP active** and the seven `meta_*` tools appear.
+3. Run the prompt sequence above.
 
 ### Ordinary browser fallback
 

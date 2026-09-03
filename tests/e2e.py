@@ -220,14 +220,44 @@ def main() -> int:
                     "disabled on Luna",
                     "Enterprise and Edu",
                     "every eligible workspace",
+                    "Google Chrome 149 or later",
+                    "chrome://flags/#enable-webmcp-testing",
+                    "restart Chrome",
+                    "WebMCP active",
+                    "seven meta-tools",
                 ]:
                     assert expected in guide_text, expected
+                critical_font_sizes = preview_page.evaluate(
+                    """() => Object.fromEntries(Object.entries({
+                      guideCopy: '.client-guide p',
+                      guideSteps: '.client-guide .run-steps',
+                      guideLink: '.client-guide a',
+                      registryLabel: '.registry-summary small',
+                      toolName: '.tool-card strong',
+                      toolDescription: '.tool-card p',
+                    }).map(([name, selector]) => [
+                      name,
+                      Number.parseFloat(getComputedStyle(document.querySelector(selector)).fontSize),
+                    ]))"""
+                )
+                minimum_font_sizes = {
+                    "guideCopy": 11,
+                    "guideSteps": 11,
+                    "guideLink": 11,
+                    "registryLabel": 9,
+                    "toolName": 10,
+                    "toolDescription": 10,
+                }
+                assert all(
+                    critical_font_sizes[name] >= minimum
+                    for name, minimum in minimum_font_sizes.items()
+                ), critical_font_sizes
                 for width in [900, 390]:
                     preview_page.set_viewport_size({"width": width, "height": 844})
                     assert preview_page.evaluate("document.documentElement.scrollWidth <= window.innerWidth") is True
                 preview_page.close()
                 result["checks"].append(
-                    "client prerequisites and responsive five-step non-native fallback"
+                    "native client prerequisites, readable judge guidance, and responsive five-step fallback"
                 )
 
                 page = context.new_page()
@@ -297,6 +327,31 @@ def main() -> int:
                 progress("loading controlled target")
                 page.locator("#target-frame").evaluate("(frame, html) => { frame.srcdoc = html; }", demo_html)
                 page.wait_for_function("document.querySelector('#target-frame').contentWindow?.demoApp")
+                target_font_sizes = page.locator("#target-frame").evaluate(
+                    """frame => Object.fromEntries(Object.entries({
+                      legacyBadge: '.legacy-badge',
+                      formLabel: 'form > label',
+                      formButton: 'form button',
+                      sessionMeta: '.session-meta',
+                      sessionDescription: '.session-card p',
+                    }).map(([name, selector]) => [
+                      name,
+                      Number.parseFloat(frame.contentWindow.getComputedStyle(
+                        frame.contentDocument.querySelector(selector)
+                      ).fontSize),
+                    ]))"""
+                )
+                minimum_target_font_sizes = {
+                    "legacyBadge": 10,
+                    "formLabel": 11,
+                    "formButton": 11,
+                    "sessionMeta": 9,
+                    "sessionDescription": 10,
+                }
+                assert all(
+                    target_font_sizes[name] >= minimum
+                    for name, minimum in minimum_target_font_sizes.items()
+                ), target_font_sizes
                 progress("loading production browser modules")
                 page.add_script_tag(content=app_source, type="module")
                 page.wait_for_function("window.MetaWebMCP && Object.keys(window.__nativeTools || {}).length === 7")

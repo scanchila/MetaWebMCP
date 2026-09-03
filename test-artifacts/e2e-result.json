@@ -1,8 +1,8 @@
 {
-  "baseUrl": "http://127.0.0.1:43999",
+  "baseUrl": "http://127.0.0.1:48161",
   "checks": [
     "server health endpoint",
-    "client prerequisites and responsive five-step non-native fallback",
+    "native client prerequisites, readable judge guidance, and responsive five-step fallback",
     "mode controls expose pressed-button semantics and native keyboard activation",
     "fallback contains untrusted evidence, prevents risk downgrades, requires reviewed metadata, and keeps skipped verification incomplete after export",
     "seven native meta-tools; target has no WebMCP registry",
