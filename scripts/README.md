@@ -14,7 +14,7 @@ python scripts/capture-native-evidence.py
 python scripts/capture-public-evidence.py
 ```
 
-`capture-public-evidence.py` contacts Wikipedia, SauceDemo, and The Internet. It uses SauceDemo's published test account and redacts the password from retained results. Set `META_WEBMCP_EVIDENCE_CASE` to one case slug and `META_WEBMCP_EVIDENCE_APPEND=1` to rerun a single target without discarding the other target records.
+`capture-public-evidence.py` contacts Wikipedia, SauceDemo, and The Internet. It uses SauceDemo's published test account and redacts the password from retained results. Set `META_WEBMCP_EVIDENCE_CASE` to one case slug and `META_WEBMCP_EVIDENCE_APPEND=1` to rerun a single target without discarding the other target records. Append mode requires the retained capture script and helper hashes, browser identity, and browser launch configuration to match the current run; after any of those inputs changes, run a full capture with `META_WEBMCP_EVIDENCE_APPEND` unset.
 
 `capture-deployment-security-gates.py` verifies unauthenticated, cross-origin, authorized, and tampered-capability behavior. It also creates one bounded export, confirms capability ownership and single-use download semantics, and deletes the cached archive by consuming it. Cookie and capability values are never written to the result.
 
