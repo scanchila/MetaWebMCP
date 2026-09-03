@@ -662,6 +662,40 @@ def main() -> int:
                     "document.modelContext.getTools().then(tools => tools.length === 2)"
                 )
                 assert browser_adapter_page.evaluate("window.MetaWebMCPBrowserBridge === undefined") is True
+                invalid_export_inputs = browser_adapter_page.evaluate(
+                    """async () => {
+                      window.__catalogSubmits = 0;
+                      document.querySelector('#catalog-search').addEventListener('submit', () => {
+                        window.__catalogSubmits += 1;
+                      });
+                      const cases = [
+                        {},
+                        { query: 42 },
+                        { query: 'WebMCP', unexpected: true },
+                      ];
+                      const errors = [];
+                      for (const input of cases) {
+                        try {
+                          await window.__callNative('search_catalog', input);
+                          errors.push('accepted');
+                        } catch (error) {
+                          errors.push(String(error.message || error));
+                        }
+                      }
+                      return {
+                        errors,
+                        value: document.querySelector('#catalog-query').value,
+                        result: document.querySelector('#search-result').textContent,
+                        submits: window.__catalogSubmits,
+                      };
+                    }"""
+                )
+                assert "input.query is required" in invalid_export_inputs["errors"][0]
+                assert "input.query must be a string" in invalid_export_inputs["errors"][1]
+                assert "input.unexpected is not accepted" in invalid_export_inputs["errors"][2]
+                assert invalid_export_inputs["value"] == ""
+                assert invalid_export_inputs["result"] == ""
+                assert invalid_export_inputs["submits"] == 0
                 native_search = browser_adapter_page.evaluate(
                     "async () => window.__callNative('search_catalog', { query: 'WebMCP' })"
                 )
@@ -690,7 +724,7 @@ def main() -> int:
                 assert "Beta" in missing_item["message"]
                 assert browser_adapter_page.locator("#cart-state").inner_text() == "Cart is empty"
                 result["checks"].append(
-                    "browser-derived export executes natively without the bridge and fails closed when an item disappears"
+                    "browser-derived export validates inputs before effects, runs without the bridge, and fails closed when an item disappears"
                 )
                 browser_adapter_page.close()
 

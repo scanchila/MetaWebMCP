@@ -111,6 +111,7 @@ Export is a separate, source-owner path: the generated module interprets the rev
 - Calls `document.modelContext.registerTool` directly.
 - Preserves the normal interface when WebMCP is absent.
 - Uses one `AbortController` per tool.
+- Validates every invocation against the serialized ToolSpec before changing page state.
 - Sets read-only and untrusted-content annotations.
 - Implements the same deterministic executor types.
 - Executes browser-derived form and item recipes through constrained owned-page DOM lookups, with an optional explicit browser bridge.

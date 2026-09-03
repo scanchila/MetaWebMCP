@@ -40,6 +40,7 @@ test('generated project directly registers WebMCP tools and includes review arti
     project.files['src/webmcp.generated.js'],
     /form\.querySelector\(executor\.submitSelector\) \|\| document\.querySelector\(executor\.submitSelector\)/,
   );
+  assert.match(project.files['src/webmcp.generated.js'], /assertSchemaValue\(spec\.inputSchema, normalized\)/);
   assert.match(project.files['README.md'], /top-level page/);
   assert.match(project.files['integration-report.html'], /Generated WebMCP integration/);
   assert.match(project.files['integration-report.html'], /<link rel="icon" href="data:,">/);
