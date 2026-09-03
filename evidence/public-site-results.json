@@ -1,0 +1,585 @@
+{
+  "capturedAt": "2026-09-03T00:42:03.940232Z",
+  "deployment": "https://metawebmcp.neuryta.com",
+  "deploymentVersion": "36b55862-be1d-45e2-a345-81ca2cf7f932",
+  "runtime": "Cloudflare Browser Run with Playwright MCP",
+  "entrypoint": "native document.modelContext",
+  "feature": "WebMCPTesting",
+  "initialTools": [
+    "meta_activate_webmcp",
+    "meta_analyze_site",
+    "meta_create_webmcp",
+    "meta_export_webmcp",
+    "meta_get_state",
+    "meta_reset_workspace",
+    "meta_test_webmcp"
+  ],
+  "results": [
+    {
+      "target": "Wikipedia",
+      "slug": "wikipedia-search",
+      "stages": [
+        {
+          "target": {
+            "title": "en.wikipedia.org",
+            "url": "https://en.wikipedia.org/wiki/Main_Page",
+            "kind": "browser_mcp"
+          },
+          "goal": "Search Wikipedia for a topic and return the resulting page.",
+          "analysis": {
+            "summary": {
+              "controls": 249,
+              "buttons": 5,
+              "inputs": 1,
+              "candidates": 5
+            },
+            "warnings": [],
+            "runtime": {
+              "transport": "page",
+              "availableToolCount": 15,
+              "sessionEstablished": true,
+              "sessionReused": true
+            },
+            "capabilities": [
+              {
+                "name": "search",
+                "description": "Use the \u201cSearch\u201d workflow through the connected browser MCP session and return the resulting page snapshot.",
+                "risk": "read",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "search_wikipedia": {
+                      "type": "string",
+                      "description": "Value for Search Wikipedia."
+                    }
+                  },
+                  "required": [
+                    "search_wikipedia"
+                  ],
+                  "additionalProperties": false
+                },
+                "evidenceCount": 2
+              },
+              {
+                "name": "main_menu",
+                "description": "Activate \u201cMain menu\u201d through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "risk": "write",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                },
+                "evidenceCount": 1
+              },
+              {
+                "name": "tools",
+                "description": "Activate \u201cTools\u201d through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "risk": "write",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                },
+                "evidenceCount": 1
+              },
+              {
+                "name": "hide_appearance",
+                "description": "Activate \u201cHide Appearance\u201d through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "risk": "write",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                },
+                "evidenceCount": 1
+              },
+              {
+                "name": "tool_349_languages",
+                "description": "Activate \u201c349 languages\u201d through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "risk": "write",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                },
+                "evidenceCount": 1
+              }
+            ]
+          },
+          "generatedTools": [
+            {
+              "name": "search",
+              "risk": "read",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "search_wikipedia": {
+                    "type": "string",
+                    "description": "Value for Search Wikipedia."
+                  }
+                },
+                "required": [
+                  "search_wikipedia"
+                ],
+                "additionalProperties": false
+              }
+            }
+          ],
+          "selectedTool": "search",
+          "nativeRegistered": true,
+          "arguments": {
+            "search_wikipedia": "WebMCP"
+          },
+          "execution": {
+            "ok": true,
+            "targetPageDiagnostics": {
+              "errors": null,
+              "warnings": null
+            },
+            "steps": [
+              {
+                "tool": "browser_type",
+                "arguments": {
+                  "element": "Search Wikipedia",
+                  "ref": "e23",
+                  "text": "WebMCP"
+                }
+              },
+              {
+                "tool": "browser_click",
+                "arguments": {
+                  "element": "Search",
+                  "ref": "e879"
+                }
+              },
+              {
+                "tool": "browser_snapshot",
+                "arguments": {}
+              }
+            ],
+            "finalSnapshotExcerpt": "- Ran Playwright code: ```js // <internal code to capture accessibility snapshot> ``` - Page URL: https://en.wikipedia.org/w/index.php?search=WebMCP&title=Special:Search&ns0=1 - Page Title: WebMCP - Search results - Wikipedia - Page Snapshot ```yaml - generic [active] [ref=e1]: - link \"Jump to content\" [ref=e2] [cursor=pointer]: - /url: \"#bodyContent\" - banner [ref=e4]: - generic [ref=e5]:"
+          },
+          "export": null,
+          "postconditions": {
+            "WebMCP": true
+          }
+        }
+      ],
+      "capturedAt": "2026-09-03T00:42:21.307163Z",
+      "postconditions": {
+        "search:WebMCP": true
+      },
+      "session": {
+        "established": true,
+        "reusedAcrossStages": true,
+        "stageCount": 1
+      },
+      "workspaceScreenshot": "wikipedia-search-workspace.png",
+      "workspaceScreenshotSha256": "e46ba968c0524d248746f6d74af9c9d53b309332cc34aaaeff4a310d0e212a4d",
+      "targetScreenshot": "wikipedia-search-target.png",
+      "targetScreenshotSha256": "25580a0a4cbe227dac5aa372d70e2844a7c86a115de082e4b7b2cdf3f88be995",
+      "consoleErrors": []
+    },
+    {
+      "target": "SauceDemo",
+      "slug": "saucedemo-cart",
+      "stages": [
+        {
+          "target": {
+            "title": "www.saucedemo.com",
+            "url": "https://www.saucedemo.com/",
+            "kind": "browser_mcp"
+          },
+          "goal": "Sign in with the public test account and inspect the product catalog.",
+          "analysis": {
+            "summary": {
+              "controls": 3,
+              "buttons": 1,
+              "inputs": 2,
+              "candidates": 1
+            },
+            "warnings": [],
+            "runtime": {
+              "transport": "page",
+              "availableToolCount": 15,
+              "sessionEstablished": true,
+              "sessionReused": true
+            },
+            "capabilities": [
+              {
+                "name": "login",
+                "description": "Use the \u201cLogin\u201d workflow through the connected browser MCP session and return the resulting page snapshot.",
+                "risk": "write",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "username": {
+                      "type": "string",
+                      "description": "Value for Username."
+                    },
+                    "password": {
+                      "type": "string",
+                      "description": "Value for Password."
+                    }
+                  },
+                  "required": [
+                    "username",
+                    "password"
+                  ],
+                  "additionalProperties": false
+                },
+                "evidenceCount": 3
+              }
+            ]
+          },
+          "generatedTools": [
+            {
+              "name": "login",
+              "risk": "write",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "description": "Value for Username."
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Value for Password."
+                  }
+                },
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "additionalProperties": false
+              }
+            }
+          ],
+          "selectedTool": "login",
+          "nativeRegistered": true,
+          "arguments": {
+            "username": "standard_user",
+            "password": "[redacted]"
+          },
+          "execution": {
+            "ok": true,
+            "targetPageDiagnostics": {
+              "errors": null,
+              "warnings": null
+            },
+            "steps": [
+              {
+                "tool": "browser_type",
+                "arguments": {
+                  "element": "Username",
+                  "ref": "e11",
+                  "text": "standard_user"
+                }
+              },
+              {
+                "tool": "browser_type",
+                "arguments": {
+                  "element": "Password",
+                  "ref": "e13",
+                  "text": "[redacted]"
+                }
+              },
+              {
+                "tool": "browser_click",
+                "arguments": {
+                  "element": "Login",
+                  "ref": "e15"
+                }
+              },
+              {
+                "tool": "browser_snapshot",
+                "arguments": {}
+              }
+            ],
+            "finalSnapshotExcerpt": "[ref=e27] [cursor=pointer] - img \"Open Menu\" [ref=e28] - generic [ref=e30]: Swag Labs - generic [ref=e33]: - generic [ref=e34]: Products - generic [ref=e36] [cursor=pointer]: - generic [ref=e37]: Name (A to Z) - combobox [ref=e38]: - option \"Name (A to Z)\" [selected] - option \"Name (Z to A)\" - option \"Price (low to high)\""
+          },
+          "export": null,
+          "postconditions": {
+            "Products": true
+          }
+        },
+        {
+          "target": {
+            "title": "www.saucedemo.com",
+            "url": "https://www.saucedemo.com/inventory.html",
+            "kind": "browser_mcp"
+          },
+          "goal": "Add one selected product to the cart and return the updated catalog state.",
+          "analysis": {
+            "summary": {
+              "controls": 28,
+              "buttons": 8,
+              "inputs": 1,
+              "candidates": 3
+            },
+            "warnings": [],
+            "runtime": {
+              "transport": "page",
+              "availableToolCount": 15,
+              "sessionEstablished": true,
+              "sessionReused": true
+            },
+            "capabilities": [
+              {
+                "name": "add_to_cart",
+                "description": "Activate \u201cAdd to cart\u201d for one visible item through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "risk": "write",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "item": {
+                      "type": "string",
+                      "description": "Visible item associated with the \u201cAdd to cart\u201d action.",
+                      "enum": [
+                        "Sauce Labs Backpack",
+                        "Sauce Labs Bike Light",
+                        "Sauce Labs Bolt T-Shirt",
+                        "Sauce Labs Fleece Jacket",
+                        "Sauce Labs Onesie",
+                        "Test.allTheThings() T-Shirt (Red)"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "item"
+                  ],
+                  "additionalProperties": false
+                },
+                "evidenceCount": 6
+              },
+              {
+                "name": "open_menu",
+                "description": "Activate \u201cOpen Menu\u201d through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "risk": "write",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                },
+                "evidenceCount": 1
+              },
+              {
+                "name": "button",
+                "description": "Activate \u201cbutton\u201d through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "risk": "write",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                },
+                "evidenceCount": 1
+              }
+            ]
+          },
+          "generatedTools": [
+            {
+              "name": "add_to_cart",
+              "risk": "write",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "description": "Visible item associated with the \u201cAdd to cart\u201d action.",
+                    "enum": [
+                      "Sauce Labs Backpack",
+                      "Sauce Labs Bike Light",
+                      "Sauce Labs Bolt T-Shirt",
+                      "Sauce Labs Fleece Jacket",
+                      "Sauce Labs Onesie",
+                      "Test.allTheThings() T-Shirt (Red)"
+                    ]
+                  }
+                },
+                "required": [
+                  "item"
+                ],
+                "additionalProperties": false
+              }
+            }
+          ],
+          "selectedTool": "add_to_cart",
+          "nativeRegistered": true,
+          "arguments": {
+            "item": "Sauce Labs Backpack"
+          },
+          "execution": {
+            "ok": true,
+            "targetPageDiagnostics": {
+              "errors": null,
+              "warnings": null
+            },
+            "steps": [
+              {
+                "tool": "browser_click",
+                "arguments": {
+                  "element": "Add to cart for Sauce Labs Backpack",
+                  "ref": "e45"
+                }
+              },
+              {
+                "tool": "browser_snapshot",
+                "arguments": {}
+              }
+            ],
+            "finalSnapshotExcerpt": "o A)\" - option \"Price (low to high)\" - option \"Price (high to low)\" - generic [ref=e33]: - generic [ref=e34]: - link \"Sauce Labs Backpack\" [ref=e36] [cursor=pointer]: - /url: \"#\" - img \"Sauce Labs Backpack\" [ref=e37] - generic [ref=e38]: - generic [ref=e39]: - link \"Sauce Labs Backpack\" [ref=e40] [cursor=pointer]: - /url: \"#\"\n\u2026\nuncompromising style with unequaled laptop and tablet protection. - generic [ref=e43]: - generic [ref=e44]: $29.99 - button \"Remove\" [ref=e116] [cursor=pointer] - generic [ref=e46]: - link \"Sauce Labs Bike Light\" [ref=e48] [cursor=pointer]: - /url: \"#\" - img \"Sauce Labs Bike Light\" [ref=e49] - generic [ref=e50]: - generic [ref=e51]:"
+          },
+          "export": {
+            "fileName": "saucedemo-cart-webmcp.zip",
+            "fileCount": 11,
+            "bytes": 29658,
+            "archiveSha256": "af8c75d2474f7344deb67229138174be5e7499d5d65d7688cff391c14b53c5df",
+            "directRegisterTool": true,
+            "unixFileMode": "0644",
+            "toolNames": [
+              "add_to_cart"
+            ]
+          },
+          "postconditions": {
+            "Sauce Labs Backpack": true,
+            "Remove": true
+          }
+        }
+      ],
+      "capturedAt": "2026-09-03T00:44:44.847302Z",
+      "postconditions": {
+        "login:Products": true,
+        "add_to_cart:Sauce Labs Backpack": true,
+        "add_to_cart:Remove": true
+      },
+      "session": {
+        "established": true,
+        "reusedAcrossStages": true,
+        "stageCount": 2
+      },
+      "workspaceScreenshot": "saucedemo-cart-workspace.png",
+      "workspaceScreenshotSha256": "c41ab08dfa2e0c9fb804fbd58092523b96b83f5ccb2de757fb6d1a25fc7c7d9b",
+      "targetScreenshot": "saucedemo-cart-target.png",
+      "targetScreenshotSha256": "c77d3a18d159252141a2fc37c039f6ea522aee8fbcfa8a4b452539e272c1e11a",
+      "consoleErrors": []
+    },
+    {
+      "target": "The Internet",
+      "slug": "the-internet-add-element",
+      "stages": [
+        {
+          "target": {
+            "title": "the-internet.herokuapp.com",
+            "url": "https://the-internet.herokuapp.com/add_remove_elements/",
+            "kind": "browser_mcp"
+          },
+          "goal": "Add a visible element to the page and return the changed interface state.",
+          "analysis": {
+            "summary": {
+              "controls": 2,
+              "buttons": 1,
+              "inputs": 0,
+              "candidates": 1
+            },
+            "warnings": [],
+            "runtime": {
+              "transport": "page",
+              "availableToolCount": 15,
+              "sessionEstablished": true,
+              "sessionReused": true
+            },
+            "capabilities": [
+              {
+                "name": "add_element",
+                "description": "Activate \u201cAdd Element\u201d through the connected browser MCP session and return the resulting page snapshot. This may change page state.",
+                "risk": "write",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                },
+                "evidenceCount": 1
+              }
+            ]
+          },
+          "generatedTools": [
+            {
+              "name": "add_element",
+              "risk": "write",
+              "inputSchema": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          ],
+          "selectedTool": "add_element",
+          "nativeRegistered": true,
+          "arguments": {},
+          "execution": {
+            "ok": true,
+            "targetPageDiagnostics": {
+              "errors": null,
+              "warnings": null
+            },
+            "steps": [
+              {
+                "tool": "browser_click",
+                "arguments": {
+                  "element": "Add Element",
+                  "ref": "e9"
+                }
+              },
+              {
+                "tool": "browser_snapshot",
+                "arguments": {}
+              }
+            ],
+            "finalSnapshotExcerpt": "[level=3] [ref=e7] - generic [ref=e8]: - button \"Add Element\" [active] [ref=e9] [cursor=pointer] - separator [ref=e10] - button \"Delete\" [ref=e17] [cursor=pointer] - generic [ref=e12]: - separator [ref=e13] - generic [ref=e14]: - text: Powered by - link \"Elemental Selenium\" [ref=e15] [cursor=pointer]: - /url: http://elementalselenium.com/ ```"
+          },
+          "export": null,
+          "postconditions": {
+            "Delete": true
+          }
+        }
+      ],
+      "capturedAt": "2026-09-03T00:46:28.049757Z",
+      "postconditions": {
+        "add_element:Delete": true
+      },
+      "session": {
+        "established": true,
+        "reusedAcrossStages": true,
+        "stageCount": 1
+      },
+      "workspaceScreenshot": "the-internet-add-element-workspace.png",
+      "workspaceScreenshotSha256": "27020e38aff56262382d12daa6761c2e10a7fbccf3d8eca9c4fa2351d82efd27",
+      "targetScreenshot": "the-internet-add-element-target.png",
+      "targetScreenshotSha256": "f38d6e45f3bec0e541978360b436aa9875b77801d41b326452ee4267190e5837",
+      "consoleErrors": []
+    }
+  ],
+  "browser": "Google Chrome 154.0.8037.0 beta",
+  "browserMcp": {
+    "configured": true,
+    "transport": "page",
+    "availableTools": [
+      "browser_click",
+      "browser_close",
+      "browser_console_messages",
+      "browser_drag",
+      "browser_handle_dialog",
+      "browser_hover",
+      "browser_navigate",
+      "browser_network_requests",
+      "browser_press_key",
+      "browser_resize",
+      "browser_select_option",
+      "browser_snapshot",
+      "browser_take_screenshot",
+      "browser_type",
+      "browser_wait_for"
+    ]
+  }
+}

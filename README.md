@@ -25,7 +25,13 @@ An ordinary website that initially had no WebMCP tools
 
 No model API key is required. The browser agent supplies the reasoning and calls the meta-tools. MetaWebMCP handles deterministic discovery, contracts, runtime registration, execution, tests, and code generation.
 
-![MetaWebMCP recursive end-to-end run](test-artifacts/metawebmcp-e2e.png)
+![MetaWebMCP running the recursive flow through native WebMCP](evidence/native-webmcp-recursive-workspace.png)
+
+## Production proof
+
+The deployed build has been exercised through a real browser `document.modelContext`: seven permanent tools became eleven after activation, all four generated-tool checks passed, and the downloaded 13-file repository registered and ran the same four tools independently. Through that same native entrypoint, the session-scoped hosted adapter completed semantic search, a two-stage sign-in and cart workflow, and a visible page-state mutation across three public targets.
+
+Screenshots and redacted machine-readable results are retained in [`evidence/`](evidence/). The production workspace scored 96 for Lighthouse performance and 100 for accessibility, best practices, SEO, and agentic browsing; the independently served native export scored 100 in all five categories.
 
 ## What is included
 
@@ -168,6 +174,8 @@ The end-to-end test launches the included server and an available Chromium build
 The unit/integration suite also verifies both transport layouts: isolated server-side workspaces and one Streamable HTTP session owned by the open page from analysis through generated-tool execution.
 
 See [`TEST_REPORT.md`](TEST_REPORT.md) for the exact environment and latest run.
+
+Production-native and public-site evidence is retained in [`evidence/`](evidence/), including exact tool surfaces, postconditions, console-error records, screenshot hashes, and deployment version.
 
 ## Design constraints
 
