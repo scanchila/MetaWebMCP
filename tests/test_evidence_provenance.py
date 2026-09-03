@@ -99,6 +99,13 @@ class EvidenceProvenanceTest(unittest.TestCase):
                 self.assertNotIn('--enable-blink-features=WebMCPTesting', source)
                 self.assertIn('Headless evidence capture requires Chrome 152+', source)
 
+    def test_native_capture_checks_browser_identity_before_creating_a_page(self):
+        source = (ROOT / 'scripts' / 'capture-native-evidence.py').read_text()
+        main_source = source[source.index('def main():'):]
+        identity_check = 'captured_browser_identity = browser_identity(CHROME, browser.version)'
+        self.assertLess(main_source.index(identity_check), main_source.index('page = browser.new_page'))
+        self.assertIn("'browser': captured_browser_identity", main_source)
+
     def test_requires_an_explicit_full_source_commit(self):
         self.assertEqual(configured_source_commit({'META_WEBMCP_SOURCE_COMMIT': SOURCE_COMMIT.upper()}), SOURCE_COMMIT)
         with self.assertRaisesRegex(RuntimeError, 'exact full deployed commit'):

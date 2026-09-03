@@ -230,6 +230,7 @@ def main():
             args=BROWSER_ARGS,
         )
         try:
+            captured_browser_identity = browser_identity(CHROME, browser.version)
             page = browser.new_page(viewport={'width': 1840, 'height': 1215}, device_scale_factor=1)
             page.set_default_timeout(20_000)
             page.on('console', lambda message: console_errors.append(message.text) if message.type == 'error' else None)
@@ -384,7 +385,7 @@ def main():
                 'captureScript': Path(__file__).name,
                 'captureScriptSha256': CAPTURE_SCRIPT_SHA256,
                 'captureDependencies': {PROVENANCE_HELPER.name: PROVENANCE_HELPER_SHA256},
-                'browser': browser_identity(CHROME, browser.version),
+                'browser': captured_browser_identity,
                 'browserLaunch': {
                     'executable': Path(CHROME).name,
                     'headless': True,
