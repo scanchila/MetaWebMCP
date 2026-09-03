@@ -16,14 +16,14 @@ function assertSchemaValue(schema, value, path = 'input') {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${path} must be an object.`);
     const properties = schema.properties || {};
     for (const required of schema.required || []) {
-      if (!(required in value)) throw new Error(`${path}.${required} is required.`);
+      if (!Object.hasOwn(value, required)) throw new Error(`${path}.${required} is required.`);
     }
     if (schema.additionalProperties === false) {
-      const unexpected = Object.keys(value).find((key) => !(key in properties));
+      const unexpected = Object.keys(value).find((key) => !Object.hasOwn(properties, key));
       if (unexpected) throw new Error(`${path}.${unexpected} is not accepted.`);
     }
     for (const [key, item] of Object.entries(value)) {
-      if (properties[key]) assertSchemaValue(properties[key], item, `${path}.${key}`);
+      if (Object.hasOwn(properties, key)) assertSchemaValue(properties[key], item, `${path}.${key}`);
     }
     return;
   }
@@ -246,7 +246,7 @@ async function executeDomSpec(spec, input, context) {
   if (executor.type === 'dom-form') {
     const form = uniqueForm(targetDocument, executor.formSelector);
     for (const field of executor.fields || []) {
-      if (!(field.name in input)) continue;
+      if (!Object.hasOwn(input, field.name)) continue;
       const control = uniqueFormControl(targetDocument, form, field.selector);
       setControlValue(control, input[field.name], targetDocument);
     }
