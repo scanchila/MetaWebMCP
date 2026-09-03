@@ -8,6 +8,7 @@ import {
 } from '../deploy/cloudflare/browser-egress-proxy.mjs';
 import {
   BROWSER_MCP_TOOL_NAMES,
+  hostedBrowserEngine,
   hostedBrowserEnabled,
   isBlockedBrowserHostname,
   validateBrowserTransportMessage,
@@ -18,6 +19,10 @@ test('hosted Browser Run is disabled unless the deployment explicitly opts in', 
   assert.equal(hostedBrowserEnabled({}), false);
   assert.equal(hostedBrowserEnabled({ HOSTED_BROWSER_ENABLED: '0' }), false);
   assert.equal(hostedBrowserEnabled({ HOSTED_BROWSER_ENABLED: '1' }), true);
+  assert.equal(hostedBrowserEngine({}), 'chromium');
+  assert.equal(hostedBrowserEngine({ HOSTED_BROWSER_ENGINE: 'chromium' }), 'chromium');
+  assert.equal(hostedBrowserEngine({ HOSTED_BROWSER_ENGINE: 'unknown' }), 'chromium');
+  assert.equal(hostedBrowserEngine({ HOSTED_BROWSER_ENGINE: 'kitesurf' }), 'kitesurf');
 });
 
 function routedRequest({

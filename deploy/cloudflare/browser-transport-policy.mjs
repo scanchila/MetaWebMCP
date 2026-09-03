@@ -17,6 +17,10 @@ export function hostedBrowserEnabled(bindings) {
   return bindings?.HOSTED_BROWSER_ENABLED === '1';
 }
 
+export function hostedBrowserEngine(bindings) {
+  return bindings?.HOSTED_BROWSER_ENGINE === 'kitesurf' ? 'kitesurf' : 'chromium';
+}
+
 export function isBlockedBrowserHostname(rawHostname) {
   return isBlockedPublicHostname(rawHostname);
 }

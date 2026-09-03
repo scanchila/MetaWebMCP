@@ -15,6 +15,7 @@ test('Cloudflare deployment declares immutable version metadata and source ident
   const config = JSON.parse(await readFile(new URL('../deploy/cloudflare/wrangler.jsonc', import.meta.url), 'utf8'));
   assert.deepEqual(config.version_metadata, { binding: 'CF_VERSION_METADATA' });
   assert.equal(config.vars.HOSTED_BROWSER_ENABLED, '1');
+  assert.equal(config.vars.HOSTED_BROWSER_ENGINE, 'kitesurf');
   assert.ok(config.compatibility_flags.includes('global_fetch_strictly_public'));
   assert.deepEqual(
     config.ratelimits.find((binding) => binding.name === 'ANALYSIS_RATE_LIMITER')?.simple,
@@ -29,6 +30,7 @@ test('Cloudflare deployment declares immutable version metadata and source ident
   const worker = await readFile(new URL('../deploy/cloudflare/worker.mjs', import.meta.url), 'utf8');
   assert.match(worker, /bindings\.CF_VERSION_METADATA\?\.id/);
   assert.match(worker, /bindings\.META_WEBMCP_SOURCE_COMMIT/);
+  assert.match(worker, /endpointURLString\(runtimeEnv\.BROWSER, \{ browser: 'kitesurf' \}\)/);
   assert.match(worker, /'cache-control': 'no-store'/);
   assert.match(worker, /bindings\.ANALYSIS_RATE_LIMITER\.limit/);
   const snapshotRoute = worker.slice(

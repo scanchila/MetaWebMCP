@@ -10,6 +10,7 @@
     "deploy": "node deploy.mjs"
   },
   "dependencies": {
+    "@cloudflare/playwright": "1.3.6",
     "@cloudflare/playwright-mcp": "0.0.5"
   },
   "devDependencies": {

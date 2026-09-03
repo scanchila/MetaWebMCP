@@ -1,4 +1,5 @@
 import { env as runtimeEnv } from 'cloudflare:workers';
+import { endpointURLString } from '@cloudflare/playwright';
 import { createMcpAgent } from '@cloudflare/playwright-mcp';
 
 import { analyzeAccessibilitySnapshot, analyzeHtml } from '../../lib/analyzer.mjs';
@@ -17,6 +18,7 @@ import { ExportStore } from './export-store.mjs';
 import { MAX_EXPORT_ARCHIVE_BYTES } from './export-store-core.mjs';
 import {
   BROWSER_MCP_TOOL_NAMES,
+  hostedBrowserEngine,
   hostedBrowserEnabled,
   validateBrowserTransportMessage,
   validatePublicTarget,
@@ -31,7 +33,11 @@ const EXPORT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{
 
 export { ExportStore };
 
-export const PlaywrightMCP = createMcpAgent(runtimeEnv.BROWSER, {
+const browserEndpoint = hostedBrowserEngine(runtimeEnv) === 'kitesurf'
+  ? endpointURLString(runtimeEnv.BROWSER, { browser: 'kitesurf' })
+  : runtimeEnv.BROWSER;
+
+export const PlaywrightMCP = createMcpAgent(browserEndpoint, {
   capabilities: ['core', 'wait'],
   allowedTools: BROWSER_MCP_TOOL_NAMES,
   network: {
@@ -264,6 +270,7 @@ async function handleApi(request, bindings, pathname, browserCapability) {
       ok: true,
       service: 'MetaWebMCP',
       browserMcpConfigured: hostedBrowserEnabled(bindings),
+      browserEngine: hostedBrowserEngine(bindings),
       runtime: 'cloudflare',
       deploymentVersion,
       sourceCommit,
@@ -276,6 +283,7 @@ async function handleApi(request, bindings, pathname, browserCapability) {
     return json({
       ok: true,
       browserMcpConfigured: hostedBrowserEnabled(bindings),
+      browserEngine: hostedBrowserEngine(bindings),
       browserMcpEndpoint: hostedBrowserEnabled(bindings) ? '/sse' : '',
       browserMcpTransport: hostedBrowserEnabled(bindings) ? 'sse' : 'none',
       allowPrivateTargets: false,

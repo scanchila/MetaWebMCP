@@ -29,6 +29,7 @@ Set `MCP_CAPABILITY_SECRET` to a randomly generated value of at least 32 bytes. 
 - `ExportStore` is a SQLite-backed Durable Object that retains bounded, expiring ZIP archives with atomic owner claims.
 - The page uses the package's SSE endpoint so one control connection remains open for the life of the browser session.
 - The showcase sets `HOSTED_BROWSER_ENABLED=1` for the in-site viewer. Set it to `0` when a deployment does not have suitable Browser Run capacity and abuse monitoring; the controlled sample and tool-only observation inputs continue to work.
+- The showcase selects Cloudflare's agent-focused Kitesurf engine with `HOSTED_BROWSER_ENGINE=kitesurf`; omit that variable to use Chromium instead. Kitesurf is currently a beta service, so retain the deterministic sample as a fallback.
 - Browser transport requests require a same-origin, short-lived signed capability stored in an HttpOnly SameSite cookie and are limited to 60 requests per source IP per minute.
 - Browser HTTP traffic is intercepted and fulfilled through the Worker's public-Internet `fetch()` path with manual redirects, a 20-second per-request deadline, a 2 MB request cap, and an 8 MB response cap. Worker contexts, service workers, and direct socket APIs are disabled rather than allowed to bypass that route.
 - Anonymous HTML and URL analysis is limited to 30 requests per source IP per minute. URL fetches share one 12-second deadline across redirects, and Worker fetches use public Internet routing rather than zone-origin routing.
