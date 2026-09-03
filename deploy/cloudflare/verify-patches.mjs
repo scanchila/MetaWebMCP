@@ -6,6 +6,9 @@ const { PageSnapshot } = await import('./node_modules/@cloudflare/playwright-mcp
 const { default: screenshotTools } = await import(
   './node_modules/@cloudflare/playwright-mcp/lib/esm/src/tools/screenshot.js'
 );
+const { default: snapshotTools } = await import(
+  './node_modules/@cloudflare/playwright-mcp/lib/esm/src/tools/snapshot.js'
+);
 
 const agentsPackage = JSON.parse(await readFile(
  './node_modules/@cloudflare/playwright-mcp/node_modules/agents/package.json',
@@ -148,6 +151,56 @@ assert.deepEqual(screenshotResult.content, [
     mimeType: 'image/png',
   },
 ]);
+
+const clickTool = snapshotTools.find((tool) => tool.schema.name === 'browser_click');
+assert.ok(clickTool, 'the click tool should remain available');
+let pressedKey;
+const geometryFailure = new Error(`locator.click: Timeout 5000ms exceeded.
+Call log:
+  - scrolling into view if needed
+  - done scrolling
+  - element is not visible`);
+const clickAction = await clickTool.handle(
+  {
+    currentTabOrDie: () => ({
+      snapshotOrDie: () => ({
+        refLocator: () => ({
+          _generateLocatorString: async () => "getByRole('button', { name: 'Search' })",
+          click: async () => { throw geometryFailure; },
+          isVisible: async () => true,
+          isEnabled: async () => true,
+          press: async (key) => { pressedKey = key; },
+        }),
+      }),
+    }),
+  },
+  { element: 'Search', ref: 'e1' },
+);
+await clickAction.action();
+assert.equal(
+  pressedKey,
+  'Enter',
+  'a pointer action without Kitesurf geometry should keyboard-activate the same referenced control',
+);
+let hiddenControlActivated = false;
+const hiddenClickAction = await clickTool.handle(
+  {
+    currentTabOrDie: () => ({
+      snapshotOrDie: () => ({
+        refLocator: () => ({
+          _generateLocatorString: async () => "getByRole('button', { name: 'Hidden action' })",
+          click: async () => { throw geometryFailure; },
+          isVisible: async () => false,
+          isEnabled: async () => true,
+          press: async () => { hiddenControlActivated = true; },
+        }),
+      }),
+    }),
+  },
+  { element: 'Hidden action', ref: 'e2' },
+);
+await assert.rejects(hiddenClickAction.action(), (error) => error === geometryFailure);
+assert.equal(hiddenControlActivated, false, 'hidden controls should fail closed instead of using keyboard activation');
 
 const chromiumPageSource = await readFile(
   './node_modules/@cloudflare/playwright/lib/playwright-core/src/server/chromium/crPage.js',

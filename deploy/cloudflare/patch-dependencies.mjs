@@ -104,6 +104,31 @@ for (const file of locatorFiles) {
   await writeFile(file, source.replace(originalLocatorGenerator, compatibleLocatorGenerator));
 }
 
+const clickToolFiles = [
+  'node_modules/@cloudflare/playwright-mcp/lib/esm/src/tools/snapshot.js',
+  'node_modules/@cloudflare/playwright-mcp/lib/cjs/src/tools/snapshot.js',
+];
+const originalClickAction = '      action: () => params.doubleClick ? locator.dblclick() : locator.click(),';
+const compatibleClickAction = `      action: async () => {
+        if (params.doubleClick) return locator.dblclick();
+        try {
+          return await locator.click();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          const missingPointerGeometry = message.includes("scrolling into view if needed")
+            && message.includes("element is not visible");
+          if (!missingPointerGeometry || !await locator.isVisible() || !await locator.isEnabled()) throw error;
+          return locator.press("Enter");
+        }
+      },`;
+
+for (const file of clickToolFiles) {
+  const source = await readFile(file, 'utf8');
+  if (source.includes(compatibleClickAction)) continue;
+  if (!source.includes(originalClickAction)) throw new Error(`Unexpected Playwright MCP click action in ${file}.`);
+  await writeFile(file, source.replace(originalClickAction, compatibleClickAction));
+}
+
 const screenshotFiles = [
   {
     file: 'node_modules/@cloudflare/playwright-mcp/lib/esm/src/tools/screenshot.js',
