@@ -97,6 +97,8 @@ export async function analyzeControlledDemo(frame, goal) {
     summary: {
       ...payload.analysis.summary,
       candidates: capabilities.length,
+      discoveredCandidates: capabilities.length,
+      omittedCandidates: 0,
       generatedFromLiveDom: true,
     },
     capabilities,

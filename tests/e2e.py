@@ -329,6 +329,8 @@ def main() -> int:
                     })"""
                 )
                 assert analysis["summary"]["candidates"] == 4, analysis
+                assert analysis["summary"]["discoveredCandidates"] == 4, analysis
+                assert analysis["summary"]["omittedCandidates"] == 0, analysis
                 capability_names = [item["name"] for item in analysis["capabilities"]]
                 assert capability_names == [
                     "find_sessions",
