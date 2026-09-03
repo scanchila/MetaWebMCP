@@ -634,8 +634,13 @@ def main() -> int:
                     "async () => window.__callNative('inspect_itinerary', {})"
                 )
                 assert "1 SESSION" in generated_inspect["visibleState"]
+                generated_clear = generated_page.evaluate(
+                    "async () => window.__callNative('clear_itinerary', {})"
+                )
+                assert "0 SESSIONS" in generated_clear["visibleState"]
+                assert generated_page.evaluate("window.demoApp.getState().itinerary.length") == 0
                 result["checks"].append(
-                    "exported repository registers and executes four native tools with form-scoped submission"
+                    "exported repository registers and independently executes all four native tools with form-scoped submission"
                 )
                 generated_page.close()
 
