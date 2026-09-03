@@ -5,12 +5,80 @@ import { execFileSync } from 'node:child_process';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-import { crc32 } from '../lib/zip.mjs';
+import { runInNewContext } from 'node:vm';
 
 const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const evidenceDirectory = path.join(root, 'evidence');
 const identityFields = ['deploymentVersion', 'sourceCommit', 'deployedAt', 'deploymentTag'];
+const deployedAssetPaths = [
+  '/',
+  '/styles.css',
+  '/js/app.js',
+  '/js/browser-mcp-session.js',
+  '/js/demo-analyzer.js',
+  '/js/mcp-http-client.js',
+  '/js/mcp-recipe.js',
+  '/js/network-policy.js',
+  '/js/webmcp-runtime.js',
+  '/demo/index.html',
+  '/demo/demo.css',
+  '/demo/demo.js',
+];
+const expectedExportFiles = [
+  'relay-sessions-webmcp/AGENTS.md',
+  'relay-sessions-webmcp/LICENSE',
+  'relay-sessions-webmcp/README.md',
+  'relay-sessions-webmcp/index.html',
+  'relay-sessions-webmcp/integration-report.html',
+  'relay-sessions-webmcp/metawebmcp-report.json',
+  'relay-sessions-webmcp/package.json',
+  'relay-sessions-webmcp/serve.mjs',
+  'relay-sessions-webmcp/src/tool-spec.json',
+  'relay-sessions-webmcp/src/webmcp.generated.js',
+  'relay-sessions-webmcp/target.css',
+  'relay-sessions-webmcp/target.js',
+  'relay-sessions-webmcp/tests/manual-evals.md',
+];
+const expectedPublicJourneys = {
+  'wikipedia-search': {
+    target: 'Wikipedia',
+    postconditions: ['search:WebMCP'],
+    stages: [{
+      tool: 'search',
+      steps: ['browser_type', 'browser_click', 'browser_snapshot'],
+      postconditions: ['WebMCP'],
+    }],
+  },
+  'saucedemo-cart': {
+    target: 'SauceDemo',
+    postconditions: [
+      'login:Products',
+      'add_to_cart:Sauce Labs Backpack',
+      'add_to_cart:Remove',
+    ],
+    stages: [
+      {
+        tool: 'login',
+        steps: ['browser_type', 'browser_type', 'browser_click', 'browser_snapshot'],
+        postconditions: ['Products'],
+      },
+      {
+        tool: 'add_to_cart',
+        steps: ['browser_click', 'browser_snapshot'],
+        postconditions: ['Sauce Labs Backpack', 'Remove'],
+      },
+    ],
+  },
+  'the-internet-add-element': {
+    target: 'The Internet',
+    postconditions: ['add_element:Delete'],
+    stages: [{
+      tool: 'add_element',
+      steps: ['browser_click', 'browser_snapshot'],
+      postconditions: ['Delete'],
+    }],
+  },
+};
 
 const sha256 = (content) => createHash('sha256').update(content).digest('hex');
 
@@ -36,6 +104,11 @@ function assertDeploymentIdentity(record, label) {
   assert.ok(Number.isFinite(Date.parse(record.deployedAt)), `${label} deployment timestamp`);
   assert.equal(record.deploymentTag, `source-${record.sourceCommit.slice(0, 12)}`, `${label} deployment tag`);
   assert.equal(record.identityVerifiedFromHealth, true, `${label} health identity`);
+  assert.equal(
+    execFileSync('git', ['cat-file', '-t', record.sourceCommit], { cwd: root, encoding: 'utf8' }).trim(),
+    'commit',
+    `${label} source identity is a commit`,
+  );
 }
 
 function assertSameDeployment(records) {
@@ -48,19 +121,29 @@ function assertSameDeployment(records) {
   }
 }
 
-function assertCaptureSourceProvenance(record) {
+function assertSameProductionOrigin(values) {
+  const origins = values.map((value) => new URL(value).origin);
+  assert.ok(origins.every((origin) => origin === origins[0]), 'production evidence origins must agree');
+}
+
+function assertCaptureSourceProvenance(record, captureScript, dependencies) {
+  assert.equal(record.captureScript, captureScript);
+  assert.ok(record.captureDependencies && !Array.isArray(record.captureDependencies), 'capture dependency map');
+  assert.deepEqual(Object.keys(record.captureDependencies).sort(), [...dependencies].sort());
   assert.equal(
     sha256(sourceFile(record, `scripts/${record.captureScript}`)),
     record.captureScriptSha256,
     `${record.captureScript} source SHA-256`,
   );
-  for (const [name, expected] of Object.entries(record.captureDependencies || {})) {
+  for (const [name, expected] of Object.entries(record.captureDependencies)) {
     assert.equal(sha256(sourceFile(record, `scripts/${name}`)), expected, `${name} source SHA-256`);
   }
 }
 
 function assertAssetProvenance(record) {
-  for (const [urlPath, expected] of Object.entries(record.assetSha256 || {})) {
+  assert.ok(record.assetSha256 && !Array.isArray(record.assetSha256), 'deployed asset hash map');
+  assert.deepEqual(Object.keys(record.assetSha256).sort(), [...deployedAssetPaths].sort());
+  for (const [urlPath, expected] of Object.entries(record.assetSha256)) {
     const relative = urlPath === '/' ? 'public/index.html' : `public${urlPath}`;
     assert.equal(sha256(sourceFile(record, relative)), expected, `${relative} deployed SHA-256`);
   }
@@ -72,8 +155,10 @@ const lighthouseBrowser = (report) => (
   String(report.environment?.hostUserAgent || '').match(/(?:Headless)?Chrome\/[^ ]+/)?.[0] || 'unknown'
 );
 
-async function assertLighthouseSummary(summaryName) {
+async function assertLighthouseSummary(summaryName, { rawReport, inputArtifact }) {
   const summary = await json(summaryName);
+  assert.equal(summary.summarizer, 'summarize-lighthouse.mjs');
+  assert.equal(summary.rawReport, rawReport);
   const rawBytes = await readFile(path.join(evidenceDirectory, summary.rawReport));
   const report = JSON.parse(rawBytes);
   assert.equal(sha256(rawBytes), summary.rawReportSha256);
@@ -96,47 +181,120 @@ async function assertLighthouseSummary(summaryName) {
     summary.summarizerSha256,
     `${summary.summarizer} source SHA-256`,
   );
-  if (summary.inputArtifact) {
-    await assertArtifactHash(summary.inputArtifact.file, summary.inputArtifact.sha256);
+  if (inputArtifact) {
+    assert.deepEqual(Object.keys(summary.inputArtifact).sort(), ['file', 'sha256']);
+    assert.equal(summary.inputArtifact.file, inputArtifact);
+    await assertArtifactHash(inputArtifact, summary.inputArtifact.sha256);
+  } else {
+    assert.equal(summary.inputArtifact, null);
   }
   return summary;
 }
 
+function independentCrc32(content) {
+  let checksum = 0xffffffff;
+  for (const byte of content) {
+    checksum ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) {
+      checksum = (checksum >>> 1) ^ ((checksum & 1) ? 0xedb88320 : 0);
+    }
+  }
+  return (checksum ^ 0xffffffff) >>> 0;
+}
+
+function assertSafeZipPath(name) {
+  const segments = name.split('/');
+  assert.ok(
+    name
+      && !name.includes('\\')
+      && !name.includes('\0')
+      && !path.posix.isAbsolute(name)
+      && !/^[a-z]:/i.test(name)
+      && !segments.includes('..'),
+    `safe ZIP path: ${name}`,
+  );
+}
+
 function parseStoredZip(content) {
+  assert.ok(content.length >= 22, 'ZIP end record is present');
+  const endOffset = content.length - 22;
+  assert.equal(content.readUInt32LE(endOffset), 0x06054b50, 'ZIP end record');
+  assert.equal(content.readUInt16LE(endOffset + 4), 0, 'single-disk ZIP');
+  assert.equal(content.readUInt16LE(endOffset + 6), 0, 'central directory disk');
+  const entriesOnDisk = content.readUInt16LE(endOffset + 8);
+  const centralEntries = content.readUInt16LE(endOffset + 10);
+  assert.equal(entriesOnDisk, centralEntries, 'complete central directory');
+  assert.equal(content.readUInt16LE(endOffset + 20), 0, 'ZIP comment length');
+  const centralSize = content.readUInt32LE(endOffset + 12);
+  const centralStart = content.readUInt32LE(endOffset + 16);
+  assert.equal(centralStart + centralSize, endOffset, 'central directory extent');
+
+  const centralRecords = [];
+  const centralNames = new Set();
+  let centralOffset = centralStart;
+  for (let index = 0; index < centralEntries; index += 1) {
+    assert.ok(centralOffset + 46 <= endOffset, 'complete central entry');
+    assert.equal(content.readUInt32LE(centralOffset), 0x02014b50, 'central entry signature');
+    const flags = content.readUInt16LE(centralOffset + 8);
+    const method = content.readUInt16LE(centralOffset + 10);
+    const checksum = content.readUInt32LE(centralOffset + 16);
+    const compressedSize = content.readUInt32LE(centralOffset + 20);
+    const size = content.readUInt32LE(centralOffset + 24);
+    const nameLength = content.readUInt16LE(centralOffset + 28);
+    const extraLength = content.readUInt16LE(centralOffset + 30);
+    const commentLength = content.readUInt16LE(centralOffset + 32);
+    const localOffset = content.readUInt32LE(centralOffset + 42);
+    const nameStart = centralOffset + 46;
+    const recordEnd = nameStart + nameLength + extraLength + commentLength;
+    assert.ok(recordEnd <= endOffset, 'central entry stays inside its directory');
+    const nameBytes = content.subarray(nameStart, nameStart + nameLength);
+    const name = nameBytes.toString('utf8');
+    assert.deepEqual(Buffer.from(name, 'utf8'), nameBytes, `valid UTF-8 ZIP path: ${name}`);
+    assertSafeZipPath(name);
+    assert.equal(centralNames.has(name), false, `unique central ZIP path: ${name}`);
+    centralNames.add(name);
+    assert.equal(flags & 0x0009, 0, `${name} is unencrypted and has no data descriptor`);
+    assert.equal(method, 0, `${name} is stored`);
+    assert.equal(compressedSize, size, `${name} stored sizes`);
+    assert.equal(content.readUInt32LE(centralOffset + 38) >>> 16, 0o100644, `${name} portable file mode`);
+    centralRecords.push({ name, flags, method, checksum, compressedSize, size, localOffset });
+    centralOffset = recordEnd;
+  }
+  assert.equal(centralOffset, centralStart + centralSize, 'complete central directory bytes');
+
   const entries = new Map();
-  let offset = 0;
-  while (content.readUInt32LE(offset) === 0x04034b50) {
-    assert.equal(content.readUInt16LE(offset + 8), 0, 'retained ZIP entries must be stored');
-    const checksum = content.readUInt32LE(offset + 14);
-    const size = content.readUInt32LE(offset + 18);
-    assert.equal(size, content.readUInt32LE(offset + 22), 'stored ZIP sizes');
+  const localRegions = [];
+  for (const central of centralRecords) {
+    const offset = central.localOffset;
+    assert.ok(offset + 30 <= centralStart, `${central.name} local header bounds`);
+    assert.equal(content.readUInt32LE(offset), 0x04034b50, `${central.name} local signature`);
+    assert.equal(content.readUInt16LE(offset + 6), central.flags, `${central.name} flags`);
+    assert.equal(content.readUInt16LE(offset + 8), central.method, `${central.name} method`);
+    assert.equal(content.readUInt32LE(offset + 14), central.checksum, `${central.name} central CRC-32`);
+    assert.equal(content.readUInt32LE(offset + 18), central.compressedSize, `${central.name} compressed size`);
+    assert.equal(content.readUInt32LE(offset + 22), central.size, `${central.name} uncompressed size`);
     const nameLength = content.readUInt16LE(offset + 26);
     const extraLength = content.readUInt16LE(offset + 28);
     const nameStart = offset + 30;
-    const name = content.subarray(nameStart, nameStart + nameLength).toString('utf8');
     const dataStart = nameStart + nameLength + extraLength;
-    const data = content.subarray(dataStart, dataStart + size);
-    assert.ok(name && !path.posix.isAbsolute(name) && !name.split('/').includes('..'), `safe ZIP path: ${name}`);
-    assert.equal(crc32(data), checksum, `${name} CRC-32`);
-    assert.equal(entries.has(name), false, `unique ZIP path: ${name}`);
-    entries.set(name, data);
-    offset = dataStart + size;
+    const dataEnd = dataStart + central.compressedSize;
+    assert.ok(dataEnd <= centralStart, `${central.name} data bounds`);
+    const localName = content.subarray(nameStart, nameStart + nameLength).toString('utf8');
+    assert.equal(localName, central.name, `${central.name} local path`);
+    const data = content.subarray(dataStart, dataEnd);
+    assert.equal(independentCrc32(data), central.checksum, `${central.name} independent CRC-32`);
+    assert.equal(entries.has(central.name), false, `unique local ZIP path: ${central.name}`);
+    entries.set(central.name, data);
+    localRegions.push({ start: offset, end: dataEnd, name: central.name });
   }
-  assert.equal(content.readUInt32LE(offset), 0x02014b50, 'ZIP central directory');
 
-  const endOffset = content.length - 22;
-  assert.equal(content.readUInt32LE(endOffset), 0x06054b50, 'ZIP end record');
-  const centralEntries = content.readUInt16LE(endOffset + 10);
-  let centralOffset = content.readUInt32LE(endOffset + 16);
-  for (let index = 0; index < centralEntries; index += 1) {
-    assert.equal(content.readUInt32LE(centralOffset), 0x02014b50);
-    assert.equal(content.readUInt32LE(centralOffset + 38) >>> 16, 0o100644, 'portable ZIP file mode');
-    centralOffset += 46
-      + content.readUInt16LE(centralOffset + 28)
-      + content.readUInt16LE(centralOffset + 30)
-      + content.readUInt16LE(centralOffset + 32);
+  localRegions.sort((left, right) => left.start - right.start);
+  let localOffset = 0;
+  for (const region of localRegions) {
+    assert.equal(region.start, localOffset, `${region.name} follows the prior local entry`);
+    localOffset = region.end;
   }
-  assert.equal(centralEntries, entries.size);
+  assert.equal(localOffset, centralStart, 'local entries exactly precede the central directory');
   return entries;
 }
 
@@ -175,8 +333,17 @@ test('retained capture records resolve to their exact source and deployment iden
     exportSummary,
     productionSamples,
   })) assertDeploymentIdentity(record, label);
-  assertSameDeployment([native, security, productionSummary, exportSummary, productionSamples]);
-  for (const record of [native, publicSites, security]) assertCaptureSourceProvenance(record);
+  assertSameDeployment([native, publicSites, security, productionSummary, exportSummary, productionSamples]);
+  assertSameProductionOrigin([
+    native.deployment,
+    publicSites.deployment,
+    security.deployment,
+    productionSummary.url,
+    productionSamples.deployment,
+  ]);
+  assertCaptureSourceProvenance(native, 'capture-native-evidence.py', ['evidence_provenance.py']);
+  assertCaptureSourceProvenance(publicSites, 'capture-public-evidence.py', ['evidence_provenance.py']);
+  assertCaptureSourceProvenance(security, 'capture-deployment-security-gates.py', ['evidence_provenance.py']);
   for (const record of [native, publicSites]) assertAssetProvenance(record);
 
   assert.equal(native.evaluation.ok, true);
@@ -204,18 +371,56 @@ test('retained capture records resolve to their exact source and deployment iden
     cookiePathRoot: true,
   });
   assert.equal(security.sensitiveValuesRetained, false);
-  assert.equal(publicSites.results.length, 3);
+  assert.deepEqual(
+    publicSites.results.map((result) => result.slug).sort(),
+    Object.keys(expectedPublicJourneys).sort(),
+  );
   for (const result of publicSites.results) {
-    assert.deepEqual(result.consoleErrors, []);
-    assert.ok(result.stages.every((stage) => stage.execution.ok === true));
+    const expected = expectedPublicJourneys[result.slug];
+    assert.ok(expected, `known public-site journey: ${result.slug}`);
+    assert.equal(result.target, expected.target);
+    assert.equal(result.stages.length, expected.stages.length, `${result.slug} stage count`);
+    assert.deepEqual(result.session, {
+      established: true,
+      reusedAcrossStages: true,
+      stageCount: expected.stages.length,
+    });
+    assert.deepEqual(Object.keys(result.postconditions).sort(), [...expected.postconditions].sort());
     assert.ok(Object.values(result.postconditions).every((value) => value === true));
+    assert.deepEqual(result.consoleErrors, []);
+    result.stages.forEach((stage, index) => {
+      const expectedStage = expected.stages[index];
+      assert.equal(stage.selectedTool, expectedStage.tool);
+      assert.equal(stage.nativeRegistered, true);
+      assert.deepEqual(stage.generatedTools.map((tool) => tool.name), [expectedStage.tool]);
+      assert.equal(stage.analysis.runtime.sessionEstablished, true);
+      assert.equal(stage.analysis.runtime.sessionReused, true);
+      assert.equal(stage.execution.ok, true);
+      assert.deepEqual(stage.execution.steps.map((step) => step.tool), expectedStage.steps);
+      assert.deepEqual(Object.keys(stage.postconditions).sort(), [...expectedStage.postconditions].sort());
+      assert.ok(Object.values(stage.postconditions).every((value) => value === true));
+    });
   }
 });
 
 test('retained Lighthouse summaries and sample aggregate match every raw report', async () => {
-  await assertLighthouseSummary('lighthouse-production-summary.json');
-  await assertLighthouseSummary('lighthouse-native-export-summary.json');
+  const productionSummary = await assertLighthouseSummary('lighthouse-production-summary.json', {
+    rawReport: 'lighthouse-production-report.json',
+    inputArtifact: null,
+  });
+  await assertLighthouseSummary('lighthouse-native-export-summary.json', {
+    rawReport: 'lighthouse-native-export-report.json',
+    inputArtifact: 'relay-sessions-webmcp.zip',
+  });
   const samples = await json('lighthouse-production-samples.json');
+  const expectedReports = [
+    'lighthouse-production-report-run1.json',
+    'lighthouse-production-report-run2.json',
+    'lighthouse-production-report.json',
+  ];
+  assert.equal(samples.samples.length, 3);
+  assert.deepEqual(samples.samples.map((sample) => sample.rawReport).sort(), [...expectedReports].sort());
+  assert.equal(samples.samples.filter((sample) => sample.rawReport === productionSummary.rawReport).length, 1);
   const computed = [];
   for (const sample of samples.samples) {
     const rawBytes = await readFile(path.join(evidenceDirectory, sample.rawReport));
@@ -235,6 +440,11 @@ test('retained Lighthouse summaries and sample aggregate match every raw report'
     assert.equal(samples.lighthouseVersion, report.lighthouseVersion);
     assert.equal(samples.browser, lighthouseBrowser(report));
     assert.equal(samples.formFactor, report.configSettings?.formFactor || 'unknown');
+    assert.equal(
+      new URL(report.finalUrl || report.requestedUrl).href,
+      new URL(samples.deployment).href,
+      `${sample.rawReport} production URL`,
+    );
     computed.push({ report, sample: expected });
   }
 
@@ -266,11 +476,38 @@ test('retained export is a safe complete native WebMCP repository', async () => 
   const native = await json('native-webmcp-result.json');
   const archive = await readFile(path.join(evidenceDirectory, native.exportedNativeValidation.archive));
   const entries = parseStoredZip(archive);
+  assert.equal(native.exported.fileName, native.exportedNativeValidation.archive);
+  assert.equal(native.exported.bytes, archive.length);
+  assert.equal(native.exportedNativeValidation.unixFileMode, '0644');
   assert.equal(entries.size, native.exported.fileCount);
   assert.equal(entries.size, native.exportedNativeValidation.fileCount);
-  const source = [...entries.entries()].find(([name]) => name.endsWith('/src/webmcp.generated.js'))?.[1];
-  assert.ok(source, 'generated native source is present');
-  assert.match(source.toString('utf8'), /document\.modelContext\.registerTool\(\{/);
+  assert.deepEqual([...entries.keys()].sort(), [...expectedExportFiles].sort());
+
+  const source = entries.get('relay-sessions-webmcp/src/webmcp.generated.js')?.toString('utf8');
+  const toolSpecs = JSON.parse(entries.get('relay-sessions-webmcp/src/tool-spec.json')?.toString('utf8'));
+  assert.match(source, /\S/, 'generated native source is present');
+  assert.ok(Array.isArray(toolSpecs) && toolSpecs.length > 0, 'generated tool specs are present');
+  assert.deepEqual(
+    toolSpecs.map((tool) => tool.name).sort(),
+    [...native.exportedNativeValidation.registeredTools].sort(),
+  );
+
+  const registered = [];
+  const executableSource = source.replace(/^export\s+/gm, '');
+  await runInNewContext(`${executableSource}\nregisterGeneratedWebMCP();`, {
+    AbortController,
+    console: { info() {} },
+    document: {
+      readyState: 'loading',
+      addEventListener() {},
+      modelContext: {
+        async registerTool(spec) {
+          registered.push(spec.name);
+        },
+      },
+    },
+  }, { timeout: 1_000 });
+  assert.deepEqual(registered, toolSpecs.map((tool) => tool.name));
 });
 
 test('every local evidence-document link resolves', async () => {
