@@ -212,7 +212,9 @@ async function analyzeWithBrowserMcp(body, capabilityId) {
   for (const required of ['browser_navigate', 'browser_snapshot']) {
     if (!names.has(required)) throw new Error(`Connected MCP server does not expose required tool ${required}.`);
   }
-  const navigationResult = await client.callTool('browser_navigate', { url: parsed.href });
+  const navigationResult = await client.callTool('browser_navigate', { url: parsed.href }, {
+    maxResponseBytes: MCP_SNAPSHOT_RESPONSE_LIMIT_BYTES,
+  });
   const navigationText = flattenMcpText(navigationResult);
   const finalUrlMatch = navigationText.match(/^- Page URL:\s*(\S+)\s*$/m);
   const finalTarget = finalUrlMatch
