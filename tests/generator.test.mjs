@@ -36,11 +36,10 @@ test('generated project directly registers WebMCP tools and includes review arti
   const project = generateProjectFiles({ projectName: 'relay-webmcp', tools: [tool], target: { url: 'https://events.example' }, goal: 'Find sessions' });
   assert.match(project.files['src/webmcp.generated.js'], /document\.modelContext\.registerTool\(\{/);
   assert.match(project.files['src/webmcp.generated.js'], /name: spec\.name/);
-  assert.match(
-    project.files['src/webmcp.generated.js'],
-    /form\.querySelector\(executor\.submitSelector\) \|\| document\.querySelector\(executor\.submitSelector\)/,
-  );
+  assert.doesNotMatch(project.files['src/webmcp.generated.js'], /form\.querySelector\([^)]*\) \|\| document\.querySelector/);
+  assert.match(project.files['src/webmcp.generated.js'], /form\.contains\(element\) \|\| element\.form === form/);
   assert.match(project.files['src/webmcp.generated.js'], /assertSchemaValue\(spec\.inputSchema, normalized\)/);
+  assert.match(project.files['src/webmcp.generated.js'], /schema\.minimum/);
   assert.match(project.files['README.md'], /top-level page/);
   assert.match(project.files['integration-report.html'], /Generated WebMCP integration/);
   assert.match(project.files['integration-report.html'], /<link rel="icon" href="data:,">/);

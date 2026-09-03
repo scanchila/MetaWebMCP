@@ -36,9 +36,20 @@ function assertSchemaValue(schema, value, path = 'input') {
     return;
   }
 
-  if (schema.type === 'string' && typeof value !== 'string') throw new Error(`${path} must be a string.`);
-  if (schema.type === 'number' && (typeof value !== 'number' || !Number.isFinite(value))) throw new Error(`${path} must be a finite number.`);
-  if (schema.type === 'integer' && (!Number.isInteger(value))) throw new Error(`${path} must be an integer.`);
+  if (schema.type === 'string') {
+    if (typeof value !== 'string') throw new Error(`${path} must be a string.`);
+    if (Number.isFinite(schema.minLength) && value.length < schema.minLength) throw new Error(`${path} must contain at least ${schema.minLength} characters.`);
+    if (Number.isFinite(schema.maxLength) && value.length > schema.maxLength) throw new Error(`${path} must contain at most ${schema.maxLength} characters.`);
+    if (typeof schema.pattern === 'string' && !(new RegExp(schema.pattern).test(value))) throw new Error(`${path} does not match its required pattern.`);
+  }
+  if (schema.type === 'number' || schema.type === 'integer') {
+    if (schema.type === 'number' && (typeof value !== 'number' || !Number.isFinite(value))) throw new Error(`${path} must be a finite number.`);
+    if (schema.type === 'integer' && !Number.isInteger(value)) throw new Error(`${path} must be an integer.`);
+    if (Number.isFinite(schema.minimum) && value < schema.minimum) throw new Error(`${path} must be at least ${schema.minimum}.`);
+    if (Number.isFinite(schema.maximum) && value > schema.maximum) throw new Error(`${path} must be at most ${schema.maximum}.`);
+    if (Number.isFinite(schema.exclusiveMinimum) && value <= schema.exclusiveMinimum) throw new Error(`${path} must be greater than ${schema.exclusiveMinimum}.`);
+    if (Number.isFinite(schema.exclusiveMaximum) && value >= schema.exclusiveMaximum) throw new Error(`${path} must be less than ${schema.exclusiveMaximum}.`);
+  }
   if (schema.type === 'boolean' && typeof value !== 'boolean') throw new Error(`${path} must be a boolean.`);
 }
 
@@ -208,6 +219,23 @@ function resultFor(spec, targetDocument, extra = {}) {
   };
 }
 
+function uniqueForm(targetDocument, selector) {
+  const forms = [...targetDocument.querySelectorAll(selector)].filter((element) => element.matches?.('form'));
+  if (forms.length !== 1) throw new Error(forms.length ? `Form selector is ambiguous: ${selector}` : `Form not found: ${selector}`);
+  return forms[0];
+}
+
+function uniqueFormControl(targetDocument, form, selector) {
+  const controls = [...targetDocument.querySelectorAll(selector)]
+    .filter((element) => form.contains?.(element) || element.form === form);
+  if (controls.length !== 1) {
+    throw new Error(controls.length
+      ? `Form control is ambiguous within the resolved form: ${selector}`
+      : `Form control not found within the resolved form: ${selector}`);
+  }
+  return controls[0];
+}
+
 async function executeDomSpec(spec, input, context) {
   const targetDocument = context.getTargetDocument?.();
   if (!targetDocument) {
@@ -216,16 +244,15 @@ async function executeDomSpec(spec, input, context) {
   const executor = spec.executor;
 
   if (executor.type === 'dom-form') {
-    const form = targetDocument.querySelector(executor.formSelector);
-    if (!form?.matches?.('form')) throw new Error(`Form not found: ${executor.formSelector}`);
+    const form = uniqueForm(targetDocument, executor.formSelector);
     for (const field of executor.fields || []) {
       if (!(field.name in input)) continue;
-      const control = form.querySelector(field.selector) || targetDocument.querySelector(field.selector);
+      const control = uniqueFormControl(targetDocument, form, field.selector);
       setControlValue(control, input[field.name], targetDocument);
     }
-    const submit = form.querySelector(executor.submitSelector) || targetDocument.querySelector(executor.submitSelector);
+    const submit = executor.submitSelector ? uniqueFormControl(targetDocument, form, executor.submitSelector) : null;
     if (submit?.click) submit.click();
-    else if (typeof form.requestSubmit === 'function') form.requestSubmit();
+    else if (!executor.submitSelector && typeof form.requestSubmit === 'function') form.requestSubmit();
     else form.dispatchEvent(new (targetWindowFor(targetDocument).Event)('submit', { bubbles: true, cancelable: true }));
     await settle(90);
     return resultFor(spec, targetDocument);

@@ -792,6 +792,41 @@ def main() -> int:
                 assert invalid_export_inputs["value"] == ""
                 assert invalid_export_inputs["result"] == ""
                 assert invalid_export_inputs["submits"] == 0
+                ambiguous_form = browser_adapter_page.evaluate(
+                    """async () => {
+                      const decoy = document.createElement('form');
+                      decoy.id = 'catalog-decoy';
+                      decoy.innerHTML = '<label for="decoy-query">Catalog query</label><input id="decoy-query"><button>Search catalog</button>';
+                      window.__decoySubmits = 0;
+                      decoy.addEventListener('submit', event => {
+                        event.preventDefault();
+                        window.__decoySubmits += 1;
+                      });
+                      document.body.prepend(decoy);
+                      let message = '';
+                      try {
+                        await window.__callNative('search_catalog', { query: 'WebMCP' });
+                      } catch (error) {
+                        message = String(error.message || error);
+                      }
+                      const state = {
+                        message,
+                        decoyValue: decoy.querySelector('input').value,
+                        decoySubmits: window.__decoySubmits,
+                        targetValue: document.querySelector('#catalog-query').value,
+                        targetSubmits: window.__catalogSubmits,
+                        result: document.querySelector('#search-result').textContent,
+                      };
+                      decoy.remove();
+                      return state;
+                    }"""
+                )
+                assert "more than one form" in ambiguous_form["message"]
+                assert ambiguous_form["decoyValue"] == ""
+                assert ambiguous_form["decoySubmits"] == 0
+                assert ambiguous_form["targetValue"] == ""
+                assert ambiguous_form["targetSubmits"] == 0
+                assert ambiguous_form["result"] == ""
                 native_search = browser_adapter_page.evaluate(
                     "async () => window.__callNative('search_catalog', { query: 'WebMCP' })"
                 )
@@ -820,7 +855,7 @@ def main() -> int:
                 assert "Beta" in missing_item["message"]
                 assert browser_adapter_page.locator("#cart-state").inner_text() == "Cart is empty"
                 result["checks"].append(
-                    "browser-derived export validates inputs before effects, runs without the bridge, and fails closed when an item disappears"
+                    "browser-derived export validates inputs before effects, rejects ambiguous forms, runs without the bridge, and fails closed when an item disappears"
                 )
                 browser_adapter_page.close()
 
