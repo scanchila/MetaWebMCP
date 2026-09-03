@@ -133,7 +133,9 @@ test('target-controlled labels stay in evidence rather than registered descripti
 test('accessibility snapshot analysis produces browser MCP recipes', () => {
   const snapshot = `- main "Conference"
   - textbox "Topic" [ref=e1]
-  - combobox "Level" [ref=e2]
+  - combobox "Level" [ref=e2]:
+    - option "All levels" [selected]
+    - option "Advanced"
   - button "Find sessions" [ref=e3]
   - button "Add to itinerary" [ref=e4]`;
   const result = analyzeAccessibilitySnapshot({ snapshot, url: 'https://events.example', goal: 'Build an itinerary.' });
@@ -166,6 +168,23 @@ test('accessibility snapshot analysis produces browser MCP recipes', () => {
     { tool: 'browser_click', arguments: { element: 'Add to itinerary', ref: 'e4' } },
     { tool: 'browser_snapshot', arguments: {} },
   ]);
+});
+
+test('snapshot forms omit dropdown inputs when their choices are not observable', () => {
+  const result = analyzeAccessibilitySnapshot({
+    snapshot: `- form "Search sessions" [ref=e1]:
+  - searchbox "Topic" [ref=e2]
+  - combobox "Level" [ref=e3]: All levels
+  - button "Search sessions" [ref=e4]`,
+    url: 'https://events.example/sessions',
+    goal: 'Search sessions.',
+  });
+  const search = result.capabilities.find((capability) => capability.name === 'search_sessions');
+
+  assert.ok(search);
+  assert.deepEqual(Object.keys(search.inputSchema.properties), ['topic']);
+  assert.equal(search.executor.steps.some((step) => step.tool === 'browser_select_option'), false);
+  assert.match(result.warnings.join(' '), /dropdown did not expose its choices and was omitted/i);
 });
 
 test('snapshot analysis explains unnamed actions instead of generating a generic button tool', () => {

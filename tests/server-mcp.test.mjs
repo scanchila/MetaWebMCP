@@ -328,7 +328,7 @@ test('generated browser recipes satisfy the Playwright MCP tool contracts', { ti
           return;
         }
         const text = name === 'browser_snapshot'
-          ? '- textbox "Topic" [ref=e1]\n- combobox "Level" [ref=e2]\n- button "Find sessions" [ref=e3]'
+          ? '- textbox "Topic" [ref=e1]\n- combobox "Level" [ref=e2]:\n  - option "All levels" [selected]\n  - option "Advanced"\n- button "Find sessions" [ref=e3]'
           : name === 'browser_navigate' && args.url.endsWith('/redirect')
             ? '### Page\n- Page URL: http://127.0.0.1:8931/mcp\n- HTTP status: 403 Forbidden'
             : `${name} completed`;

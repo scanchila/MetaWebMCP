@@ -605,7 +605,9 @@ def main() -> int:
 
                 agent_snapshot = """- main "Property search" [ref=e0]
   - textbox "City or neighborhood" [ref=e1]
-  - combobox "Property type" [ref=e2]
+  - combobox "Property type" [ref=e2]:
+    - option "All property types" [selected]
+    - option "Apartamento"
   - button "Search properties" [ref=e3]"""
                 agent_analysis = page.evaluate(
                     """async ({ snapshot }) => window.__callNative('meta_analyze_site', {

@@ -15,7 +15,7 @@ test('page-scoped Browser MCP session analyzes and executes through one transpor
   const requests = [];
   const toolCalls = [];
   let deleteCount = 0;
-  const snapshot = '- textbox "Topic" [ref=e1]\n- combobox "Level" [ref=e2]\n- button "Find sessions" [ref=e3]';
+  const snapshot = '- textbox "Topic" [ref=e1]\n- combobox "Level" [ref=e2]:\n  - option "All levels" [selected]\n  - option "Advanced"\n- button "Find sessions" [ref=e3]';
   const tools = [
     'browser_navigate',
     'browser_snapshot',
