@@ -100,6 +100,24 @@ function reset() {
   render();
 }
 
+function restore(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
+    throw new Error('A valid Relay Sessions state is required.');
+  }
+  const filters = snapshot.filters && typeof snapshot.filters === 'object' ? snapshot.filters : {};
+  state.query = String(filters.query || '').slice(0, 200);
+  state.level = ['all', 'practical', 'advanced'].includes(filters.level) ? filters.level : 'all';
+  state.day = ['all', 'day-1', 'day-2'].includes(filters.day) ? filters.day : 'all';
+  const ids = Array.isArray(snapshot.itinerary)
+    ? snapshot.itinerary.map((item) => typeof item === 'string' ? item : item?.id)
+    : [];
+  state.itinerary = [...new Set(ids)].filter((id) => sessions.some((session) => session.id === id));
+  form.elements.query.value = state.query;
+  form.elements.level.value = state.level;
+  form.elements.day.value = state.day;
+  render();
+}
+
 function getState() {
   return {
     filters: { query: state.query, level: state.level, day: state.day },
@@ -130,5 +148,5 @@ itineraryList.addEventListener('click', (event) => {
 
 document.querySelector('#clear-itinerary').addEventListener('click', clear);
 
-window.demoApp = Object.freeze({ add, remove, clear, reset, getState, sessions: structuredClone(sessions) });
+window.demoApp = Object.freeze({ add, remove, clear, reset, restore, getState, sessions: structuredClone(sessions) });
 render();

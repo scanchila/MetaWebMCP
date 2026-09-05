@@ -13,6 +13,19 @@ Both planes use one `ToolRegistry`. The registry always stores an internal execu
 
 The top-level application also keeps one versioned workspace record in same-origin IndexedDB. It saves drafts, analysis evidence, reviewed ToolSpecs and recipes, evaluation and trace state, and whether generated tools were active. On reload, validated contracts are registered through the same `ToolRegistry`; malformed or incompatible records are discarded. Reset deletes the record. IndexedDB failure is non-fatal and leaves the existing in-memory flow intact.
 
+An explicit presentation mode adds a second persistence destination without
+changing that local-first default. A page with an author capability stores a
+sanitized controlled-demo projection in a one-hour server workspace. A
+different browser with the read capability polls revision numbers and
+rehydrates the same ToolSpecs plus Relay Sessions state into read-only
+executors. Read and write tokens remain in URL fragments, while only token
+hashes are stored. External-target observations, screenshots, hosted browser
+sessions, and export URLs are excluded.
+
+The Node runtime keeps a bounded in-memory equivalent for local development.
+The Cloudflare deployment uses one `SharedWorkspaceStore` Durable Object per
+workspace, providing atomic revisions and alarm-driven expiration.
+
 ## Recursive sequence
 
 ```text

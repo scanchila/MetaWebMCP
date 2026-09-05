@@ -25,7 +25,19 @@ test('Cloudflare deployment declares immutable version metadata and source ident
     config.durable_objects.bindings.find((binding) => binding.name === 'EXPORT_STORE'),
     { name: 'EXPORT_STORE', class_name: 'ExportStore' },
   );
-  assert.deepEqual(config.migrations.at(-1), { tag: 'v2', new_sqlite_classes: ['ExportStore'] });
+  assert.deepEqual(
+    config.ratelimits.find((binding) => binding.name === 'SHARED_WORKSPACE_RATE_LIMITER')?.simple,
+    { limit: 12, period: 60 },
+  );
+  assert.deepEqual(
+    config.ratelimits.find((binding) => binding.name === 'SHARED_WORKSPACE_ACCESS_RATE_LIMITER')?.simple,
+    { limit: 240, period: 60 },
+  );
+  assert.deepEqual(
+    config.durable_objects.bindings.find((binding) => binding.name === 'SHARED_WORKSPACE_STORE'),
+    { name: 'SHARED_WORKSPACE_STORE', class_name: 'SharedWorkspaceStore' },
+  );
+  assert.deepEqual(config.migrations.at(-1), { tag: 'v3', new_sqlite_classes: ['SharedWorkspaceStore'] });
 
   const worker = await readFile(new URL('../deploy/cloudflare/worker.mjs', import.meta.url), 'utf8');
   assert.match(worker, /bindings\.CF_VERSION_METADATA\?\.id/);
@@ -39,6 +51,7 @@ test('Cloudflare deployment declares immutable version metadata and source ident
   );
   assert.match(snapshotRoute, /analysisRequestWithinLimit\(request, bindings\)/);
   assert.match(worker, /bindings\.EXPORT_STORE\.idFromName/);
+  assert.match(worker, /bindings\.SHARED_WORKSPACE_STORE\.idFromName/);
   assert.match(worker, /request\.headers\.get\('cf-connecting-ip'\)/);
   assert.match(worker, /'x-metawebmcp-source-key'/);
   assert.doesNotMatch(worker, /caches\.default/);

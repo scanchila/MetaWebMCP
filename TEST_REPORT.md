@@ -1,6 +1,6 @@
 # Test report
 
-Local regression verification completed on **2026-09-03T21:45:47Z** (**2026-09-04 04:45:47, Asia/Ho_Chi_Minh**) against the working tree based on source commit `643db6c8e80e4e0f489c5d17d5a6b9bfb77ace20`. This run covers managing-agent-authored action and collection tools, bounded lazy-page capture, two cold/direct FincaRaíz pairs, the cross-site Metrocuadrado case, and the Steam multipage benchmark.
+Local regression verification completed on **2026-09-03T22:35:16Z** (**2026-09-04 05:35:16, Asia/Ho_Chi_Minh**) against the feature working tree rebased onto source commit `66552530457f0d010a7cb66b98920ceb377fd4de`. This run covers tokenized cross-browser presentation handoff, managing-agent-authored action and collection tools, bounded lazy-page capture, two cold/direct FincaRaíz pairs, the cross-site Metrocuadrado case, and the Steam multipage benchmark.
 
 The retained production-native and Lighthouse evidence below was captured earlier against deployed Worker version `c5ac5494-8d79-413e-9a9c-8db3dcd3339c`, built from source commit `178f2ff8dd63dc6f1c29558f5ed36cf4798b23e8`.
 
@@ -9,7 +9,7 @@ The retained production-native and Lighthouse evidence below was captured earlie
 - Linux x86_64, kernel 6.8.0-138-generic
 - Node.js 24.5.0
 - npm 11.5.1
-- Python 3.10.12 for evidence tests; Python 3.12.12 for the browser journey
+- Python 3.14.2 for the local evidence tests and browser journey
 - Playwright for Python 1.62.0
 - Google Chrome 147.0.7727.116 for the deterministic local journey
 - Google Chrome 154.0.8037.0 beta with `WebMCPTesting` for native-browser and Lighthouse validation
@@ -20,11 +20,11 @@ The retained production-native and Lighthouse evidence below was captured earlie
 ## Automated results
 
 - Capture-script syntax checks: **passed**.
-- Static repository checks: **passed**.
-- Node unit and integration tests: **118 passed, 0 failed**.
+- Static repository checks: **195 repository files passed**.
+- Node unit and integration tests: **126 passed, 0 failed**.
 - Evidence provenance tests: **11 passed, 0 failed**.
 - Cloudflare Worker dry-run bundle: **passed** with Browser Run, Durable Object, Rate Limit, Static Assets, and Worker Version Metadata bindings.
-- Recursive Chromium end-to-end journey: **21 checks passed** with no console or page errors.
+- Recursive Chromium end-to-end journey: **22 checks passed** with no console or page errors.
 - Generated runtime evaluations: **4 contracts evaluated, 4 passed, 0 failed, 0 skipped, 0 not run**.
 - Retained production Lighthouse: **100 median performance (99–100 across three mobile samples)** and **100 accessibility, best practices, SEO, and agentic browsing in every sample**. Maximum CLS was **0.000106**; console errors were **0**.
 - Retained independently served native export Lighthouse: **100 performance, accessibility, best practices, SEO, and agentic browsing**. CLS and console errors were **0**.
@@ -109,7 +109,7 @@ test captured all 500 occurrences; all three corrected gates passed 50/50.
 This post-run correction is a limitation, and a preregistered repeat is still
 needed before treating the measured ratio as an expected effect size.
 
-The Node suite covers HTML and accessibility-snapshot analysis, repeated-link collection discovery, managing-agent ToolSpec grounding, risk floors, common field parsers, filtering, computed fields, stable ranking, bounded lazy-page capture, pagination and stopping proofs, caller-browser recipe and collection handoff, independent FincaRaíz, Metrocuadrado, and Steam oracle/scoring behavior, inline hosted-browser image capture, complete form containment, required and constrained fields, rejection of ambiguous forms, repeated item-action grouping, bounded input-to-reference mappings, current and legacy Playwright reference schemas, response-scoped reference refresh, consequential-action classification, untrusted metadata containment, ZIP generation with portable Unix modes, runnable owner bundles, generated collection parity, unsafe bundle rejection, public-network target validation across reserved IPv4 and IPv6 ranges, DNS validation and proxy pinning, navigation and redirect validation, Streamable HTTP and long-lived SSE MCP clients, failed-analysis teardown, serialized operations, server-side workspace isolation, Cloudflare hosted-browser deployment gating, signed capability expiry and tamper rejection, cookie attributes, page-owned MCP session reuse and closure, capability-owned single-use exports, and deployment provenance enforcement. The Cloudflare compatibility check also executes the patched agent factory and proves that two Durable Object instances receive distinct MCP protocol servers.
+The Node suite covers HTML and accessibility-snapshot analysis, repeated-link collection discovery, managing-agent ToolSpec grounding, risk floors, common field parsers, filtering, computed fields, stable ranking, bounded lazy-page capture, pagination and stopping proofs, caller-browser recipe and collection handoff, independent FincaRaíz, Metrocuadrado, and Steam oracle/scoring behavior, inline hosted-browser image capture, complete form containment, required and constrained fields, rejection of ambiguous forms, repeated item-action grouping, bounded input-to-reference mappings, current and legacy Playwright reference schemas, response-scoped reference refresh, consequential-action classification, untrusted metadata containment, ZIP generation with portable Unix modes, runnable owner bundles, generated collection parity, unsafe bundle rejection, public-network target validation across reserved IPv4 and IPv6 ranges, DNS validation and proxy pinning, navigation and redirect validation, Streamable HTTP and long-lived SSE MCP clients, failed-analysis teardown, serialized operations, server-side workspace isolation, tokenized shared-workspace sanitization, authorization, fixed expiry, and revision polling, Cloudflare hosted-browser deployment gating, signed capability expiry and tamper rejection, cookie attributes, page-owned MCP session reuse and closure, capability-owned single-use exports, and deployment provenance enforcement. The Cloudflare compatibility check also executes the patched agent factory and proves that two Durable Object instances receive distinct MCP protocol servers.
 
 The deterministic browser journey verifies:
 
@@ -118,22 +118,23 @@ The deterministic browser journey verifies:
 3. Native-client prerequisites and the five-step browser fallback remain readable at every tested breakpoint.
 4. Browser-local drafts, contracts, and active caller plans survive reload without reviving temporary export links; Reset removes the saved record.
 5. The workspace remains functional when IndexedDB is unavailable.
-6. Workspace reset awaits browser cleanup even before a successful analysis.
-7. Caller-supplied observation produces a delegated recipe, exposes the collection authoring grammar, accepts a managing-agent-authored collection through the native meta-tool, and returns it as an explicit incomplete plan.
-8. The human workspace is URL-first, has no snapshot/HTML data-entry controls, and retains a keyboard-accessible sample.
-9. Hosted-browser rate limits expose agent-browser guidance and open the Run path guide.
-10. Hosted inspection displays the rendered page and accessibility model in switchable views.
-11. The fallback contains untrusted evidence, prevents risk downgrades, requires reviewed metadata, and never reports skipped verification as complete.
-12. Seven permanent meta-tools register on the top-level page while the target iframe has no WebMCP registry.
-13. `meta_analyze_site` derives four evidence-backed capabilities from the controlled target.
-14. `meta_create_webmcp` constructs constrained ToolSpecs.
-15. `meta_activate_webmcp` changes the top-level registry from seven to eleven tools.
-16. The generated tools search sessions, add an itinerary item, inspect visible state, and clear it.
-17. `meta_test_webmcp` completes registration, schema, execution, and visible-postcondition checks for all four tools.
-18. `meta_export_webmcp` returns a valid 13-file repository ZIP with direct `document.modelContext.registerTool(...)` source.
-19. The extracted site independently registers and executes all four exported tools, including a zero-item postcondition after `clear_itinerary`.
-20. A browser-derived export validates inputs before effects, rejects form ambiguity, runs without MetaWebMCP or a browser bridge, and fails closed when the requested item disappears.
-21. The completed workspace has no horizontal overflow from 390 px through 1440 px.
+6. Separate browser profiles synchronize the controlled-demo registry and target state through distinct author/viewer bearer tokens, while the viewer's controls and tool handlers remain read-only.
+7. Workspace reset awaits browser cleanup even before a successful analysis.
+8. Caller-supplied observation produces a delegated recipe, exposes the collection authoring grammar, accepts a managing-agent-authored collection through the native meta-tool, and returns it as an explicit incomplete plan.
+9. The human workspace is URL-first, has no snapshot/HTML data-entry controls, and retains a keyboard-accessible sample.
+10. Hosted-browser rate limits expose agent-browser guidance and open the Run path guide.
+11. Hosted inspection displays the rendered page and accessibility model in switchable views.
+12. The fallback contains untrusted evidence, prevents risk downgrades, requires reviewed metadata, and never reports skipped verification as complete.
+13. Seven permanent meta-tools register on the top-level page while the target iframe has no WebMCP registry.
+14. `meta_analyze_site` derives four evidence-backed capabilities from the controlled target.
+15. `meta_create_webmcp` constructs constrained ToolSpecs.
+16. `meta_activate_webmcp` changes the top-level registry from seven to eleven tools.
+17. The generated tools search sessions, add an itinerary item, inspect visible state, and clear it.
+18. `meta_test_webmcp` completes registration, schema, execution, and visible-postcondition checks for all four tools.
+19. `meta_export_webmcp` returns a valid 13-file repository ZIP with direct `document.modelContext.registerTool(...)` source.
+20. The extracted site independently registers and executes all four exported tools, including a zero-item postcondition after `clear_itinerary`.
+21. A browser-derived export validates inputs before effects, rejects form ambiguity, runs without MetaWebMCP or a browser bridge, and fails closed when the requested item disappears.
+22. The completed workspace has no horizontal overflow from 390 px through 1440 px.
 
 Deterministic local artifacts are retained in:
 

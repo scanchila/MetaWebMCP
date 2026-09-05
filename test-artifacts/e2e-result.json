@@ -1,11 +1,12 @@
 {
-  "baseUrl": "http://127.0.0.1:49473",
+  "baseUrl": "http://127.0.0.1:53867",
   "checks": [
     "server health endpoint",
     "landing explains incremental compatibility, opens the workspace, reveals it for tool activity, and remains responsive",
     "native client prerequisites, readable judge guidance, and responsive five-step fallback",
     "browser-local workspace survives reload without reviving an export link and Reset clears it",
     "workspace remains usable when IndexedDB is unavailable",
+    "separate browser profiles share generated tools and controlled target state through read/write tokens while the viewer remains read-only",
     "workspace reset awaits browser cleanup without requiring a successful analysis",
     "calling-agent snapshot analysis plus delegated recipe and managing-agent-authored collection",
     "URL-first workspace removes human snapshot and source-mode inputs while retaining a visible sample",
@@ -122,7 +123,7 @@
       {
         "tool": "find_sessions",
         "status": "passed",
-        "durationMs": 96,
+        "durationMs": 100,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -178,7 +179,7 @@
       {
         "tool": "add_session_to_itinerary",
         "status": "passed",
-        "durationMs": 74,
+        "durationMs": 79,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -247,7 +248,7 @@
       {
         "tool": "inspect_itinerary",
         "status": "passed",
-        "durationMs": 2,
+        "durationMs": 5,
         "checks": [
           {
             "name": "registered in generated tool registry",
@@ -316,7 +317,7 @@
       {
         "tool": "clear_itinerary",
         "status": "passed",
-        "durationMs": 74,
+        "durationMs": 80,
         "checks": [
           {
             "name": "registered in generated tool registry",
